@@ -9,7 +9,7 @@ import {
   Animated,
 } from "react-native";
 
-import randomcolor from "randomcolor";
+
 import Constants from "expo-constants";
 import React, { Component, useRef } from "react";
 import { useState, useEffect } from "react";
