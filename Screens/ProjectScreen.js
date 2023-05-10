@@ -155,7 +155,7 @@ export default function ProjectScreen() {
       >
         <View style={styles.rowSection}>
           <TouchableOpacity style={styles.headerBehave}>
-            <SimpleLineIcons name="bell" size="30" color="black" />
+            <SimpleLineIcons name="bell" size={30} color="black" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.headerBehave}>
             <UserAvatar
