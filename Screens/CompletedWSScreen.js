@@ -5,10 +5,10 @@ import Header from "../components/HeaderWithTextAndAvatar";
 import { ScrollView } from "react-native";
 import { TouchableOpacity } from "react-native";
 import { TextInput } from "react-native";
-import { Feather, SimpleLineIcons } from "@expo/vector-icons";
+import { Feather, FontAwesome, SimpleLineIcons } from "@expo/vector-icons";
 import { Colors } from "react-native/Libraries/NewAppScreen";
 import HomeSection from "../components/HomeSection";
-import TaskCard from "../components/TaskCardProgress";
+import TaskCard from "../components/TaskCardCompleted";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRef } from "react";
 
@@ -155,7 +155,7 @@ export default function ProjectScreen() {
       >
         <View style={styles.rowSection}>
           <TouchableOpacity style={styles.headerBehave}>
-            <SimpleLineIcons name="bell" size={30} color="black" />
+            <SimpleLineIcons name="arrow-left" size="24" color="black" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.headerBehave}>
             <UserAvatar
@@ -213,7 +213,40 @@ export default function ProjectScreen() {
         </View>
 
         {/* My Task */}
-        <HomeSection title={this.sectionInHome.sectionName}></HomeSection>
+        <View style={styles.contentName}>
+          <Text style={{ fontSize: 20, fontWeight: 600 }}>Completed</Text>
+          <Text
+            style={{
+              fontSize: 20,
+              fontWeight: 600,
+              color: "gray",
+              marginHorizontal: 6,
+            }}
+          >
+            3
+          </Text>
+          <TouchableOpacity>
+            <FontAwesome name="sort" size={20} color="black" />
+          </TouchableOpacity>
+        </View>
+        {/* TaskCard */}
+        <TaskCard
+          title={this.projectCard.title1}
+          subtitle={this.projectCard.subtitle1}
+          time={this.projectCard.time1}
+          status={this.projectCard.status1}
+          iconName={this.projectCard.icon}
+        ></TaskCard>
+        {/* End of TaskCard */}
+        {/* TaskCard */}
+        <TaskCard
+          title={this.projectCard.title1}
+          subtitle={this.projectCard.subtitle1}
+          time={this.projectCard.time1}
+          status={this.projectCard.status1}
+          iconName={this.projectCard.icon}
+        ></TaskCard>
+        {/* End of TaskCard */}
         {/* TaskCard */}
         <TaskCard
           title={this.projectCard.title1}
@@ -233,37 +266,6 @@ export default function ProjectScreen() {
         ></TaskCard>
         {/* End of TaskCard */}
         {/* End of My Task */}
-
-        {/* All Tasks */}
-        <HomeSection title={this.sectionInHome.sectionName2}></HomeSection>
-        {/* TaskCard */}
-        <TaskCard
-          title={this.projectCard.title1}
-          subtitle={this.projectCard.subtitle1}
-          time={this.projectCard.time1}
-          status={this.projectCard.status1}
-          iconName={this.projectCard.icon}
-        ></TaskCard>
-        {/* End of TaskCard */}
-        {/* TaskCard */}
-        <TaskCard
-          title={this.projectCard.title1}
-          subtitle={this.projectCard.subtitle1}
-          time={this.projectCard.time1}
-          status={this.projectCard.status1}
-          iconName={this.projectCard.icon}
-        ></TaskCard>
-        {/* End of TaskCard */}
-        {/* TaskCard */}
-        <TaskCard
-          title={this.projectCard.title1}
-          subtitle={this.projectCard.subtitle1}
-          time={this.projectCard.time1}
-          status={this.projectCard.status1}
-          iconName={this.projectCard.icon}
-        ></TaskCard>
-        {/* End of TaskCard */}
-        {/* End of All Tasks */}
       </Animated.ScrollView>
     </KeyboardAvoidingView>
   );
@@ -317,5 +319,11 @@ const styles = StyleSheet.create({
   },
   headerBehave: {
     padding: 20,
+  },
+  contentName: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    marginHorizontal: 20,
   },
 });

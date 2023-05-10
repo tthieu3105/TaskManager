@@ -159,7 +159,7 @@ function TabNavigator() {
       })}
     >
       <Tab.Screen
-        name="Home"
+        name="HomeTab"
         component={HomeScreenStackNavigator}
         options={{
           tabBarIcon: ({ focused }) => (
@@ -197,7 +197,7 @@ function TabNavigator() {
         }}
       />
       <Tab.Screen
-        name="Calendar"
+        name="CalendarTab"
         component={CalendarScreenStackNavigator}
         options={{
           tabBarIcon: ({ focused }) => (
@@ -236,7 +236,7 @@ function TabNavigator() {
       />
 
       <Tab.Screen
-        name="New"
+        name="NewTab"
         component={NewTaskNoteScreenStackNavigator}
         options={({ navigation }) => ({
           tabBarButton: ({ focused }) => (
@@ -250,7 +250,7 @@ function TabNavigator() {
       />
 
       <Tab.Screen
-        name="Note"
+        name="NoteTab"
         component={NoteScreenStackNavigator}
         options={{
           tabBarIcon: ({ focused }) => (
@@ -288,7 +288,7 @@ function TabNavigator() {
         }}
       />
       <Tab.Screen
-        name="Workspace"
+        name="WorkspaceTab"
         component={WorkSpaceScreenStackNavigator}
         options={{
           tabBarIcon: ({ focused }) => (
