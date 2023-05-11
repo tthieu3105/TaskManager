@@ -140,10 +140,12 @@ const styles = StyleSheet.create({
   addButtonInner: {
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: Colors.primary,
+    backgroundColor: "#BDD8F1",
     with: 60,
     height: 60,
     borderRadius: 30,
+    borderColor: "#375A7F",
+    borderWidth: 2.5,
   },
 
   addButtonIcon: {
@@ -157,7 +159,7 @@ const styles = StyleSheet.create({
     position: "relative",
     width: 60,
     height: 60,
-    marginTop: -20,
+    marginTop: -10,
   },
 
   item: {
@@ -166,10 +168,12 @@ const styles = StyleSheet.create({
     left: 5,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: Colors.primary,
+    backgroundColor: "#BDD8F1",
     width: 50,
     height: 50,
     borderRadius: 25,
+    borderColor: "#375A7F",
+    borderWidth: 2.5,
   },
 
   itemIcon: {
