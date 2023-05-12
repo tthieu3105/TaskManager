@@ -25,7 +25,7 @@ import NoteInfoScreen from "../Screens/NoteInfoScreen.js";
 import WorkSpaceScreen from "../Screens/WorkSpaceScreen.js";
 import HomeScreen from "../Screens/HomeScreen.js";
 import NoteScreen from "../Screens/NoteScreen.js";
-//import CreateTaskScreen from "../Screens/CreateTaskScreen.js";
+import CreateTaskScreen from "../Screens/CreateTaskScreen.js";
 import NotifyScreen from "../Screens/NotifyScreen.js";
 import TaskInfoScreen from "../Screens/TaskInfoScreen.js";
 // import EditTaskScreen from "../Screens/EditTaskScreen.js";
@@ -45,12 +45,12 @@ const HomeStack = createStackNavigator();
 function HomeScreenStackNavigator() {
   return (
     <HomeStack.Navigator screenOptions={{ headerShown: false }}>
-      <HomeStack.Screen name="Home" component={HomeScreen} />
+      <HomeStack.Screen name="HomeScreen" component={HomeScreen} />
       <HomeStack.Screen name="Notify" component={NotifyScreen} />
       <HomeStack.Screen name="AccountFeature" component={AccountFeature} />
       <HomeStack.Screen name="EditProfile" component={EditProfile} />
       <HomeStack.Screen name="NewNote" component={AddNoteScreen} />
-      {/* <HomeStack.Screen name="NewTask" component={CreateTaskScreen} /> */}
+      <HomeStack.Screen name="NewTask" component={CreateTaskScreen} />
     </HomeStack.Navigator>
   );
 }
@@ -59,7 +59,7 @@ const CalendarStack = createStackNavigator();
 function CalendarScreenStackNavigator() {
   return (
     <CalendarStack.Navigator screenOptions={{ headerShown: false }}>
-      <CalendarStack.Screen name="Calendar" component={CalendarScreen} />
+      <CalendarStack.Screen name="CalendarScreen" component={CalendarScreen} />
       <CalendarStack.Screen name="TaskInfo" component={TaskInfoScreen} />
       {/* <CalendarStack.Screen name="TaskEdit" component={EditTaskScreen} /> */}
     </CalendarStack.Navigator>
@@ -70,19 +70,19 @@ function CalendarScreenStackNavigator() {
 // function CreateTaskScreenStackNavigator() {
 //   return (
 //     <CreateTaskStack.Navigator screenOptions={{ headerShown: false }}>
-//       <CreateTaskStack.Screen name="AddTask" component={CreateTaskScreen} />
+//       <CreateTaskStack.Screen name="NewTask" component={CreateTaskScreen} />
 //     </CreateTaskStack.Navigator>
 //   );
 // }
 
-const AddNoteStack = createStackNavigator();
-function AddNoteScreenStackNavigator() {
-  return (
-    <AddNoteStack.Navigator screenOptions={{ headerShown: false }}>
-      <AddNoteStack.Screen name="AddNote" component={AddNoteScreen} />
-    </AddNoteStack.Navigator>
-  );
-}
+// const AddNoteStack = createStackNavigator();
+// function AddNoteScreenStackNavigator() {
+//   return (
+//     <AddNoteStack.Navigator screenOptions={{ headerShown: false }}>
+//       <AddNoteStack.Screen name="AddNote" component={AddNoteScreen} />
+//     </AddNoteStack.Navigator>
+//   );
+// }
 
 const NoteScreenStack = createStackNavigator();
 function NoteScreenStackNavigator() {
@@ -101,7 +101,7 @@ function WorkSpaceScreenStackNavigator() {
   return (
     <WorkSpaceScreenStack.Navigator screenOptions={{ headerShown: false }}>
       <WorkSpaceScreenStack.Screen
-        name="Workspace"
+        name="WorkspaceScreen"
         component={WorkSpaceScreen}
       />
       <WorkSpaceScreenStack.Screen name="Notify" component={NotifyScreen} />
@@ -121,7 +121,10 @@ const NewTaskNoteScreenStack = createStackNavigator();
 function NewTaskNoteScreenStackNavigator() {
   return (
     <NewTaskNoteScreenStack.Navigator screenOptions={{ headerShown: false }}>
-      {/* <NewTaskNoteScreenStack.Screen name="NewTask" component={CreateTaskScreen} /> */}
+      <NewTaskNoteScreenStack.Screen
+        name="NewTask"
+        component={CreateTaskScreen}
+      />
       <NewTaskNoteScreenStack.Screen name="NewNote" component={AddNoteScreen} />
     </NewTaskNoteScreenStack.Navigator>
   );
@@ -159,7 +162,7 @@ function TabNavigator() {
       })}
     >
       <Tab.Screen
-        name="HomeTab"
+        name="Home"
         component={HomeScreenStackNavigator}
         options={{
           tabBarIcon: ({ focused }) => (
@@ -197,7 +200,7 @@ function TabNavigator() {
         }}
       />
       <Tab.Screen
-        name="CalendarTab"
+        name="Calendar"
         component={CalendarScreenStackNavigator}
         options={{
           tabBarIcon: ({ focused }) => (
@@ -236,7 +239,7 @@ function TabNavigator() {
       />
 
       <Tab.Screen
-        name="NewTab"
+        name="New"
         component={NewTaskNoteScreenStackNavigator}
         options={({ navigation }) => ({
           tabBarButton: ({ focused }) => (
@@ -250,7 +253,7 @@ function TabNavigator() {
       />
 
       <Tab.Screen
-        name="NoteTab"
+        name="Note"
         component={NoteScreenStackNavigator}
         options={{
           tabBarIcon: ({ focused }) => (
@@ -288,7 +291,7 @@ function TabNavigator() {
         }}
       />
       <Tab.Screen
-        name="WorkspaceTab"
+        name="Workspace"
         component={WorkSpaceScreenStackNavigator}
         options={{
           tabBarIcon: ({ focused }) => (

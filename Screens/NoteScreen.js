@@ -11,7 +11,12 @@ import {
 } from "react-native";
 import React, { Component, useEffect, useRef } from "react";
 import Header from "../components/HeaderWithTextAndAvatar";
-import { Feather, FontAwesome, SimpleLineIcons } from "@expo/vector-icons";
+import {
+  Feather,
+  FontAwesome,
+  SimpleLineIcons,
+  Ionicons,
+} from "@expo/vector-icons";
 import { Colors } from "react-native/Libraries/NewAppScreen";
 import NoteCard from "../components/NoteCard";
 import UserAvatar from "@muhzi/react-native-user-avatar";
@@ -90,7 +95,8 @@ export default function NoteScreen() {
         >
           <View style={styles.rowSection}>
             <TouchableOpacity style={styles.headerBehave}>
-              <SimpleLineIcons name="bell" size={30} color="black" />
+              {/* <SimpleLineIcons name="bell" size={30} color="black" /> */}
+              <Ionicons name="notifications-outline" size={30}></Ionicons>
             </TouchableOpacity>
             <TouchableOpacity style={styles.headerBehave}>
               <UserAvatar

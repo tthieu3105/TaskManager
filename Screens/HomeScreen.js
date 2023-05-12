@@ -14,7 +14,7 @@ import {
 import React, { Component, useEffect, useRef } from "react";
 import { Colors } from "react-native/Libraries/NewAppScreen";
 import UserAvatar from "@muhzi/react-native-user-avatar";
-import { Feather, SimpleLineIcons } from "@expo/vector-icons";
+import { Feather, SimpleLineIcons, Ionicons } from "@expo/vector-icons";
 import HomeSection from "../components/HomeSection";
 import TaskCardOP from "../components/TaskCardProgress";
 import TaskCardCP from "../components/TaskCardCompleted";
@@ -98,7 +98,8 @@ export default function HomeScreen({ navigation }) {
         >
           <View style={styles.rowSection}>
             <TouchableOpacity style={styles.headerBehave}>
-              <SimpleLineIcons name="bell" size={30} color="black" />
+              {/* <SimpleLineIcons name="bell" size={30} color="black" /> */}
+              <Ionicons name="notifications-outline" size={30}></Ionicons>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.headerBehave}

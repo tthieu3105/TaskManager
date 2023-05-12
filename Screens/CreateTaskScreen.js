@@ -69,6 +69,7 @@ export default function CreateTaskScreen() {
     extrapolate: "clamp",
   });
   // End of header animation
+
   // Drop down list
   const [selected, setSelected] = React.useState("");
 
@@ -219,6 +220,7 @@ export default function CreateTaskScreen() {
   };
   // Due date
   const [isEnableDueDate, setIsEnableDueDate] = useState(false);
+  const appearDuedate = useRef(new Animated.Value(0)).current;
 
   const [dueDateVisible, setDueDateVisible] = useState(false);
   const toggleSwitchDueDate = () => {
@@ -226,9 +228,16 @@ export default function CreateTaskScreen() {
       setDueDateVisible(false);
     } else {
       setDueDateVisible(true);
+      Animated.timing(appearDuedate, {
+        toValue: dueDateVisible ? 1 : 0,
+        duration: 800,
+        useNativeDriver: true,
+      }).start();
     }
+
     setIsEnableDueDate((previousState) => !previousState);
   };
+
   // Include time
   const [isEnableTime, setIsEnableTime] = useState(false);
 
@@ -565,6 +574,7 @@ export default function CreateTaskScreen() {
                     <View style={styles.inputText}>
                       <TextInput
                         style={styles.textInInputText}
+                        multiline={true}
                         placeholder="Enter Username or Email"
                         placeholderTextColor={Colors.placeholder}
                       ></TextInput>
@@ -652,8 +662,9 @@ const styles = StyleSheet.create({
   },
 
   textInInputText: {
+    paddingTop: 0,
     fontSize: 16,
-    width: "90%",
+    flex: 1,
   },
 
   timeTitle: {
