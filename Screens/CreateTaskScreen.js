@@ -28,7 +28,9 @@ import { SelectList } from "react-native-dropdown-select-list";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 
 const CONTAINER_HEIGHT = 80;
-
+const inputText = {
+  name2: "Title",
+};
 export default function CreateTaskScreen() {
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -263,15 +265,6 @@ export default function CreateTaskScreen() {
     setIsEnableAssign((previousState) => !previousState);
   };
   // End of Toggle Button
-  inputText = {
-    name1: "Project",
-    name2: "Title",
-    name3: "Date",
-    name4: "Description",
-    icon1: "arrow-drop-down-circle",
-    icon3: "calendar-today",
-    hintText: "Enter Username or Email",
-  };
 
   return (
     <KeyboardAvoidingView
@@ -349,7 +342,7 @@ export default function CreateTaskScreen() {
 
               {/* Title name */}
               {/* TextInput */}
-              <InputArea name={this.inputText.name2}></InputArea>
+              <InputArea name={inputText.name2}></InputArea>
 
               {/* End of TextInput */}
 

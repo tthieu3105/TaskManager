@@ -17,7 +17,15 @@ import NoteCard from "../components/NoteCard";
 import UserAvatar from "@muhzi/react-native-user-avatar";
 import TaskCardOP from "../components/TaskCardProgress";
 const CONTAINER_HEIGHT = 80;
-
+const taskCard = {
+  title1: "Landing Page Agency",
+  subtitle1: "Webb Design",
+  time1: "10:00 - 12:30 am",
+  status1: "On Progress",
+  status2: "Completed",
+  status3: "Overdue",
+  icon: "star",
+};
 export default function NoteScreen() {
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -58,21 +66,7 @@ export default function NoteScreen() {
     extrapolate: "clamp",
   });
   // End of header animation
-  headerItems = {
-    name: "SK",
-    icon: "bell",
-    size: "30",
-  };
 
-  taskCard = {
-    title1: "Landing Page Agency",
-    subtitle1: "Webb Design",
-    time1: "10:00 - 12:30 am",
-    status1: "On Progress",
-    status2: "Completed",
-    status3: "Overdue",
-    icon: "star",
-  };
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -151,25 +145,25 @@ export default function NoteScreen() {
             </TouchableOpacity>
           </View>
           <TaskCardOP
-            title={this.taskCard.title1}
-            subtitle={this.taskCard.subtitle1}
-            time={this.taskCard.time1}
-            status={this.taskCard.status1}
-            iconName={this.taskCard.icon}
+            title={taskCard.title1}
+            subtitle={taskCard.subtitle1}
+            time={taskCard.time1}
+            status={taskCard.status1}
+            iconName={taskCard.icon}
           ></TaskCardOP>
           <TaskCardOP
-            title={this.taskCard.title1}
-            subtitle={this.taskCard.subtitle1}
-            time={this.taskCard.time1}
-            status={this.taskCard.status1}
-            iconName={this.taskCard.icon}
+            title={taskCard.title1}
+            subtitle={taskCard.subtitle1}
+            time={taskCard.time1}
+            status={taskCard.status1}
+            iconName={taskCard.icon}
           ></TaskCardOP>
           <TaskCardOP
-            title={this.taskCard.title1}
-            subtitle={this.taskCard.subtitle1}
-            time={this.taskCard.time1}
-            status={this.taskCard.status1}
-            iconName={this.taskCard.icon}
+            title={taskCard.title1}
+            subtitle={taskCard.subtitle1}
+            time={taskCard.time1}
+            status={taskCard.status1}
+            iconName={taskCard.icon}
           ></TaskCardOP>
         </View>
       </Animated.ScrollView>

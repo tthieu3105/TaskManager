@@ -92,6 +92,12 @@ function NoteScreenStackNavigator() {
       <NoteScreenStack.Screen name="Notify" component={NotifyScreen} />
       <NoteScreenStack.Screen name="NoteInfo" component={NoteInfoScreen} />
       <NoteScreenStack.Screen name="EditNote" component={EditNoteScreen} />
+
+      <NoteScreenStack.Screen
+        name="AccountFeature"
+        component={AccountFeature}
+      />
+      <NoteScreenStack.Screen name="EditProfile" component={EditProfile} />
     </NoteScreenStack.Navigator>
   );
 }

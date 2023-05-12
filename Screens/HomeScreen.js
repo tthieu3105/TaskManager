@@ -22,6 +22,21 @@ import TaskCardOD from "../components/TaskCardOverdue";
 import TabContainer from "../components/TabContainer";
 
 const CONTAINER_HEIGHT = 80;
+const sectionInHome = {
+  sectionName: "My Tasks",
+  sectionName2: "Completed",
+  sectionName3: "Overdue",
+};
+
+const taskCard = {
+  title1: "Landing Page Agency",
+  subtitle1: "Webb Design",
+  time1: "10:00 - 12:30 am",
+  status1: "On Progress",
+  status2: "Completed",
+  status3: "Overdue",
+  icon: "star",
+};
 export default function HomeScreen({ navigation }) {
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -62,21 +77,6 @@ export default function HomeScreen({ navigation }) {
     extrapolate: "clamp",
   });
   // End of header animation
-  sectionInHome = {
-    sectionName: "My Tasks",
-    sectionName2: "Completed",
-    sectionName3: "Overdue",
-  };
-
-  taskCard = {
-    title1: "Landing Page Agency",
-    subtitle1: "Webb Design",
-    time1: "10:00 - 12:30 am",
-    status1: "On Progress",
-    status2: "Completed",
-    status3: "Overdue",
-    icon: "star",
-  };
 
   return (
     <TabContainer>
@@ -97,7 +97,10 @@ export default function HomeScreen({ navigation }) {
           ]}
         >
           <View style={styles.rowSection}>
-            <TouchableOpacity style={styles.headerBehave}>
+            <TouchableOpacity
+              style={styles.headerBehave}
+              onPress={() => navigation.navigate("Notify")}
+            >
               {/* <SimpleLineIcons name="bell" size={30} color="black" /> */}
               <Ionicons name="notifications-outline" size={30}></Ionicons>
             </TouchableOpacity>
@@ -145,66 +148,66 @@ export default function HomeScreen({ navigation }) {
           </View>
 
           {/* My Task */}
-          <HomeSection title={this.sectionInHome.sectionName}></HomeSection>
+          <HomeSection title={sectionInHome.sectionName}></HomeSection>
           {/* TaskCard */}
           <TaskCardOP
-            title={this.taskCard.title1}
-            subtitle={this.taskCard.subtitle1}
-            time={this.taskCard.time1}
-            status={this.taskCard.status1}
-            iconName={this.taskCard.icon}
+            title={taskCard.title1}
+            subtitle={taskCard.subtitle1}
+            time={taskCard.time1}
+            status={taskCard.status1}
+            iconName={taskCard.icon}
           ></TaskCardOP>
           {/* End of TaskCard */}
 
           {/* TaskCard */}
           <TaskCardOP
-            title={this.taskCard.title1}
-            subtitle={this.taskCard.subtitle1}
-            time={this.taskCard.time1}
-            status={this.taskCard.status1}
-            iconName={this.taskCard.icon}
+            title={taskCard.title1}
+            subtitle={taskCard.subtitle1}
+            time={taskCard.time1}
+            status={taskCard.status1}
+            iconName={taskCard.icon}
           ></TaskCardOP>
           {/* End of TaskCard */}
           {/* End of My Task*/}
 
           {/* Completed Section */}
-          <HomeSection title={this.sectionInHome.sectionName2}></HomeSection>
+          <HomeSection title={sectionInHome.sectionName2}></HomeSection>
           {/* TaskCard */}
           <TaskCardCP
-            title={this.taskCard.title1}
-            subtitle={this.taskCard.subtitle1}
-            time={this.taskCard.time1}
-            status={this.taskCard.status2}
+            title={taskCard.title1}
+            subtitle={taskCard.subtitle1}
+            time={taskCard.time1}
+            status={taskCard.status2}
           ></TaskCardCP>
           {/* End of TaskCard */}
 
           {/* TaskCard */}
           <TaskCardCP
-            title={this.taskCard.title1}
-            subtitle={this.taskCard.subtitle1}
-            time={this.taskCard.time1}
-            status={this.taskCard.status2}
+            title={taskCard.title1}
+            subtitle={taskCard.subtitle1}
+            time={taskCard.time1}
+            status={taskCard.status2}
           ></TaskCardCP>
           {/* End of TaskCard */}
           {/* End of Completed Section */}
 
           {/* Overdue Section */}
-          <HomeSection title={this.sectionInHome.sectionName3}></HomeSection>
+          <HomeSection title={sectionInHome.sectionName3}></HomeSection>
           {/* TaskCard */}
           <TaskCardOD
-            title={this.taskCard.title1}
-            subtitle={this.taskCard.subtitle1}
-            time={this.taskCard.time1}
-            status={this.taskCard.status3}
+            title={taskCard.title1}
+            subtitle={taskCard.subtitle1}
+            time={taskCard.time1}
+            status={taskCard.status3}
           ></TaskCardOD>
           {/* End of TaskCard */}
 
           {/* TaskCard */}
           <TaskCardOD
-            title={this.taskCard.title1}
-            subtitle={this.taskCard.subtitle1}
-            time={this.taskCard.time1}
-            status={this.taskCard.status3}
+            title={taskCard.title1}
+            subtitle={taskCard.subtitle1}
+            time={taskCard.time1}
+            status={taskCard.status3}
           ></TaskCardOD>
           {/* End of TaskCard */}
           {/* End of Overdue Section */}

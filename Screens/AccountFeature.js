@@ -75,7 +75,7 @@ const AccountFeature = ({ navigation }) => {
         {/* Layout button back và title */}
         <View style={styles.row}>
           {/* Button: back to previous screen */}
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate("HomeScreen")}>
             <AntDesign
               name="left"
               size={30}
