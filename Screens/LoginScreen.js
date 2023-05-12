@@ -17,10 +17,22 @@ import { StatusBar } from "expo-status-bar";
 import CreateAccScreen from "./CreateAccScreen";
 import { useNavigation } from "react-router-native";
 
+import { ToastAndroid } from "react-native";
+import { db } from "../components/FirebaseConfig";
+import {
+  ref,
+  onValue,
+  get,
+  child,
+  orderByChild,
+  equalTo,
+} from "firebase/database";
+
 const CONTAINER_HEIGHT = 80;
 
 const LoginScreen = ({ navigation }) => {
-    // Lấy Password
+  const [userName, setUserName] = useState("");
+  // Lấy Password
   const [password, setPassword] = useState("");
   const [hidePassword, setHidePassword] = useState(true);
   const [showPasswordIcon, setShowPasswordIcon] = useState("eye-outline");
@@ -28,6 +40,48 @@ const LoginScreen = ({ navigation }) => {
   const toggleHidePassword = () => {
     setHidePassword(!hidePassword);
     setShowPasswordIcon(hidePassword ? "eye-off-outline" : "eye-outline");
+  };
+
+  const LoginFunction = (userName, password) => {
+    if (userName === "") {
+      ToastAndroid.show(
+        "UserName or Email cannot be empty",
+        ToastAndroid.SHORT
+      );
+      return false;
+    }
+    if (password === "") {
+      ToastAndroid.show("Password cannot be empty", ToastAndroid.SHORT);
+      return false;
+    }
+
+    // Lấy reference đến node 'User' trong Firebase Realtime Database
+    const usersRef = ref(db, "User");
+
+    const userList = [];
+
+    // Lấy toàn bộ dữ liệu User và lưu vào list user
+    get(usersRef).then((snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        Object.keys(data).forEach((key) => {
+          const user = data[key];
+          userList.push({ username: user.UserName, email: user.Email, password: user.Password });
+        });
+        console.log("Users found:", userList);
+        const foundUser = userList.find(
+          (user) => (user.username === userName || user.email === userName)  && user.password === password
+        );
+        if (foundUser) {
+          ToastAndroid.show("Login Successfully!", ToastAndroid.SHORT);
+          navigation.navigate("Home");
+        } else {
+          ToastAndroid.show("Invalid UserName or Password!", ToastAndroid.SHORT);
+        }
+      } else {
+        console.log("No users found");
+      }
+    });
   };
 
   // Header Animation
@@ -105,6 +159,8 @@ const LoginScreen = ({ navigation }) => {
                 placeholder="Username or Email"
                 multiline
                 placeholderTextColor={Colors.placeholder}
+                value={userName}
+                onChangeText={(text) => setUserName(text)}
               ></TextInput>
             </View>
 
@@ -137,7 +193,11 @@ const LoginScreen = ({ navigation }) => {
           </View>
 
           <View style={{ backgroundColor: "white" }}>
-            <TouchableOpacity style={styles.buttonLogin} onPress={() => navigation.navigate("Home")}>
+            {/* <TouchableOpacity style={styles.buttonLogin} onPress={() => navigation.navigate("Home")}> */}
+            <TouchableOpacity
+              style={styles.buttonLogin}
+              onPress={() => LoginFunction(userName, password)}
+            >
               <Text style={styles.textInButton}>Login</Text>
             </TouchableOpacity>
 
@@ -253,7 +313,7 @@ const styles = StyleSheet.create({
 
   textInInsertBox: {
     fontSize: 16,
-    paddingTop:0,
+    paddingTop: 0,
     width: "90%",
     // fontFamily: "Poppins",
     marginBottom: "auto",
