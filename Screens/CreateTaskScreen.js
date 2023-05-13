@@ -283,7 +283,7 @@ export default function CreateTaskScreen() {
         >
           <View style={styles.rowSection}>
             <TouchableOpacity style={styles.headerBehave}>
-              <SimpleLineIcons name="arrow-left" size="30" color="black" />
+              <SimpleLineIcons name="arrow-left" size={30} color="black" />
             </TouchableOpacity>
             <TouchableOpacity style={styles.headerBehave}>
               <UserAvatar

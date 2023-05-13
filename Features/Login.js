@@ -17,3 +17,6 @@ const LoginFunction = (userName, password) => {
 }
 
 export {LoginFunction}
+
+// npm install @react-native-community/datetimepicker --save
+// npx expo install @react-native-community/datetimepicker@6.2.0

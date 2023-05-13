@@ -19,8 +19,7 @@ import { MaterialIcons } from "@expo/vector-icons";
 import InputArea from "../components/InputAreaForTask";
 import { Colors } from "react-native/Libraries/NewAppScreen";
 import { SelectList } from "react-native-dropdown-select-list";
-
-import DateTimePickerModal from 'react-native-modal-datetime-picker';
+import DateTimePickerModal from "react-native-modal-datetime-picker";
 
 const CONTAINER_HEIGHT = 80;
 
