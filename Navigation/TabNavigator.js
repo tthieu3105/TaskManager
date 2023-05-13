@@ -46,7 +46,11 @@ function HomeScreenStackNavigator() {
   return (
     <HomeStack.Navigator screenOptions={{ headerShown: false }}>
       <HomeStack.Screen name="HomeScreen" component={HomeScreen} />
-      <HomeStack.Screen name="Notify" component={NotifyScreen} />
+      <HomeStack.Screen
+        name="Notify"
+        component={NotifyScreen}
+        options={{ unmountOnBlur: true }}
+      />
       <HomeStack.Screen name="AccountFeature" component={AccountFeature} />
       <HomeStack.Screen name="EditProfile" component={EditProfile} />
       <HomeStack.Screen name="NewNote" component={AddNoteScreen} />

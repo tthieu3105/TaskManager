@@ -285,7 +285,7 @@ export default function CreateTaskScreen() {
         >
           <View style={styles.rowSection}>
             <TouchableOpacity style={styles.headerBehave}>
-              <SimpleLineIcons name="arrow-left" size="30" color="black" />
+              <SimpleLineIcons name="arrow-left" size={30} color="black" />
             </TouchableOpacity>
             <TouchableOpacity style={styles.headerBehave}>
               <UserAvatar
@@ -329,7 +329,7 @@ export default function CreateTaskScreen() {
                         width: 2,
                         height: 2,
                       },
-                      borderWidth: "0",
+                      borderWidth: 0,
                     }}
                     maxHeight={200}
                   />

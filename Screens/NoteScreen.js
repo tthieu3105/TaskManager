@@ -88,12 +88,11 @@ export default function NoteScreen({ navigation }) {
           ]}
         >
           <View style={styles.rowSection}>
-            <TouchableOpacity style={styles.headerBehave}>
-              <Ionicons
-                name="notifications-outline"
-                size={30}
-                onPress={() => navigation.navigate("Notify")}
-              ></Ionicons>
+            <TouchableOpacity
+              style={styles.headerBehave}
+              onPress={() => navigation.navigate("Notify")}
+            >
+              <Ionicons name="notifications-outline" size={30}></Ionicons>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.headerBehave}

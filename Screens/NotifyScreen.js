@@ -88,7 +88,7 @@ export default function NotifyScreen({ navigation }) {
           </Text>
           <TouchableOpacity
             style={styles.headerBehave}
-            onPress={() => navigation.navigate("HomeScreen")}
+            onPress={() => navigation.goBack()}
           >
             <Text style={styles.textHeader}>Done</Text>
           </TouchableOpacity>

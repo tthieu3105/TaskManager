@@ -78,7 +78,7 @@ const EditProfile = ({ navigation }) => {
               name="left"
               size={30}
               style={styles.arrowIcon}
-              onPress={() => navigation.navigate("AccountFeature")}
+              onPress={() => navigation.goBack()}
             ></AntDesign>
           </TouchableOpacity>
           {/* Title */}
