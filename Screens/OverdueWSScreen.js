@@ -75,7 +75,13 @@ const Progress = ({ step, steps, height }) => {
   );
 };
 const CONTAINER_HEIGHT = 80;
-
+const projectCard = {
+  title1: "Landing Page Agency",
+  subtitle1: "Webb Design",
+  time1: "10:00 - 12:30 am",
+  status1: "On Progress",
+  icon: "user-circle",
+};
 export default function ProjectScreen() {
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -116,18 +122,6 @@ export default function ProjectScreen() {
     extrapolate: "clamp",
   });
   // End of header animation
-
-  sectionInHome = {
-    sectionName: "Recently assigned",
-    sectionName2: "All tasks",
-  };
-  projectCard = {
-    title1: "Landing Page Agency",
-    subtitle1: "Webb Design",
-    time1: "10:00 - 12:30 am",
-    status1: "On Progress",
-    icon: "user-circle",
-  };
   const [index, setIndex] = React.useState(0);
   React.useEffect(() => {
     const interval = setInterval(() => {
@@ -231,29 +225,29 @@ export default function ProjectScreen() {
         </View>
         {/* TaskCard */}
         <TaskCard
-          title={this.projectCard.title1}
-          subtitle={this.projectCard.subtitle1}
-          time={this.projectCard.time1}
-          status={this.projectCard.status1}
-          iconName={this.projectCard.icon}
+          title={projectCard.title1}
+          subtitle={projectCard.subtitle1}
+          time={projectCard.time1}
+          status={projectCard.status1}
+          iconName={projectCard.icon}
         ></TaskCard>
         {/* End of TaskCard */}
         {/* TaskCard */}
         <TaskCard
-          title={this.projectCard.title1}
-          subtitle={this.projectCard.subtitle1}
-          time={this.projectCard.time1}
-          status={this.projectCard.status1}
-          iconName={this.projectCard.icon}
+          title={projectCard.title1}
+          subtitle={projectCard.subtitle1}
+          time={projectCard.time1}
+          status={projectCard.status1}
+          iconName={projectCard.icon}
         ></TaskCard>
         {/* End of TaskCard */}
         {/* TaskCard */}
         <TaskCard
-          title={this.projectCard.title1}
-          subtitle={this.projectCard.subtitle1}
-          time={this.projectCard.time1}
-          status={this.projectCard.status1}
-          iconName={this.projectCard.icon}
+          title={projectCard.title1}
+          subtitle={projectCard.subtitle1}
+          time={projectCard.time1}
+          status={projectCard.status1}
+          iconName={projectCard.icon}
         ></TaskCard>
         {/* End of TaskCard */}
         {/* TaskCard */}

@@ -11,14 +11,24 @@ import {
 } from "react-native";
 import React, { Component, useEffect, useRef } from "react";
 import Header from "../components/HeaderWithTextAndAvatar";
-import { Feather, FontAwesome, SimpleLineIcons } from "@expo/vector-icons";
+import {
+  Feather,
+  FontAwesome,
+  SimpleLineIcons,
+  Ionicons,
+} from "@expo/vector-icons";
 import { Colors } from "react-native/Libraries/NewAppScreen";
 import NoteCard from "../components/NoteCard";
 import UserAvatar from "@muhzi/react-native-user-avatar";
 import TabContainer from "../components/TabContainer";
 const CONTAINER_HEIGHT = 80;
-
-export default function NoteScreen() {
+const noteCard = {
+  tileName: "Landing Page Agency Creative",
+  contentCard:
+    "Lorem ipsum dolor sit amet consectetur. Velit ut arcu fames quis viverra ",
+  dateCard: "February 9",
+};
+export default function NoteScreen({ navigation }) {
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
   const offsetAnim = useRef(new Animated.Value(0)).current;
@@ -58,17 +68,6 @@ export default function NoteScreen() {
     extrapolate: "clamp",
   });
   // End of header animation
-  headerItems = {
-    name: "SK",
-    icon: "bell",
-    size: "30",
-  };
-  noteCard = {
-    tileName: "Landing Page Agency Creative",
-    contentCard:
-      "Lorem ipsum dolor sit amet consectetur. Velit ut arcu fames quis viverra ",
-    dateCard: "February 9",
-  };
 
   return (
     <TabContainer>
@@ -89,10 +88,16 @@ export default function NoteScreen() {
           ]}
         >
           <View style={styles.rowSection}>
-            <TouchableOpacity style={styles.headerBehave}>
-              <SimpleLineIcons name="bell" size={30} color="black" />
+            <TouchableOpacity
+              style={styles.headerBehave}
+              onPress={() => navigation.navigate("Notify")}
+            >
+              <Ionicons name="notifications-outline" size={30}></Ionicons>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.headerBehave}>
+            <TouchableOpacity
+              style={styles.headerBehave}
+              onPress={() => navigation.navigate("AccountFeature")}
+            >
               <UserAvatar
                 initialName="SK"
                 fontSize={15}
@@ -148,29 +153,29 @@ export default function NoteScreen() {
               </TouchableOpacity>
             </View>
             <NoteCard
-              title={this.noteCard.tileName}
-              content={this.noteCard.contentCard}
-              date={this.noteCard.dateCard}
+              title={noteCard.tileName}
+              content={noteCard.contentCard}
+              date={noteCard.dateCard}
             ></NoteCard>
             <NoteCard
-              title={this.noteCard.tileName}
-              content={this.noteCard.contentCard}
-              date={this.noteCard.dateCard}
+              title={noteCard.tileName}
+              content={noteCard.contentCard}
+              date={noteCard.dateCard}
             ></NoteCard>
             <NoteCard
-              title={this.noteCard.tileName}
-              content={this.noteCard.contentCard}
-              date={this.noteCard.dateCard}
+              title={noteCard.tileName}
+              content={noteCard.contentCard}
+              date={noteCard.dateCard}
             ></NoteCard>
             <NoteCard
-              title={this.noteCard.tileName}
-              content={this.noteCard.contentCard}
-              date={this.noteCard.dateCard}
+              title={noteCard.tileName}
+              content={noteCard.contentCard}
+              date={noteCard.dateCard}
             ></NoteCard>
             <NoteCard
-              title={this.noteCard.tileName}
-              content={this.noteCard.contentCard}
-              date={this.noteCard.dateCard}
+              title={noteCard.tileName}
+              content={noteCard.contentCard}
+              date={noteCard.dateCard}
             ></NoteCard>
           </View>
         </Animated.ScrollView>
