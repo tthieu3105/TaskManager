@@ -11,8 +11,13 @@ import NotifyCard from "../components/NotifyCard";
 import { ScrollView } from "react-native";
 import { StatusBar } from "react-native";
 const CONTAINER_HEIGHT = 80;
-
-export default function NotifyScreen() {
+const notifyInfo = {
+  name: "name of task",
+  date: "Mar 10",
+  project: "name of project",
+  due: "March 12, 2023",
+};
+export default function NotifyScreen({ navigation }) {
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
   const offsetAnim = useRef(new Animated.Value(0)).current;
@@ -52,12 +57,6 @@ export default function NotifyScreen() {
     extrapolate: "clamp",
   });
   // End of header animation
-  notifyInfo = {
-    name: "name of task",
-    date: "Mar 10",
-    project: "name of project",
-    due: "March 12, 2023",
-  };
 
   return (
     <KeyboardAvoidingView
@@ -87,7 +86,10 @@ export default function NotifyScreen() {
           >
             All updates
           </Text>
-          <TouchableOpacity style={styles.headerBehave}>
+          <TouchableOpacity
+            style={styles.headerBehave}
+            onPress={() => navigation.goBack()}
+          >
             <Text style={styles.textHeader}>Done</Text>
           </TouchableOpacity>
         </View>
@@ -103,59 +105,59 @@ export default function NotifyScreen() {
         <View style={{ marginTop: CONTAINER_HEIGHT }}>
           {/* Notify Card */}
           <NotifyCard
-            nameTask={this.notifyInfo.name}
-            createDate={this.notifyInfo.date}
-            projectName={this.notifyInfo.project}
-            dueDate={this.notifyInfo.due}
+            nameTask={notifyInfo.name}
+            createDate={notifyInfo.date}
+            projectName={notifyInfo.project}
+            dueDate={notifyInfo.due}
           ></NotifyCard>
           {/* End of Notify Card */}
 
           {/* Notify Card */}
           <NotifyCard
-            nameTask={this.notifyInfo.name}
-            createDate={this.notifyInfo.date}
-            projectName={this.notifyInfo.project}
-            dueDate={this.notifyInfo.due}
+            nameTask={notifyInfo.name}
+            createDate={notifyInfo.date}
+            projectName={notifyInfo.project}
+            dueDate={notifyInfo.due}
           ></NotifyCard>
           {/* End of Notify Card */}
           {/* Notify Card */}
           <NotifyCard
-            nameTask={this.notifyInfo.name}
-            createDate={this.notifyInfo.date}
-            projectName={this.notifyInfo.project}
-            dueDate={this.notifyInfo.due}
+            nameTask={notifyInfo.name}
+            createDate={notifyInfo.date}
+            projectName={notifyInfo.project}
+            dueDate={notifyInfo.due}
           ></NotifyCard>
           {/* End of Notify Card */}
           {/* Notify Card */}
           <NotifyCard
-            nameTask={this.notifyInfo.name}
-            createDate={this.notifyInfo.date}
-            projectName={this.notifyInfo.project}
-            dueDate={this.notifyInfo.due}
+            nameTask={notifyInfo.name}
+            createDate={notifyInfo.date}
+            projectName={notifyInfo.project}
+            dueDate={notifyInfo.due}
           ></NotifyCard>
           {/* End of Notify Card */}
           {/* Notify Card */}
           <NotifyCard
-            nameTask={this.notifyInfo.name}
-            createDate={this.notifyInfo.date}
-            projectName={this.notifyInfo.project}
-            dueDate={this.notifyInfo.due}
+            nameTask={notifyInfo.name}
+            createDate={notifyInfo.date}
+            projectName={notifyInfo.project}
+            dueDate={notifyInfo.due}
           ></NotifyCard>
           {/* End of Notify Card */}
           {/* Notify Card */}
           <NotifyCard
-            nameTask={this.notifyInfo.name}
-            createDate={this.notifyInfo.date}
-            projectName={this.notifyInfo.project}
-            dueDate={this.notifyInfo.due}
+            nameTask={notifyInfo.name}
+            createDate={notifyInfo.date}
+            projectName={notifyInfo.project}
+            dueDate={notifyInfo.due}
           ></NotifyCard>
           {/* End of Notify Card */}
           {/* Notify Card */}
           <NotifyCard
-            nameTask={this.notifyInfo.name}
-            createDate={this.notifyInfo.date}
-            projectName={this.notifyInfo.project}
-            dueDate={this.notifyInfo.due}
+            nameTask={notifyInfo.name}
+            createDate={notifyInfo.date}
+            projectName={notifyInfo.project}
+            dueDate={notifyInfo.due}
           ></NotifyCard>
           {/* End of Notify Card */}
         </View>

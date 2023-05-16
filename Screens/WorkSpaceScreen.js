@@ -9,7 +9,6 @@ import {
   Animated,
 } from "react-native";
 
-
 import Constants from "expo-constants";
 import React, { Component, useRef } from "react";
 import { useState, useEffect } from "react";
@@ -22,7 +21,7 @@ import TabContainer from "../components/TabContainer";
 
 const CONTAINER_HEIGHT = 80;
 
-const WorkSpaceScreen = () => {
+const WorkSpaceScreen = ({ navigation }) => {
   const [currentDate, setCurrentDate] = useState("");
   // Hiển thị ngày tháng năm hiện tại lên textView:
   useEffect(() => {
@@ -94,7 +93,7 @@ const WorkSpaceScreen = () => {
         >
           <View style={styles.row}>
             {/* Button: back to previous screen */}
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate("Notify")}>
               <Ionicons
                 name="notifications-outline"
                 size={30}
@@ -103,13 +102,16 @@ const WorkSpaceScreen = () => {
             </TouchableOpacity>
 
             {/* small avatar */}
-            <View style={styles.headerBehave}>
+            <TouchableOpacity
+              style={styles.headerBehave}
+              onPress={() => navigation.navigate("AccountFeature")}
+            >
               <UserAvatar
                 size={40}
                 active
                 src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=2900&q=80"
               />
-            </View>
+            </TouchableOpacity>
           </View>
         </Animated.View>
 

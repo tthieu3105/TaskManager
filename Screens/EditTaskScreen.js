@@ -22,8 +22,16 @@ import { SelectList } from "react-native-dropdown-select-list";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 
 const CONTAINER_HEIGHT = 80;
-
-export default function EditTaskScreen() {
+const inputText = {
+  name1: "Project",
+  name2: "Title",
+  name3: "Date",
+  name4: "Description",
+  icon1: "arrow-drop-down-circle",
+  icon3: "calendar-today",
+  hintText: "Enter Username or Email",
+};
+export default function EditTaskScreen({ navigation }) {
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
   const offsetAnim = useRef(new Animated.Value(0)).current;
@@ -239,16 +247,6 @@ export default function EditTaskScreen() {
   };
   // End of Toggle Button
 
-  inputText = {
-    name1: "Project",
-    name2: "Title",
-    name3: "Date",
-    name4: "Description",
-    icon1: "arrow-drop-down-circle",
-    icon3: "calendar-today",
-    hintText: "Enter Username or Email",
-  };
-
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -265,10 +263,16 @@ export default function EditTaskScreen() {
         ]}
       >
         <View style={styles.rowSection}>
-          <TouchableOpacity style={styles.headerBehave}>
+          <TouchableOpacity
+            style={styles.headerBehave}
+            onPress={() => navigation.goBack()}
+          >
             <SimpleLineIcons name="arrow-left" size="20" color="black" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.headerBehave}>
+          <TouchableOpacity
+            style={styles.headerBehave}
+            onPress={() => navigation.goBack()}
+          >
             <Text style={styles.textHeader}>Done</Text>
           </TouchableOpacity>
         </View>
@@ -317,7 +321,7 @@ export default function EditTaskScreen() {
 
             {/* Title name */}
             {/* TextInput */}
-            <InputArea name={this.inputText.name2}></InputArea>
+            <InputArea name={inputText.name2}></InputArea>
 
             {/* End of TextInput */}
 

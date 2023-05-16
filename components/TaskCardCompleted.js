@@ -4,13 +4,20 @@ import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { Feather } from "@expo/vector-icons";
 
 export default class TaskCardCP extends Component {
+  handlePress = () => {
+    const { screenName, navigation } = this.props;
+    navigation.navigate(screenName);
+  };
   render() {
     return (
       <View style={styles.taskCard}>
         {/* TaskCard */}
         <View style={styles.taskCardInfo}>
           <View style={styles.firstRowTaskCard}>
-            <TouchableOpacity style={{ marginTop: 15, flex: 1 }}>
+            <TouchableOpacity
+              style={{ marginTop: 15, flex: 1 }}
+              onPress={this.handlePress}
+            >
               <Text style={styles.taskCardTitle}>{this.props.title}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.priorityStar}>
@@ -21,7 +28,7 @@ export default class TaskCardCP extends Component {
               />
             </TouchableOpacity>
           </View>
-          <TouchableOpacity style={{ marginTop: 5 }}>
+          <TouchableOpacity style={{ marginTop: 5 }} onPress={this.handlePress}>
             <Text style={styles.taskCardSubtitle}>{this.props.subtitle}</Text>
           </TouchableOpacity>
 
@@ -37,7 +44,7 @@ export default class TaskCardCP extends Component {
                 color="black"
                 style={{ margin: 2 }}
               />
-              <TouchableOpacity>
+              <TouchableOpacity onPress={this.handlePress}>
                 <Text style={styles.timeInTaskCard}>{this.props.time}</Text>
               </TouchableOpacity>
             </View>

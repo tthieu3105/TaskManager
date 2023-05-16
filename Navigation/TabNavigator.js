@@ -28,10 +28,15 @@ import NoteScreen from "../Screens/NoteScreen.js";
 import CreateTaskScreen from "../Screens/CreateTaskScreen.js";
 import NotifyScreen from "../Screens/NotifyScreen.js";
 import TaskInfoScreen from "../Screens/TaskInfoScreen.js";
-import EditTaskScreen from "../Screens/EditTaskScreen.js";
+// import EditTaskScreen from "../Screens/EditTaskScreen.js";
 import EditNoteScreen from "../Screens/EditNoteScreen.js";
+import EditTaskScreen from "../Screens/EditTaskScreen.js";
+
 import ProjectScreen from "../Screens/ProjectScreen.js";
 import NewTaskNote from "../Screens/NewTaskNote.js";
+import MyTaskScreen from "../Screens/MyTaskScreen.js";
+import CompletedScreen from "../Screens/CompletedTaskScreen.js";
+import OverdueScreen from "../Screens/OverdueTaskScreen.js";
 
 import { tabContextProvider, useTabMenu } from "../context/tabContext.js";
 import AddButton from "../components/AddButton.js";
@@ -44,13 +49,25 @@ const Stack = createStackNavigator();
 const HomeStack = createStackNavigator();
 function HomeScreenStackNavigator() {
   return (
-    <HomeStack.Navigator screenOptions={{ headerShown: false }}>
+
+    <HomeStack.Navigator
+      initialRouteName="HomeScreen"
+      screenOptions={{ headerShown: false }}
+    >
       <HomeStack.Screen name="HomeScreen" component={HomeScreen} />
-      <HomeStack.Screen name="Notify" component={NotifyScreen} />
+
       <HomeStack.Screen name="AccountFeature" component={AccountFeature} />
       <HomeStack.Screen name="EditProfile" component={EditProfile} />
+      <HomeStack.Screen name="Notify" component={NotifyScreen} />
       <HomeStack.Screen name="NewNote" component={AddNoteScreen} />
       <HomeStack.Screen name="NewTask" component={CreateTaskScreen} />
+
+      <HomeStack.Screen name="MyTask" component={MyTaskScreen} />
+      <HomeStack.Screen name="Completed" component={CompletedScreen} />
+      <HomeStack.Screen name="Overdue" component={OverdueScreen} />
+
+      <HomeStack.Screen name="TaskInfo" component={TaskInfoScreen} />
+      <HomeStack.Screen name="EditTask" component={EditTaskScreen} />
     </HomeStack.Navigator>
   );
 }
@@ -58,40 +75,55 @@ function HomeScreenStackNavigator() {
 const CalendarStack = createStackNavigator();
 function CalendarScreenStackNavigator() {
   return (
-    <CalendarStack.Navigator screenOptions={{ headerShown: false }}>
-      <CalendarStack.Screen name="Calendar" component={CalendarScreen} />
+    <CalendarStack.Navigator
+      initialRouteName="CalendarScreen"
+      screenOptions={{ headerShown: false }}
+    >
+      <CalendarStack.Screen name="CalendarScreen" component={CalendarScreen} />
       <CalendarStack.Screen name="TaskInfo" component={TaskInfoScreen} />
-      <CalendarStack.Screen name="TaskEdit" component={EditTaskScreen} />
+      <CalendarStack.Screen name="NewNote" component={AddNoteScreen} />
+      <CalendarStack.Screen name="NewTask" component={CreateTaskScreen} />
+      {/* <CalendarStack.Screen name="TaskEdit" component={EditTaskScreen} /> */}
     </CalendarStack.Navigator>
   );
 }
 
-const CreateTaskStack = createStackNavigator();
-function CreateTaskScreenStackNavigator() {
-  return (
-    <CreateTaskStack.Navigator screenOptions={{ headerShown: false }}>
-      <CreateTaskStack.Screen name="AddTask" component={CreateTaskScreen} />
-    </CreateTaskStack.Navigator>
-  );
-}
+// const CreateTaskStack = createStackNavigator();
+// function CreateTaskScreenStackNavigator() {
+//   return (
+//     <CreateTaskStack.Navigator screenOptions={{ headerShown: false }}>
+//       <CreateTaskStack.Screen name="NewTask" component={CreateTaskScreen} />
+//     </CreateTaskStack.Navigator>
+//   );
+// }
 
-const AddNoteStack = createStackNavigator();
-function AddNoteScreenStackNavigator() {
-  return (
-    <AddNoteStack.Navigator screenOptions={{ headerShown: false }}>
-      <AddNoteStack.Screen name="AddNote" component={AddNoteScreen} />
-    </AddNoteStack.Navigator>
-  );
-}
+// const AddNoteStack = createStackNavigator();
+// function AddNoteScreenStackNavigator() {
+//   return (
+//     <AddNoteStack.Navigator screenOptions={{ headerShown: false }}>
+//       <AddNoteStack.Screen name="AddNote" component={AddNoteScreen} />
+//     </AddNoteStack.Navigator>
+//   );
+// }
 
 const NoteScreenStack = createStackNavigator();
 function NoteScreenStackNavigator() {
   return (
-    <NoteScreenStack.Navigator screenOptions={{ headerShown: false }}>
+    <NoteScreenStack.Navigator
+      initialRouteName="NoteScreen"
+      screenOptions={{ headerShown: false }}
+    >
       <NoteScreenStack.Screen name="NoteScreen" component={NoteScreen} />
       <NoteScreenStack.Screen name="Notify" component={NotifyScreen} />
       <NoteScreenStack.Screen name="NoteInfo" component={NoteInfoScreen} />
       <NoteScreenStack.Screen name="EditNote" component={EditNoteScreen} />
+      <NoteScreenStack.Screen name="NewNote" component={AddNoteScreen} />
+      <NoteScreenStack.Screen name="NewTask" component={CreateTaskScreen} />
+      <NoteScreenStack.Screen
+        name="AccountFeature"
+        component={AccountFeature}
+      />
+      <NoteScreenStack.Screen name="EditProfile" component={EditProfile} />
     </NoteScreenStack.Navigator>
   );
 }
@@ -99,10 +131,18 @@ function NoteScreenStackNavigator() {
 const WorkSpaceScreenStack = createStackNavigator();
 function WorkSpaceScreenStackNavigator() {
   return (
-    <WorkSpaceScreenStack.Navigator screenOptions={{ headerShown: false }}>
+    <WorkSpaceScreenStack.Navigator
+      initialRouteName="WorkSpaceScreen"
+      screenOptions={{ headerShown: false }}
+    >
       <WorkSpaceScreenStack.Screen
-        name="Workspace"
+        name="WorkspaceScreen"
         component={WorkSpaceScreen}
+      />
+      <WorkSpaceScreenStack.Screen name="NewNote" component={AddNoteScreen} />
+      <WorkSpaceScreenStack.Screen
+        name="NewTask"
+        component={CreateTaskScreen}
       />
       <WorkSpaceScreenStack.Screen name="Notify" component={NotifyScreen} />
       <WorkSpaceScreenStack.Screen
@@ -112,7 +152,7 @@ function WorkSpaceScreenStackNavigator() {
       <WorkSpaceScreenStack.Screen name="EditProfile" component={EditProfile} />
       <WorkSpaceScreenStack.Screen name="Projects" component={ProjectScreen} />
       <WorkSpaceScreenStack.Screen name="Tasks" component={TaskInfoScreen} />
-      <WorkSpaceScreenStack.Screen name="TaskEdit" component={EditTaskScreen} />
+      {/* <WorkSpaceScreenStack.Screen name="TaskEdit" component={EditTaskScreen} /> */}
     </WorkSpaceScreenStack.Navigator>
   );
 }
@@ -194,6 +234,7 @@ function TabNavigator() {
               )}
             </View>
           ),
+          unmountOnBlur: true,
         }}
         listeners={{
           tabPress: (e) => opened && e.preventDefault(),
@@ -232,6 +273,7 @@ function TabNavigator() {
               )}
             </View>
           ),
+          unmountOnBlur: true,
         }}
         listeners={{
           tabPress: (e) => opened && e.preventDefault(),
@@ -249,6 +291,7 @@ function TabNavigator() {
               toggleOpened={toggleOpened}
             ></AddButton>
           ),
+          unmountOnBlur: true,
         })}
       />
 
@@ -285,6 +328,7 @@ function TabNavigator() {
               )}
             </View>
           ),
+          unmountOnBlur: true,
         }}
         listeners={{
           tabPress: (e) => opened && e.preventDefault(),
@@ -323,6 +367,7 @@ function TabNavigator() {
               )}
             </View>
           ),
+          unmountOnBlur: true,
         }}
         listeners={{
           tabPress: (e) => opened && e.preventDefault(),

@@ -16,7 +16,7 @@ import UserAvatar from "@muhzi/react-native-user-avatar";
 
 const CONTAINER_HEIGHT = 80;
 
-const EditProfile = () => {
+const EditProfile = ({ navigation }) => {
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
   const offsetAnim = useRef(new Animated.Value(0)).current;
@@ -78,6 +78,7 @@ const EditProfile = () => {
               name="left"
               size={30}
               style={styles.arrowIcon}
+              onPress={() => navigation.goBack()}
             ></AntDesign>
           </TouchableOpacity>
           {/* Title */}
@@ -286,7 +287,6 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     marginRight: 15,
     marginLeft: "auto",
-    
   },
 
   row: {
@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
     color: "#363942",
     fontSize: 18,
     fontWeight: "bold",
-    shadowColor:"gray",
+    shadowColor: "gray",
     shadowOpacity: 0.3,
     shadowOffset: {
       width: 2,

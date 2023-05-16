@@ -29,7 +29,9 @@ import { SelectList } from "react-native-dropdown-select-list";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 
 const CONTAINER_HEIGHT = 80;
-
+const inputText = {
+  name2: "Title",
+};
 export default function CreateTaskScreen() {
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -70,6 +72,7 @@ export default function CreateTaskScreen() {
     extrapolate: "clamp",
   });
   // End of header animation
+
   // Drop down list
   const [selected, setSelected] = React.useState("");
 
@@ -220,6 +223,7 @@ export default function CreateTaskScreen() {
   };
   // Due date
   const [isEnableDueDate, setIsEnableDueDate] = useState(false);
+  const appearDuedate = useRef(new Animated.Value(0)).current;
 
   const [dueDateVisible, setDueDateVisible] = useState(false);
   const toggleSwitchDueDate = () => {
@@ -227,9 +231,16 @@ export default function CreateTaskScreen() {
       setDueDateVisible(false);
     } else {
       setDueDateVisible(true);
+      Animated.timing(appearDuedate, {
+        toValue: dueDateVisible ? 1 : 0,
+        duration: 800,
+        useNativeDriver: true,
+      }).start();
     }
+
     setIsEnableDueDate((previousState) => !previousState);
   };
+
   // Include time
   const [isEnableTime, setIsEnableTime] = useState(false);
 
@@ -255,15 +266,6 @@ export default function CreateTaskScreen() {
     setIsEnableAssign((previousState) => !previousState);
   };
   // End of Toggle Button
-  inputText = {
-    name1: "Project",
-    name2: "Title",
-    name3: "Date",
-    name4: "Description",
-    icon1: "arrow-drop-down-circle",
-    icon3: "calendar-today",
-    hintText: "Enter Username or Email",
-  };
 
   return (
     <KeyboardAvoidingView
@@ -284,7 +286,7 @@ export default function CreateTaskScreen() {
         >
           <View style={styles.rowSection}>
             <TouchableOpacity style={styles.headerBehave}>
-              <SimpleLineIcons name="arrow-left" size="30" color="black" />
+              <SimpleLineIcons name="arrow-left" size={30} color="black" />
             </TouchableOpacity>
             <TouchableOpacity style={styles.headerBehave}>
               <UserAvatar
@@ -328,7 +330,7 @@ export default function CreateTaskScreen() {
                         width: 2,
                         height: 2,
                       },
-                      borderWidth: "0",
+                      borderWidth: 0,
                     }}
                     maxHeight={200}
                   />
@@ -341,7 +343,7 @@ export default function CreateTaskScreen() {
 
               {/* Title name */}
               {/* TextInput */}
-              <InputArea name={this.inputText.name2}></InputArea>
+              <InputArea name={inputText.name2}></InputArea>
 
               {/* End of TextInput */}
 
@@ -566,6 +568,7 @@ export default function CreateTaskScreen() {
                     <View style={styles.inputText}>
                       <TextInput
                         style={styles.textInInputText}
+                        multiline={true}
                         placeholder="Enter Username or Email"
                         placeholderTextColor={Colors.placeholder}
                       ></TextInput>
@@ -653,8 +656,9 @@ const styles = StyleSheet.create({
   },
 
   textInInputText: {
+    paddingTop: 0,
     fontSize: 16,
-    width: "90%",
+    flex: 1,
   },
 
   timeTitle: {

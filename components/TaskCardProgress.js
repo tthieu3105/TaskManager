@@ -4,13 +4,73 @@ import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { Feather } from "@expo/vector-icons";
 
 export default class TaskCardOP extends Component {
+  handlePress = () => {
+    const { screenName, navigation } = this.props;
+    navigation.navigate(screenName);
+  };
+  constructor(props) {
+    super(props);
+    this.state = {
+      taskStatus: "onProgress",
+    };
+  }
+
+  // handleTaskStatusChange = () => {
+  //   if (this.state.taskStatus === "onProgress") {
+  //     this.setState({ taskStatus: "completed" });
+  //     this.props.setTasksOnProgress(
+  //       this.props.tasksOnProgress.filter(
+  //         (task) => task.id !== this.props.task.id
+  //       )
+  //     );
+  //     this.props.setTasksCompleted([
+  //       ...this.props.tasksCompleted,
+  //       this.props.task,
+  //     ]);
+  //   } else if (this.state.taskStatus === "completed") {
+  //     this.setState({ taskStatus: "overdue" });
+  //     this.props.setTasksCompleted(
+  //       this.props.tasksCompleted.filter(
+  //         (task) => task.id !== this.props.task.id
+  //       )
+  //     );
+  //     this.props.setTasksOverdue([...this.props.tasksOverdue, this.props.task]);
+  //   }
+  // };
+  handleStatusChange = () => {
+    // Kiểm tra nếu trạng thái hiện tại là 'on progress' thì chuyển sang 'completed'
+    if (this.state.taskStatus === "on progress") {
+      this.setState({ status: "completed" });
+    }
+    // Kiểm tra nếu trạng thái hiện tại là 'completed' thì chuyển sang 'overdue'
+    else if (this.state.taskStatus === "completed") {
+      this.setState({ status: "overdue" });
+    }
+    // Kiểm tra nếu trạng thái hiện tại là 'overdue' thì chuyển sang 'on progress'
+    else if (this.state.taskStatus === "overdue") {
+      this.setState({ status: "on progress" });
+    }
+  };
   render() {
+    const { taskStatus } = this.state;
+    const statusStyle = {
+      backgroundColor:
+        taskStatus === "onProgress"
+          ? "#4B7BE5"
+          : taskStatus === "completed"
+          ? "#6BBA62"
+          : "#E7272D",
+      borderRadius: 10,
+    };
     return (
       <View style={styles.taskCard}>
         {/* TaskCard */}
         <View style={styles.taskCardInfo}>
           <View style={styles.firstRowTaskCard}>
-            <TouchableOpacity style={{ marginTop: 15, flex: 1 }}>
+            <TouchableOpacity
+              style={{ marginTop: 15, flex: 1 }}
+              onPress={this.handlePress}
+            >
               <Text style={styles.taskCardTitle}>{this.props.title}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.priorityStar}>
@@ -21,7 +81,7 @@ export default class TaskCardOP extends Component {
               />
             </TouchableOpacity>
           </View>
-          <TouchableOpacity style={{ marginTop: 5 }}>
+          <TouchableOpacity style={{ marginTop: 5 }} onPress={this.handlePress}>
             <Text style={styles.taskCardSubtitle}>{this.props.subtitle}</Text>
           </TouchableOpacity>
 
@@ -37,14 +97,25 @@ export default class TaskCardOP extends Component {
                 color="black"
                 style={{ margin: 2 }}
               />
-              <TouchableOpacity>
+              <TouchableOpacity onPress={this.handlePress}>
                 <Text style={styles.timeInTaskCard}>{this.props.time}</Text>
               </TouchableOpacity>
             </View>
 
             {/* Nút OnProgress */}
-            <TouchableOpacity style={styles.taskStatusOP}>
-              <Text style={styles.textInStatus}>{this.props.status}</Text>
+            <TouchableOpacity
+              style={statusStyle}
+              onPress={this.handleTaskStatusChange}
+            >
+              {this.state.taskStatus === "onProgress" && (
+                <Text style={styles.textInStatus}>On Progress</Text>
+              )}
+              {this.state.taskStatus === "completed" && (
+                <Text style={styles.textInStatus}>Completed</Text>
+              )}
+              {this.state.taskStatus === "overdue" && (
+                <Text style={styles.textInStatus}>Overdue</Text>
+              )}
             </TouchableOpacity>
           </View>
         </View>
@@ -102,10 +173,6 @@ const styles = StyleSheet.create({
   },
   taskStatusFinished: {
     backgroundColor: "#6BBA62",
-    borderRadius: 10,
-  },
-  completedTask: {
-    backgroundColor: "#4B7BE5",
     borderRadius: 10,
   },
   textInStatus: {

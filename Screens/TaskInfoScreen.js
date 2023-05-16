@@ -18,8 +18,17 @@ import { MaterialIcons } from "@expo/vector-icons";
 import InputArea from "../components/InputAreaForTask";
 import { Colors } from "react-native/Libraries/NewAppScreen";
 const CONTAINER_HEIGHT = 80;
-
-export default function TaskInfoScreen() {
+const inputText = {
+  name1: "Project",
+  name2: "Title",
+  name3: "Date",
+  name4: "Description",
+  icon1: "arrow-drop-down-circle",
+  icon3: "calendar-today",
+  hintText: "Enter Username or Email",
+  disable: "false",
+};
+export default function TaskInfoScreen({ navigation }) {
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
   const offsetAnim = useRef(new Animated.Value(0)).current;
@@ -60,17 +69,6 @@ export default function TaskInfoScreen() {
   });
   // End of header animation
 
-  inputText = {
-    name1: "Project",
-    name2: "Title",
-    name3: "Date",
-    name4: "Description",
-    icon1: "arrow-drop-down-circle",
-    icon3: "calendar-today",
-    hintText: "Enter Username or Email",
-    disable: "false",
-  };
-
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -89,10 +87,16 @@ export default function TaskInfoScreen() {
       >
         {/* Header */}
         <View style={styles.rowSection}>
-          <TouchableOpacity style={styles.headerBehave}>
+          <TouchableOpacity
+            style={styles.headerBehave}
+            onPress={() => navigation.goBack()}
+          >
             <SimpleLineIcons name="arrow-left" size="20" color="black" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.headerBehave}>
+          <TouchableOpacity
+            style={styles.headerBehave}
+            onPress={() => navigation.navigate("EditTask")}
+          >
             <Text style={styles.textHeader}>Edit</Text>
           </TouchableOpacity>
         </View>
@@ -113,9 +117,9 @@ export default function TaskInfoScreen() {
             {/* Project Name */}
             {/* TextInput */}
             <InputArea
-              name={this.inputText.name1}
-              icon={this.inputText.icon1}
-              editableState={this.inputText.disable}
+              name={inputText.name1}
+              icon={inputText.icon1}
+              editableState={inputText.disable}
             ></InputArea>
 
             {/* <InputText nameInputText={this.inputText.name1}></InputText> */}
@@ -124,8 +128,8 @@ export default function TaskInfoScreen() {
             {/* Title name */}
             {/* TextInput */}
             <InputArea
-              name={this.inputText.name2}
-              editableState={this.inputText.disable}
+              name={inputText.name2}
+              editableState={inputText.disable}
             ></InputArea>
 
             {/* End of TextInput */}
@@ -133,9 +137,9 @@ export default function TaskInfoScreen() {
             {/* Date  */}
             {/* TextInput */}
             <InputArea
-              name={this.inputText.name3}
-              icon={this.inputText.icon3}
-              editableState={this.inputText.disable}
+              name={inputText.name3}
+              icon={inputText.icon3}
+              editableState={inputText.disable}
             ></InputArea>
 
             {/* End of TextInput */}
