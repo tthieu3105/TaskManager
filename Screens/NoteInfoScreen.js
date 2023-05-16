@@ -21,7 +21,7 @@ import UserAvatar from "@muhzi/react-native-user-avatar";
 
 const CONTAINER_HEIGHT = 80;
 
-const NoteInforScreen = () => {
+const NoteInforScreen = ({ navigation }) => {
   const [currentDate, setCurrentDate] = useState("");
   // Hiển thị ngày tháng năm hiện tại lên textView:
   useEffect(() => {
@@ -93,7 +93,7 @@ const NoteInforScreen = () => {
       >
         <View style={styles.row}>
           {/* Button: back to previous screen */}
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
             <AntDesign
               name="left"
               size={30}
@@ -103,7 +103,7 @@ const NoteInforScreen = () => {
 
           {/* edit button */}
           <View>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate("EditNote")}>
               <Text style={styles.editButton}>Edit</Text>
             </TouchableOpacity>
           </View>
@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
     marginTop: 55,
-        // fontStyle
+    // fontStyle
   },
 
   textInButton: {

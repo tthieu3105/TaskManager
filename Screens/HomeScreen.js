@@ -37,6 +37,7 @@ const taskCard = {
   status3: "Overdue",
   icon: "star",
 };
+
 export default function HomeScreen({ navigation }) {
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -148,7 +149,12 @@ export default function HomeScreen({ navigation }) {
           </View>
 
           {/* My Task */}
-          <HomeSection title={sectionInHome.sectionName}></HomeSection>
+          <HomeSection
+            title={sectionInHome.sectionName}
+            navigation={navigation}
+            screenName="MyTask"
+          ></HomeSection>
+
           {/* TaskCard */}
           <TaskCardOP
             title={taskCard.title1}
@@ -156,6 +162,8 @@ export default function HomeScreen({ navigation }) {
             time={taskCard.time1}
             status={taskCard.status1}
             iconName={taskCard.icon}
+            navigation={navigation}
+            screenName="TaskInfo"
           ></TaskCardOP>
           {/* End of TaskCard */}
 
@@ -166,18 +174,26 @@ export default function HomeScreen({ navigation }) {
             time={taskCard.time1}
             status={taskCard.status1}
             iconName={taskCard.icon}
+            navigation={navigation}
+            screenName="TaskInfo"
           ></TaskCardOP>
           {/* End of TaskCard */}
           {/* End of My Task*/}
 
           {/* Completed Section */}
-          <HomeSection title={sectionInHome.sectionName2}></HomeSection>
+          <HomeSection
+            title={sectionInHome.sectionName2}
+            navigation={navigation}
+            screenName="Completed"
+          ></HomeSection>
           {/* TaskCard */}
           <TaskCardCP
             title={taskCard.title1}
             subtitle={taskCard.subtitle1}
             time={taskCard.time1}
             status={taskCard.status2}
+            navigation={navigation}
+            screenName="TaskInfo"
           ></TaskCardCP>
           {/* End of TaskCard */}
 
@@ -187,18 +203,26 @@ export default function HomeScreen({ navigation }) {
             subtitle={taskCard.subtitle1}
             time={taskCard.time1}
             status={taskCard.status2}
+            navigation={navigation}
+            screenName="TaskInfo"
           ></TaskCardCP>
           {/* End of TaskCard */}
           {/* End of Completed Section */}
 
           {/* Overdue Section */}
-          <HomeSection title={sectionInHome.sectionName3}></HomeSection>
+          <HomeSection
+            title={sectionInHome.sectionName3}
+            navigation={navigation}
+            screenName="Overdue"
+          ></HomeSection>
           {/* TaskCard */}
           <TaskCardOD
             title={taskCard.title1}
             subtitle={taskCard.subtitle1}
             time={taskCard.time1}
             status={taskCard.status3}
+            navigation={navigation}
+            screenName="TaskInfo"
           ></TaskCardOD>
           {/* End of TaskCard */}
 
@@ -208,6 +232,8 @@ export default function HomeScreen({ navigation }) {
             subtitle={taskCard.subtitle1}
             time={taskCard.time1}
             status={taskCard.status3}
+            navigation={navigation}
+            screenName="TaskInfo"
           ></TaskCardOD>
           {/* End of TaskCard */}
           {/* End of Overdue Section */}

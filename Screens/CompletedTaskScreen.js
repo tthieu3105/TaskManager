@@ -26,7 +26,7 @@ const taskCard = {
   status3: "Overdue",
   icon: "star",
 };
-export default function NoteScreen() {
+export default function NoteScreen({ navigation }) {
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
   const offsetAnim = useRef(new Animated.Value(0)).current;
@@ -85,10 +85,16 @@ export default function NoteScreen() {
         ]}
       >
         <View style={styles.rowSection}>
-          <TouchableOpacity style={styles.headerBehave}>
+          <TouchableOpacity
+            style={styles.headerBehave}
+            onPress={() => navigation.goBack()}
+          >
             <SimpleLineIcons name="arrow-left" size="24" color="black" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.headerBehave}>
+          <TouchableOpacity
+            style={styles.headerBehave}
+            onPress={() => navigation.navigate("AccountFeature")}
+          >
             <UserAvatar
               initialName="SK"
               fontSize={15}

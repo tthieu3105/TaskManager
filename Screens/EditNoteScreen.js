@@ -21,7 +21,7 @@ import UserAvatar from "@muhzi/react-native-user-avatar";
 import { SimpleLineIcons } from "@expo/vector-icons";
 const CONTAINER_HEIGHT = 80;
 
-export default function EditNoteScreen() {
+export default function EditNoteScreen({ navigation }) {
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
   const offsetAnim = useRef(new Animated.Value(0)).current;
@@ -96,12 +96,18 @@ export default function EditNoteScreen() {
         >
           <View style={styles.rowSection}>
             {/* Button: back to previous screen */}
-            <TouchableOpacity style={styles.headerBehave}>
+            <TouchableOpacity
+              style={styles.headerBehave}
+              onPress={() => navigation.goBack()}
+            >
               <SimpleLineIcons name="arrow-left" size="20" color="black" />
             </TouchableOpacity>
 
             {/* Done  */}
-            <TouchableOpacity style={styles.headerBehave}>
+            <TouchableOpacity
+              style={styles.headerBehave}
+              onPress={() => navigation.goBack()}
+            >
               <Text style={styles.textHeader}>Done</Text>
             </TouchableOpacity>
           </View>

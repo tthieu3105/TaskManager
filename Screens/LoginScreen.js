@@ -20,7 +20,7 @@ import { useNavigation } from "react-router-native";
 const CONTAINER_HEIGHT = 80;
 
 const LoginScreen = ({ navigation }) => {
-    // Lấy Password
+  // Lấy Password
   const [password, setPassword] = useState("");
   const [hidePassword, setHidePassword] = useState(true);
   const [showPasswordIcon, setShowPasswordIcon] = useState("eye-outline");
@@ -137,7 +137,10 @@ const LoginScreen = ({ navigation }) => {
           </View>
 
           <View style={{ backgroundColor: "white" }}>
-            <TouchableOpacity style={styles.buttonLogin} onPress={() => navigation.navigate("Home")}>
+            <TouchableOpacity
+              style={styles.buttonLogin}
+              onPress={() => navigation.navigate("HomeNavigator")}
+            >
               <Text style={styles.textInButton}>Login</Text>
             </TouchableOpacity>
 
@@ -253,7 +256,7 @@ const styles = StyleSheet.create({
 
   textInInsertBox: {
     fontSize: 16,
-    paddingTop:0,
+    paddingTop: 0,
     width: "90%",
     // fontFamily: "Poppins",
     marginBottom: "auto",

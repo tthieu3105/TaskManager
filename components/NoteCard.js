@@ -3,13 +3,17 @@ import React, { Component } from "react";
 import { Feather } from "@expo/vector-icons";
 
 export default class NoteCard extends Component {
+  handlePress = () => {
+    const { screenName, navigation } = this.props;
+    navigation.navigate(screenName);
+  };
   render() {
     return (
       <View style={styles.noteCard}>
         {/* Note card */}
         <View style={styles.noteCardInfo}>
           {/* Dòng dầu tiên */}
-          <TouchableOpacity>
+          <TouchableOpacity onPress={this.handlePress}>
             <View style={styles.firstRowNoteCard}>
               <Text style={{ fontSize: 16, fontWeight: "500" }}>
                 {this.props.title}
@@ -30,7 +34,7 @@ export default class NoteCard extends Component {
           {/* Đường kẻ */}
           <View style={styles.lineInNoteCard} />
           {/* Dòng thứ hai */}
-          <TouchableOpacity>
+          <TouchableOpacity onPress={this.handlePress}>
             <View style={styles.secondRowNoteCard}>
               <Feather name="clock" size={24} color="#4B7BE5" />
               <Text

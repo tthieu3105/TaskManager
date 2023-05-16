@@ -28,7 +28,7 @@ const inputText = {
   hintText: "Enter Username or Email",
   disable: "false",
 };
-export default function TaskInfoScreen() {
+export default function TaskInfoScreen({ navigation }) {
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
   const offsetAnim = useRef(new Animated.Value(0)).current;
@@ -87,10 +87,16 @@ export default function TaskInfoScreen() {
       >
         {/* Header */}
         <View style={styles.rowSection}>
-          <TouchableOpacity style={styles.headerBehave}>
+          <TouchableOpacity
+            style={styles.headerBehave}
+            onPress={() => navigation.goBack()}
+          >
             <SimpleLineIcons name="arrow-left" size="20" color="black" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.headerBehave}>
+          <TouchableOpacity
+            style={styles.headerBehave}
+            onPress={() => navigation.navigate("EditTask")}
+          >
             <Text style={styles.textHeader}>Edit</Text>
           </TouchableOpacity>
         </View>

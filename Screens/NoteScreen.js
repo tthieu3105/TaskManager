@@ -156,26 +156,36 @@ export default function NoteScreen({ navigation }) {
               title={noteCard.tileName}
               content={noteCard.contentCard}
               date={noteCard.dateCard}
+              navigation={navigation}
+              screenName="NoteInfo"
             ></NoteCard>
             <NoteCard
               title={noteCard.tileName}
               content={noteCard.contentCard}
               date={noteCard.dateCard}
+              navigation={navigation}
+              screenName="NoteInfo"
             ></NoteCard>
             <NoteCard
               title={noteCard.tileName}
               content={noteCard.contentCard}
               date={noteCard.dateCard}
+              navigation={navigation}
+              screenName="NoteInfo"
             ></NoteCard>
             <NoteCard
               title={noteCard.tileName}
               content={noteCard.contentCard}
               date={noteCard.dateCard}
+              navigation={navigation}
+              screenName="NoteInfo"
             ></NoteCard>
             <NoteCard
               title={noteCard.tileName}
               content={noteCard.contentCard}
               date={noteCard.dateCard}
+              navigation={navigation}
+              screenName="NoteInfo"
             ></NoteCard>
           </View>
         </Animated.ScrollView>

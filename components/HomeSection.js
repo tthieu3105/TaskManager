@@ -3,7 +3,12 @@ import React, { Component } from "react";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { Feather } from "@expo/vector-icons";
 import TaskCard from "./TaskCardProgress";
+
 export default class HomeSection extends Component {
+  handlePress = () => {
+    const { screenName, navigation } = this.props;
+    navigation.navigate(screenName);
+  };
   render() {
     return (
       <View>
@@ -12,7 +17,7 @@ export default class HomeSection extends Component {
         <View style={styles.rowSection}>
           {/* My task */}
           <Text style={styles.titleSection}>{this.props.title}</Text>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={this.handlePress}>
             <Text style={styles.viewAll}>View All</Text>
           </TouchableOpacity>
         </View>
