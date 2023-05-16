@@ -1,5 +1,12 @@
 import React from "react";
-import { StyleSheet, View, Text, Button, Dimensions, Modal } from "react-native";
+import {
+  StyleSheet,
+  View,
+  Text,
+  Button,
+  Dimensions,
+  Modal,
+} from "react-native";
 import { createStackNavigator } from "@react-navigation/stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Feather } from "@expo/vector-icons";
@@ -30,8 +37,6 @@ import { tabContextProvider, useTabMenu } from "../context/tabContext.js";
 import AddButton from "../components/AddButton.js";
 import { Colors } from "react-native/Libraries/NewAppScreen";
 
-
-
 //updating
 
 const Stack = createStackNavigator();
@@ -40,7 +45,7 @@ const HomeStack = createStackNavigator();
 function HomeScreenStackNavigator() {
   return (
     <HomeStack.Navigator screenOptions={{ headerShown: false }}>
-      <HomeStack.Screen name="Home" component={HomeScreen} />
+      <HomeStack.Screen name="HomeScreen" component={HomeScreen} />
       <HomeStack.Screen name="Notify" component={NotifyScreen} />
       <HomeStack.Screen name="AccountFeature" component={AccountFeature} />
       <HomeStack.Screen name="EditProfile" component={EditProfile} />
@@ -116,7 +121,10 @@ const NewTaskNoteScreenStack = createStackNavigator();
 function NewTaskNoteScreenStackNavigator() {
   return (
     <NewTaskNoteScreenStack.Navigator screenOptions={{ headerShown: false }}>
-      <NewTaskNoteScreenStack.Screen name="NewTask" component={CreateTaskScreen} />
+      <NewTaskNoteScreenStack.Screen
+        name="NewTask"
+        component={CreateTaskScreen}
+      />
       <NewTaskNoteScreenStack.Screen name="NewNote" component={AddNoteScreen} />
     </NewTaskNoteScreenStack.Navigator>
   );
@@ -233,11 +241,13 @@ function TabNavigator() {
       <Tab.Screen
         name="New"
         component={NewTaskNoteScreenStackNavigator}
-        options={({ navigation})=>({
-          tabBarButton: ({focused}) => (
-            <AddButton navigation={navigation} opened={opened} toggleOpened={toggleOpened} >
-              
-            </AddButton>
+        options={({ navigation }) => ({
+          tabBarButton: ({ focused }) => (
+            <AddButton
+              navigation={navigation}
+              opened={opened}
+              toggleOpened={toggleOpened}
+            ></AddButton>
           ),
         })}
       />
@@ -324,8 +334,6 @@ function TabNavigator() {
 export default TabNavigator;
 
 const styles = StyleSheet.create({
-  
-
   tabIcon: {
     width: 24,
     height: 24,
@@ -343,49 +351,5 @@ const styles = StyleSheet.create({
       width: 2,
       height: 2,
     },
-  },
-
-  Box: {
-    backgroundColor: "#F5F5F5",
-    // marginVertical: 10,
-    // marginHorizontal: "auto",
-    alignItems: "center",
-    height: 100,
-    marginTop: 250,
-    borderRadius: 10,
-    shadowColor: "gray",
-    shadowOpacity: 0.5,
-    shadowOffset: {
-      width: 2,
-      height: 2,
-    },
-    marginHorizontal: 15,
-  },
-
-  button: {
-    // bordercolor: "white",
-    backgroundColor: "#4B7BE5",
-    marginTop: 15,
-    height: 50,
-    borderRadius: 10,
-    shadowColor: "gray",
-    shadowOpacity: 0.5,
-    shadowOffset: {
-      width: 2,
-      height: 2,
-    },
-    marginHorizontal: 15,
-    marginBottom: 0,
-  },
-
-  smallTitle: {
-    marginLeft: "auto",
-    marginRight: "auto",
-    color: "#363942",
-    fontSize: 18,
-    fontWeight: "bold",
-    marginVertical: 10,
-
-    // fontStyle
   },
 });

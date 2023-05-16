@@ -20,6 +20,7 @@ import {
   SimpleLineIcons,
 } from "@expo/vector-icons";
 import Header from "../components/HeaderWithTextAndAvatar";
+
 import { MaterialIcons } from "@expo/vector-icons";
 import InputArea from "../components/InputAreaForTask";
 import { Colors } from "react-native/Libraries/NewAppScreen";
