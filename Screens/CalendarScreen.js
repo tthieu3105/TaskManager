@@ -390,7 +390,7 @@ const styles = StyleSheet.create({
 
   taskTime: {
     marginTop: 5,
-    fontSize: 10,
+    fontSize: 10
   },
 });
 

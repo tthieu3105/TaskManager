@@ -135,11 +135,11 @@ export default function NoteScreen({ navigation }) {
             </View>
             {/* End of SearchBox */}
             <View style={styles.contentName}>
-              <Text style={{ fontSize: 20, fontWeight: 600 }}>My notes</Text>
+              <Text style={{ fontSize: 20, fontWeight: "600" }}>My notes</Text>
               <Text
                 style={{
                   fontSize: 20,
-                  fontWeight: 600,
+                  fontWeight: "600",
                   color: "gray",
                   marginHorizontal: 6,
                 }}
