@@ -74,7 +74,7 @@ const LoginScreen = ({ navigation }) => {
         );
         if (foundUser) {
           ToastAndroid.show("Login Successfully!", ToastAndroid.SHORT);
-          navigation.navigate("Home");
+          navigation.navigate("HomeNavigator");
         } else {
           ToastAndroid.show("Invalid UserName or Password!", ToastAndroid.SHORT);
         }

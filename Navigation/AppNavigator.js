@@ -17,7 +17,7 @@ const StackNavigator = () => {
       <Stack.Screen name="CreateAccount" component={CreateAccScreen} />
       <Stack.Screen name="AddEmail" component={AddEmailVerify} />
       <Stack.Screen name="Verify" component={EnterVerifyCode} />
-      <Stack.Screen name="Home" component={TabNavigator} />
+      <Stack.Screen name="HomeNavigator" component={TabNavigator} />
     </Stack.Navigator>
   );
 };
