@@ -81,7 +81,7 @@ export default function NotifyScreen({ navigation }) {
             style={{
               color: "#363942",
               fontWeight: "bold",
-              fontSize: 24,
+              fontSize: 24
             }}
           >
             All updates
@@ -194,6 +194,6 @@ const styles = StyleSheet.create({
   textHeader: {
     color: "#3379E4",
     fontWeight: "500",
-    fontSize: 18,
+    fontSize: 18
   },
 });

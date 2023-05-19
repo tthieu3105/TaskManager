@@ -299,7 +299,7 @@ const styles = StyleSheet.create({
   textHeader: {
     color: "#3379E4",
     fontWeight: "500",
-    fontSize: 18,
+    fontSize: 18
   },
   container: {
     // alignItems: "center",
