@@ -49,11 +49,13 @@ const Stack = createStackNavigator();
 const HomeStack = createStackNavigator();
 function HomeScreenStackNavigator() {
   return (
+
     <HomeStack.Navigator
       initialRouteName="HomeScreen"
       screenOptions={{ headerShown: false }}
     >
       <HomeStack.Screen name="HomeScreen" component={HomeScreen} />
+
       <HomeStack.Screen name="AccountFeature" component={AccountFeature} />
       <HomeStack.Screen name="EditProfile" component={EditProfile} />
       <HomeStack.Screen name="Notify" component={NotifyScreen} />
@@ -396,47 +398,5 @@ const styles = StyleSheet.create({
     },
   },
 
-  Box: {
-    backgroundColor: "#F5F5F5",
-    // marginVertical: 10,
-    // marginHorizontal: "auto",
-    alignItems: "center",
-    height: 100,
-    marginTop: 250,
-    borderRadius: 10,
-    shadowColor: "gray",
-    shadowOpacity: 0.5,
-    shadowOffset: {
-      width: 2,
-      height: 2,
-    },
-    marginHorizontal: 15,
-  },
-
-  button: {
-    // bordercolor: "white",
-    backgroundColor: "#4B7BE5",
-    marginTop: 15,
-    height: 50,
-    borderRadius: 10,
-    shadowColor: "gray",
-    shadowOpacity: 0.5,
-    shadowOffset: {
-      width: 2,
-      height: 2,
-    },
-    marginHorizontal: 15,
-    marginBottom: 0,
-  },
-
-  smallTitle: {
-    marginLeft: "auto",
-    marginRight: "auto",
-    color: "#363942",
-    fontSize: 18,
-    fontWeight: "bold",
-    marginVertical: 10,
-
-    // fontStyle
-  },
 });
+

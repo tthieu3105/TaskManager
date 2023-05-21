@@ -20,6 +20,7 @@ import {
   SimpleLineIcons,
 } from "@expo/vector-icons";
 import Header from "../components/HeaderWithTextAndAvatar";
+
 import { MaterialIcons } from "@expo/vector-icons";
 import InputArea from "../components/InputAreaForTask";
 import { Colors } from "react-native/Libraries/NewAppScreen";
@@ -297,9 +298,10 @@ export default function CreateTaskScreen({ navigation }) {
               <UserAvatar
                 initialName="SK"
                 fontSize={15}
+
                 size={40}
-                rounded={true}
-                backgroundColors={["#4B7BE5"]}
+                active
+                src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=2900&q=80"
               />
             </TouchableOpacity>
           </View>
