@@ -26,12 +26,14 @@ import {
   orderByChild,
   equalTo,
 } from "firebase/database";
-import { auth } from "../components/FirebaseConfig";
+// import { auth } from "../components/FirebaseConfig";
 import {
   getAuth,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
 } from "firebase/auth";
+
+const auth = getAuth();
 
 const CONTAINER_HEIGHT = 80;
 
@@ -45,6 +47,10 @@ const CreateAccScreen = ({ navigation }) => {
   const [showPasswordIcon2, setShowPasswordIcon2] = useState("eye-outline");
 
   const [email, setEmail] = useState("");
+
+  // Thông tin người dùng
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   // Button hiển thị password
   const toggleHidePassword = () => {
     setHidePassword(!hidePassword);
@@ -63,7 +69,7 @@ const CreateAccScreen = ({ navigation }) => {
       .createUserWithEmailAndPassword(email, password)
       .then((userCredentials) => {
         const user = userCredentials.user;
-        console.log(user.email);
+        console.log("Loi", user.email);
       })
       .catch((error) => alert(error.message));
   };
@@ -177,6 +183,8 @@ const CreateAccScreen = ({ navigation }) => {
                 placeholder="First name"
                 multiline
                 placeholderTextColor={Colors.placeholder}
+                value={firstName}
+                onChangeText={(text) => setFirstName(text)}
               ></TextInput>
             </View>
 
@@ -187,6 +195,8 @@ const CreateAccScreen = ({ navigation }) => {
                 placeholder="Last name"
                 multiline
                 placeholderTextColor={Colors.placeholder}
+                value={lastName}
+                onChangeText={(text) => setLastName(text)}
               ></TextInput>
             </View>
 
@@ -207,14 +217,14 @@ const CreateAccScreen = ({ navigation }) => {
               </View>
 
               {/* Nhập username */}
-              <View style={styles.insertBox}>
+              {/* <View style={styles.insertBox}>
                 <TextInput
                   style={styles.textInInsertBox}
                   placeholder="Username"
                   multiline
                   placeholderTextColor={Colors.placeholder}
                 ></TextInput>
-              </View>
+              </View> */}
 
               {/* Nhập Password */}
               <View style={styles.insertBox}>
@@ -333,14 +343,6 @@ const styles = StyleSheet.create({
     // fontStyle
   },
 
-  normalTextOnBackGround: {
-    marginLeft: "auto",
-    marginRight: 30,
-    color: "black",
-    fontSize: 13,
-    textDecorationLine: "underline",
-  },
-
   textInButton: {
     fontSize: 16,
     fontWeight: "bold",
@@ -422,14 +424,6 @@ const styles = StyleSheet.create({
     marginTop: "auto",
     marginLeft: 15,
     marginRight: 15,
-  },
-
-  frameToInsert: {
-    marginTop: 0,
-    marginBottom: 0,
-    height: 45,
-    borderRadius: 10,
-    marginHorizontal: 0,
   },
 
   rowSection: {
