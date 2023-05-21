@@ -27,20 +27,24 @@ import {
   equalTo,
 } from "firebase/database";
 import { auth } from "../components/FirebaseConfig";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+} from "firebase/auth";
 
 const CONTAINER_HEIGHT = 80;
 
 const CreateAccScreen = ({ navigation }) => {
   // Lấy Password & email
-  const [password, setPassword] = useState('');
-  const [password2, setPassword2] = useState('');
+  const [password, setPassword] = useState("");
+  const [password2, setPassword2] = useState("");
   const [hidePassword, setHidePassword] = useState(true);
   const [hidePassword2, setHidePassword2] = useState(true);
   const [showPasswordIcon, setShowPasswordIcon] = useState("eye-outline");
   const [showPasswordIcon2, setShowPasswordIcon2] = useState("eye-outline");
-  
-  const [email, setEmail] = useState('');
+
+  const [email, setEmail] = useState("");
   // Button hiển thị password
   const toggleHidePassword = () => {
     setHidePassword(!hidePassword);
@@ -56,22 +60,20 @@ const CreateAccScreen = ({ navigation }) => {
   //Create account
   const handleSignUp = () => {
     auth
-      .createUserWithEmailAndPassword(email,password)
-      .then(userCredentials => {
-        const user =userCredentials.user;
+      .createUserWithEmailAndPassword(email, password)
+      .then((userCredentials) => {
+        const user = userCredentials.user;
         console.log(user.email);
       })
-      .catch(error => alert(error.message))
-  }
+      .catch((error) => alert(error.message));
+  };
 
   //confirm password
-  const checkConfirm = (password, password2) => {
+  const checkConfirm = (email, password, password2) => {
     if (password != password2) {
-      ToastAndroid.show(
-        "Your passwords does not match",
-        ToastAndroid.SHORT
-      );
-      return false;
+      ToastAndroid.show("Your passwords does not match", ToastAndroid.SHORT);
+    } else {
+      handleSignUp(email, password);
     }
   };
 
@@ -198,7 +200,8 @@ const CreateAccScreen = ({ navigation }) => {
                   style={styles.textInInsertBox}
                   placeholder="Email"
                   multiline
-                  // value = {}
+                  value={email}
+                  onChangeText={(text) => setEmail(text)}
                   placeholderTextColor={Colors.placeholder}
                 ></TextInput>
               </View>
@@ -262,7 +265,7 @@ const CreateAccScreen = ({ navigation }) => {
               {/* Button: next */}
               <TouchableOpacity
                 style={styles.button}
-                onPress={() => checkConfirm(password,password2)}
+                onPress={() => checkConfirm(email, password, password2)}
               >
                 <Text style={styles.textInButton}>Next</Text>
               </TouchableOpacity>
