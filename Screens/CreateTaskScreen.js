@@ -31,7 +31,7 @@ const CONTAINER_HEIGHT = 80;
 const inputText = {
   name2: "Title",
 };
-export default function CreateTaskScreen() {
+export default function CreateTaskScreen({ navigation }) {
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
   const offsetAnim = useRef(new Animated.Value(0)).current;
@@ -284,10 +284,16 @@ export default function CreateTaskScreen() {
           ]}
         >
           <View style={styles.rowSection}>
-            <TouchableOpacity style={styles.headerBehave}>
+            <TouchableOpacity
+              style={styles.headerBehave}
+              onPress={() => navigation.goBack()}
+            >
               <SimpleLineIcons name="arrow-left" size={30} color="black" />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.headerBehave}>
+            <TouchableOpacity
+              style={styles.headerBehave}
+              onPress={() => navigation.navigate("AccountFeature")}
+            >
               <UserAvatar
                 initialName="SK"
                 fontSize={15}
@@ -364,6 +370,7 @@ export default function CreateTaskScreen() {
                   </TouchableOpacity>
                 </View>
                 <DateTimePickerModal
+                  display="spinner"
                   isVisible={isDatePickerVisible}
                   mode="date"
                   onConfirm={handleDateConfirm}

@@ -20,6 +20,15 @@ import TaskCardOP from "../components/TaskCardProgress";
 import TaskCardCP from "../components/TaskCardCompleted";
 import TaskCardOD from "../components/TaskCardOverdue";
 import TabContainer from "../components/TabContainer";
+import { db } from "../components/FirebaseConfig";
+import {
+  ref,
+  onValue,
+  get,
+  child,
+  orderByChild,
+  equalTo,
+} from "firebase/database";
 
 const CONTAINER_HEIGHT = 80;
 const sectionInHome = {
