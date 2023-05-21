@@ -13,22 +13,33 @@ import Constants from "expo-constants";
 import React, { Component, useEffect, useRef } from "react";
 import { Colors } from "react-native/Libraries/NewAppScreen";
 import { ScrollView } from "react-native-gesture-handler";
-import FontAwesome from "../node_modules/@expo/vector-icons/FontAwesome";
-import EvilIcon from "../node_modules/@expo/vector-icons/EvilIcons";
 import AntDesign from "../node_modules/@expo/vector-icons/AntDesign";
 import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
+import { ToastAndroid } from "react-native";
+import { db } from "../components/FirebaseConfig";
+import {
+  ref,
+  onValue,
+  get,
+  child,
+  orderByChild,
+  equalTo,
+} from "firebase/database";
+import { auth } from "../components/FirebaseConfig";
 
 const CONTAINER_HEIGHT = 80;
 
 const CreateAccScreen = ({ navigation }) => {
-  // Lấy Password
-  const [password, setPassword] = useState("");
-  const [password2, setPassword2] = useState("");
+  // Lấy Password & email
+  const [password, setPassword] = useState('');
+  const [password2, setPassword2] = useState('');
   const [hidePassword, setHidePassword] = useState(true);
   const [hidePassword2, setHidePassword2] = useState(true);
   const [showPasswordIcon, setShowPasswordIcon] = useState("eye-outline");
   const [showPasswordIcon2, setShowPasswordIcon2] = useState("eye-outline");
+  
+  const [email, setEmail] = useState('');
   // Button hiển thị password
   const toggleHidePassword = () => {
     setHidePassword(!hidePassword);
@@ -37,6 +48,28 @@ const CreateAccScreen = ({ navigation }) => {
   const toggleHidePassword2 = () => {
     setHidePassword2(!hidePassword2);
     setShowPasswordIcon2(hidePassword2 ? "eye-off-outline" : "eye-outline");
+  };
+
+  //Create account
+  const handleSignUp = () => {
+    auth
+      .createUserWithEmailAndPassword(email,password)
+      .then(userCredentials => {
+        const user =userCredentials.user;
+        console.log(user.email);
+      })
+      .catch(error => alert(error.message))
+  }
+
+  //confirm password
+  const checkConfirm = (password, password2) => {
+    if (password != password2) {
+      ToastAndroid.show(
+        "Your passwords does not match",
+        ToastAndroid.SHORT
+      );
+      return false;
+    }
   };
 
   // Header Animation
@@ -162,6 +195,7 @@ const CreateAccScreen = ({ navigation }) => {
                   style={styles.textInInsertBox}
                   placeholder="Email"
                   multiline
+                  // value = {}
                   placeholderTextColor={Colors.placeholder}
                 ></TextInput>
               </View>
@@ -213,7 +247,7 @@ const CreateAccScreen = ({ navigation }) => {
                     secureTextEntry={hidePassword2}
                     value={password2}
                     onChangeText={(text) => setPassword2(text)}
-                  />
+                  ></TextInput>
 
                   {/* Button hiển thị password */}
                   <TouchableOpacity onPress={toggleHidePassword2}>
@@ -225,7 +259,7 @@ const CreateAccScreen = ({ navigation }) => {
               {/* Button: next */}
               <TouchableOpacity
                 style={styles.button}
-                onPress={() => navigation.navigate("AddEmail")}
+                onPress={() => checkConfirm(password,password2)}
               >
                 <Text style={styles.textInButton}>Next</Text>
               </TouchableOpacity>
