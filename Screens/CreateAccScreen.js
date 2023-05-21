@@ -27,6 +27,7 @@ import {
   equalTo,
 } from "firebase/database";
 import { auth } from "../components/FirebaseConfig";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 
 const CONTAINER_HEIGHT = 80;
 
@@ -49,6 +50,8 @@ const CreateAccScreen = ({ navigation }) => {
     setHidePassword2(!hidePassword2);
     setShowPasswordIcon2(hidePassword2 ? "eye-off-outline" : "eye-outline");
   };
+
+  const auth = getAuth();
 
   //Create account
   const handleSignUp = () => {
