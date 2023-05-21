@@ -230,7 +230,7 @@ const AccountFeature = ({ navigation }) => {
             </TouchableOpacity>
 
             {/* Logout button */}
-            <TouchableOpacity style={styles.buttonWarn}>
+            <TouchableOpacity style={styles.buttonWarn} onPress={() => navigation.navigate("Login")}>
               <View style={styles.row}>
                 <SimpleLineIcons
                   name="logout"

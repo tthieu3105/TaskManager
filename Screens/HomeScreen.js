@@ -110,11 +110,9 @@ export default function HomeScreen({ navigation }) {
               onPress={() => navigation.navigate("AccountFeature")}
             >
               <UserAvatar
-                initialName="SK"
-                fontSize={15}
                 size={40}
-                rounded={true}
-                backgroundColors={["#4B7BE5"]}
+                active
+                src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=2900&q=80"
               />
             </TouchableOpacity>
           </View>
