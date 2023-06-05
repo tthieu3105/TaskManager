@@ -18,7 +18,7 @@ import { Ionicons } from "@expo/vector-icons";
 import AntDesign from "../node_modules/@expo/vector-icons/AntDesign";
 import UserAvatar from "@muhzi/react-native-user-avatar";
 import TabContainer from "../components/TabContainer";
-
+import { Octicons } from "@expo/vector-icons";
 const CONTAINER_HEIGHT = 80;
 
 const WorkSpaceScreen = ({ navigation }) => {
@@ -156,20 +156,32 @@ const WorkSpaceScreen = ({ navigation }) => {
               {/* Workspace */}
 
               {/* Workspace title */}
-              <View style={styles.row1}>
-                <Text style={styles.smallTitle}>Workspace</Text>
-                {/* Đếm số lượng workspace người dùng đang có và load lên text tại đây */}
-                <Text style={styles.numberOfProject}>4</Text>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <View style={{ flexDirection: "row", flex: 1 }}>
+                  <Text style={styles.smallTitle}>Workspace</Text>
+                  {/* Đếm số lượng workspace người dùng đang có và load lên text tại đây */}
+                  <Text style={styles.numberOfProject}>4</Text>
 
-                {/* Xử lý button sắp xếp project tại đây */}
-                <TouchableOpacity>
-                  <Entypo name="select-arrows" size={22} color="black" />
+                  {/* Xử lý button sắp xếp project tại đây */}
+                  <TouchableOpacity>
+                    <Entypo name="select-arrows" size={22} color="black" />
+                  </TouchableOpacity>
+                </View>
+                {/* Thêm Project button */}
+                <TouchableOpacity
+                  onPress={() => navigation.navigate("AddProject")}
+                  style={{ marginHorizontal: 15 }}
+                >
+                  <Octicons name="diff-added" size={24} color="black" />
                 </TouchableOpacity>
               </View>
 
               {/* Projects */}
               {/* Đếm số lượng workspace của người dùng và hiển thị các workspace của người dùng lên màn hình*/}
-              <View style={styles.projectFrame}>
+              <TouchableOpacity
+                onPress={() => navigation.navigate("Projects")}
+                style={styles.projectFrame}
+              >
                 {/* Tên & số lượng công việc */}
                 <View style={styles.smallFrame1}>
                   {/* xử lý lấy tên và số lượng project từ BE, load lên text tại đây */}
@@ -182,7 +194,7 @@ const WorkSpaceScreen = ({ navigation }) => {
                   {/* Xử lý lấy tiến độ hoàn thành và load lên text & view */}
                   {/* Xử lý lấy avatar các thành viên trong workspace và load lên một vài avatar nhỏ */}
                 </View>
-              </View>
+              </TouchableOpacity>
             </View>
           </View>
         </Animated.ScrollView>

@@ -4,7 +4,9 @@ import { initializeApp } from "firebase/app";
 import { getDatabase } from "firebase/database";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
-
+import "firebase/compat/firestore";
+import "firebase/compat/auth";
+import firebase from "firebase/compat/app";
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
@@ -15,11 +17,14 @@ const firebaseConfig = {
   storageBucket: "mobileproject-ca4c1.appspot.com",
   messagingSenderId: "1037634621405",
   appId: "1:1037634621405:web:92aa1cd29ca398e5eb7034",
-  measurementId: "G-JHPL6CCKK8"
+  measurementId: "G-JHPL6CCKK8",
 };
-
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 //const analytics = getAnalytics(app);
 
 export const db = getDatabase(app);
+export { firebase };

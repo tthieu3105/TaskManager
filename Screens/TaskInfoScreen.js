@@ -28,7 +28,9 @@ const inputText = {
   hintText: "Enter Username or Email",
   disable: "false",
 };
-export default function TaskInfoScreen({ navigation }) {
+
+export default function TaskInfoScreen({ navigation, route }) {
+  const { Title, Description, StartTime, Status } = route.params;
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
   const offsetAnim = useRef(new Animated.Value(0)).current;
@@ -272,8 +274,8 @@ export default function TaskInfoScreen({ navigation }) {
       <View style={styles.createTask}>
         {/*Btn Create Task */}
         <TouchableOpacity>
-          <View style={styles.btnCreateTask}>
-            <Text style={styles.textInBtnCreateTask}>Delete this task</Text>
+          <View style={styles.btnDeleteTask}>
+            <Text style={styles.textInBtnDeleteTask}>Delete this task</Text>
           </View>
         </TouchableOpacity>
       </View>
@@ -307,7 +309,7 @@ const styles = StyleSheet.create({
   textHeader: {
     color: "#3379E4",
     fontWeight: "500",
-    fontSize: 18
+    fontSize: 18,
   },
   inputText: {
     backgroundColor: "#F5F5F5",
@@ -411,7 +413,7 @@ const styles = StyleSheet.create({
     zIndex: 1000,
     elevation: 1000,
   },
-  btnCreateTask: {
+  btnDeleteTask: {
     backgroundColor: "#E7272D",
     borderRadius: 10,
     marginHorizontal: 20,
@@ -425,7 +427,7 @@ const styles = StyleSheet.create({
       height: 2,
     },
   },
-  textInBtnCreateTask: {
+  textInBtnDeleteTask: {
     color: "#F8F6FF",
     fontWeight: "bold",
     fontSize: 16,

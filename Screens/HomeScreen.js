@@ -10,8 +10,9 @@ import {
   Animated,
   KeyboardAvoidingView,
   SafeAreaView,
+  FlatList,
 } from "react-native";
-import React, { Component, useEffect, useRef } from "react";
+import React, { Component, useEffect, useRef, useState } from "react";
 import { Colors } from "react-native/Libraries/NewAppScreen";
 import UserAvatar from "@muhzi/react-native-user-avatar";
 import { Feather, SimpleLineIcons, Ionicons } from "@expo/vector-icons";
@@ -20,6 +21,7 @@ import TaskCardOP from "../components/TaskCardProgress";
 import TaskCardCP from "../components/TaskCardCompleted";
 import TaskCardOD from "../components/TaskCardOverdue";
 import TabContainer from "../components/TabContainer";
+import { firebase } from "../components/FirebaseConfig";
 import { db } from "../components/FirebaseConfig";
 import {
   ref,
@@ -48,6 +50,39 @@ const taskCard = {
 };
 
 export default function HomeScreen({ navigation }) {
+  const [tasks, setTasks] = useState([]);
+  const todoRef = firebase.firestore().collection("Task");
+  useEffect(() => {
+    const fetchData = async () => {
+      const querySnapshot = await todoRef.get();
+      const tasks = querySnapshot.docs.map((doc) => {
+        const {
+          CreatedAt,
+          Description,
+          DueTime,
+          Remind,
+          RemindTime,
+          StartTime,
+          Status,
+          TaskID,
+          Title,
+          UserID,
+        } = doc.data();
+
+        return {
+          id: doc.id,
+          Description,
+          StartTime,
+          Status,
+          Title,
+        };
+      });
+
+      setTasks(tasks);
+    };
+
+    fetchData();
+  }, []);
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
   const offsetAnim = useRef(new Animated.Value(0)).current;
@@ -127,6 +162,7 @@ export default function HomeScreen({ navigation }) {
           </View>
         </Animated.View>
         {/* End of Header */}
+
         <Animated.ScrollView
           onScroll={Animated.event(
             [{ nativeEvent: { contentOffset: { y: scrollY } } }],
@@ -162,30 +198,36 @@ export default function HomeScreen({ navigation }) {
             screenName="MyTask"
           ></HomeSection>
 
-          {/* TaskCard */}
-          <TaskCardOP
-            title={taskCard.title1}
-            subtitle={taskCard.subtitle1}
-            time={taskCard.time1}
-            status={taskCard.status1}
-            iconName={taskCard.icon}
-            navigation={navigation}
-            screenName="TaskInfo"
-          ></TaskCardOP>
-          {/* End of TaskCard */}
-
-          {/* TaskCard */}
-          <TaskCardOP
-            title={taskCard.title1}
-            subtitle={taskCard.subtitle1}
-            time={taskCard.time1}
-            status={taskCard.status1}
-            iconName={taskCard.icon}
-            navigation={navigation}
-            screenName="TaskInfo"
-          ></TaskCardOP>
-          {/* End of TaskCard */}
-          {/* End of My Task*/}
+          <Animated.View
+          // style={{
+          //   transform: [
+          //     {
+          //       translateY: scrollY.interpolate({
+          //         inputRange: [0, 100],
+          //         outputRange: [0, 100],
+          //         extrapolate: "clamp",
+          //       }),
+          //     },
+          //   ],
+          // }}
+          >
+            {/* Flatlist of TaskCard */}
+            <FlatList
+              data={tasks}
+              renderItem={({ item }) => (
+                <TaskCardOP
+                  title={item.Title}
+                  subtitle={item.Description}
+                  time={item.StartTime}
+                  status={item.Status}
+                  iconName={taskCard.icon}
+                  navigation={navigation}
+                  screenName="TaskInfo"
+                />
+              )}
+            />
+            {/* End of Flatlist of TaskCard */}
+          </Animated.View>
 
           {/* Completed Section */}
           <HomeSection

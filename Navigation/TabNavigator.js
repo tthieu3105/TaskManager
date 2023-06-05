@@ -37,6 +37,8 @@ import NewTaskNote from "../Screens/NewTaskNote.js";
 import MyTaskScreen from "../Screens/MyTaskScreen.js";
 import CompletedScreen from "../Screens/CompletedTaskScreen.js";
 import OverdueScreen from "../Screens/OverdueTaskScreen.js";
+import AddProjectScreen from "../Screens/AddProjectScreen.js";
+import EditProjectScreen from "../Screens/EditProjectScreen.js";
 
 import { tabContextProvider, useTabMenu } from "../context/tabContext.js";
 import AddButton from "../components/AddButton.js";
@@ -49,7 +51,6 @@ const Stack = createStackNavigator();
 const HomeStack = createStackNavigator();
 function HomeScreenStackNavigator() {
   return (
-
     <HomeStack.Navigator
       initialRouteName="HomeScreen"
       screenOptions={{ headerShown: false }}
@@ -152,6 +153,14 @@ function WorkSpaceScreenStackNavigator() {
       <WorkSpaceScreenStack.Screen name="EditProfile" component={EditProfile} />
       <WorkSpaceScreenStack.Screen name="Projects" component={ProjectScreen} />
       <WorkSpaceScreenStack.Screen name="Tasks" component={TaskInfoScreen} />
+      <WorkSpaceScreenStack.Screen
+        name="AddProject"
+        component={AddProjectScreen}
+      />
+      <WorkSpaceScreenStack.Screen
+        name="EditProject"
+        component={EditProjectScreen}
+      />
       {/* <WorkSpaceScreenStack.Screen name="TaskEdit" component={EditTaskScreen} /> */}
     </WorkSpaceScreenStack.Navigator>
   );
@@ -397,6 +406,4 @@ const styles = StyleSheet.create({
       height: 2,
     },
   },
-
 });
-
