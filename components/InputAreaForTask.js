@@ -20,7 +20,9 @@ export default class InputArea extends Component {
             placeholder={this.props.placeHolder}
             placeholderTextColor={Colors.placeholder}
             editable={this.props.editableState}
-          ></TextInput>
+          >
+            {this.props.content}
+          </TextInput>
           <TouchableOpacity>
             {/* Icon */}
             <MaterialIcons name={this.props.icon} size={24} color="#363942" />

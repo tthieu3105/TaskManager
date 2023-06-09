@@ -86,49 +86,6 @@ export class BottomPopup extends React.Component {
     );
   };
 
-  //   renderContent = () => {
-  //     const { data } = this.props;
-  //     return (
-  //       <View>
-  //         <FlatList
-  //           style={{ marginVertical: 10 }}
-  //           data={data}
-  //           renderItem={this.renderItem}
-  //           keyExtractor={(item, index) => index.toString()}
-  //           ItemSeparatorComponent={this.renderSeparator}
-  //           showsVerticalScrollIndicator={false}
-  //           extraData={data}
-  //           contentContainerStyle={{ paddingBottom: 40 }}
-  //         />
-  //       </View>
-  //     );
-  //   };
-  //   renderItem = ({ item }) => {
-  //     return (
-  //       <TouchableOpacity
-  //         style={{
-  //           backgroundColor: "#4B7BE5",
-  //           height: 50,
-  //           borderRadius: 10,
-  //           shadowColor: "gray",
-  //           shadowOpacity: 0.5,
-  //           shadowOffset: {
-  //             width: 2,
-  //             height: 2,
-  //           },
-  //           marginHorizontal: 15,
-  //           marginBottom: 20,
-  //         }}
-  //       >
-  //         <Text style={styles.textInButton}>{item.name}</Text>
-  //       </TouchableOpacity>
-  //     );
-  //   };
-  //   renderSeparator = () => {
-  //     <View
-  //       style={{ opacity: 0.1, backgroundColor: "#182E44", height: 1 }}
-  //     ></View>;
-  //   };
   render() {
     let { show } = this.state;
     const { onTouchOutside, title } = this.props;

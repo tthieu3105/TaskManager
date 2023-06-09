@@ -11,6 +11,7 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Switch,
+  ActivityIndicator,
 } from "react-native";
 import React, { Component, useEffect, useRef, useState } from "react";
 import { Feather, SimpleLineIcons } from "@expo/vector-icons";
@@ -20,6 +21,7 @@ import InputArea from "../components/InputAreaForTask";
 import { Colors } from "react-native/Libraries/NewAppScreen";
 import { SelectList } from "react-native-dropdown-select-list";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
+import { firebase } from "../components/FirebaseConfig";
 
 const CONTAINER_HEIGHT = 80;
 const inputText = {
@@ -31,7 +33,121 @@ const inputText = {
   icon3: "calendar-today",
   hintText: "Enter Username or Email",
 };
-export default function EditTaskScreen({ navigation }) {
+export default function EditTaskScreen({ navigation, route }) {
+  //Lấy taskID từ màn hình TaskInfo
+  const { taskID } = route.params;
+  const [task, setTask] = useState(null);
+  const [projectName, setProjectName] = useState(""); // Add state for project name
+  const [projectNameData, setProjectNameData] = useState([]); // Add state for project name
+  const [startDate, setStartDate] = useState(null); // Add a state for start date
+  const [endDate, setEndDate] = useState(null); // Add a state for start date
+  const [dueDateVisible, setDueDateVisible] = useState(false); // Due date
+  const [timeVisible, setTimeVisible] = useState(false); //Include time
+  const [remindVisible, setRemindVisible] = useState(false); //Remind enable
+  const [remindTime, setRemindTime] = useState("");
+  const remindOptions = [
+    // "On day of event",
+    "1 days before",
+    "2 days before",
+    "7 days before",
+    // ...Thêm các giá trị khác vào đây
+  ];
+  useEffect(() => {
+    const fetchTask = async () => {
+      try {
+        const taskDoc = await firebase
+          .firestore()
+          .collection("Task")
+          .doc(taskID)
+          .get();
+
+        if (taskDoc.exists) {
+          const taskData = taskDoc.data();
+          setTask(taskData);
+          //  Thực hiện tách ngày và giờ riêng của thuộc tính StartTime
+          const startDay = taskData.StartDate.toDate();
+          const startDate = startDay.toLocaleDateString();
+          setStartDate(startDate); // Set the startDate state here
+          // Set giá trị includeEndDate, includeTime, Remind
+          const includeEndDate = taskData.IncludeEndDate;
+          const includeTime = taskData.IncludeTime;
+          const remind = taskData.Remind;
+
+          setDueDateVisible(includeEndDate);
+          setTimeVisible(includeTime);
+          setRemindVisible(remind);
+          //Tách thuộc tính DueDate và DueTime
+          if (includeEndDate) {
+            const endDay = taskData.DueDate.toDate();
+            const endDate = endDay.toLocaleDateString();
+            setEndDate(endDate); // Set the endDate state here
+          }
+          if (remind) {
+            // Tính toán khoảng thời gian giữa DueDate và RemindTime
+            const dueDate = taskData.DueDate.toDate();
+            const remindTime = new Date(taskData.RemindTime); // Chuyển đổi chuỗi thành đối tượng Date
+            const timeDiff = dueDate.getTime() - remindTime.getTime();
+            const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+            // Tìm giá trị tương ứng dựa trên daysDiff
+            let selectedOption;
+            if (daysDiff === 0) {
+              selectedOption = "On day of event";
+            } else {
+              selectedOption = remindOptions.find(
+                (option) => parseInt(option) === daysDiff
+              );
+            }
+
+            setRemindTime(selectedOption);
+          }
+
+          // Fetch project ID from Project_Task table
+          const projectTaskSnapshot = await firebase
+            .firestore()
+            .collection("Project_Task")
+            .where("TaskID", "==", taskID)
+            .limit(1)
+            .get();
+
+          if (!projectTaskSnapshot.empty) {
+            const projectTaskData = projectTaskSnapshot.docs[0].data();
+            const projectID = projectTaskData.ProjectID;
+
+            // Fetch project name from Project table
+            const projectSnapshot = await firebase
+              .firestore()
+              .collection("Project")
+              .doc(projectID)
+              .get();
+
+            if (projectSnapshot.exists) {
+              const projectData = projectSnapshot.data();
+              setProjectName(projectData.ProjectName);
+            }
+          }
+          //Fetch all Project's name
+          const projectSnapshot = await firebase
+            .firestore()
+            .collection("Project")
+            .get();
+
+          const projectData = projectSnapshot.docs.map((doc) => {
+            const project = doc.data();
+            return { key: doc.id, value: project.ProjectName };
+          });
+
+          setProjectNameData(projectData);
+        } else {
+          // Handle case when task doesn't exist
+          console.log("Task not found");
+        }
+      } catch (error) {
+        console.log("Error fetching task:", error);
+      }
+    };
+
+    fetchTask();
+  }, [taskID]);
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
   const offsetAnim = useRef(new Animated.Value(0)).current;
@@ -210,7 +326,6 @@ export default function EditTaskScreen({ navigation }) {
   // Remind
   const [isEnableRemind, setIsEnableRemind] = useState(true);
   // Hide an Element
-  const [remindVisible, setRemindVisible] = useState(false);
   const toggleSwitchRemind = () => {
     if (isEnableRemind) {
       setRemindVisible(false);
@@ -222,7 +337,6 @@ export default function EditTaskScreen({ navigation }) {
   // Due date
   const [isEnableDueDate, setIsEnableDueDate] = useState(true);
 
-  const [dueDateVisible, setDueDateVisible] = useState(false);
   const toggleSwitchDueDate = () => {
     if (isEnableDueDate) {
       setDueDateVisible(false);
@@ -246,7 +360,10 @@ export default function EditTaskScreen({ navigation }) {
     setIsEnableAssign((previousState) => !previousState);
   };
   // End of Toggle Button
-
+  if (!task) {
+    // Add a loading indicator or other placeholder component while the task is being fetched
+    return <ActivityIndicator />;
+  }
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -298,7 +415,7 @@ export default function EditTaskScreen({ navigation }) {
               <View style={{ marginHorizontal: 20, marginTop: 10 }}>
                 <SelectList
                   setSelected={(val) => setSelected(val)}
-                  data={data}
+                  data={projectNameData}
                   save="value"
                   boxStyles={{
                     backgroundColor: "#F5F5F5",
@@ -321,7 +438,7 @@ export default function EditTaskScreen({ navigation }) {
 
             {/* Title name */}
             {/* TextInput */}
-            <InputArea name={inputText.name2}></InputArea>
+            <InputArea name={inputText.name2} content={task.Title}></InputArea>
 
             {/* End of TextInput */}
 
@@ -331,7 +448,7 @@ export default function EditTaskScreen({ navigation }) {
               <Text style={styles.title}>Start date</Text>
               {/* inputText */}
               <View style={styles.inputText}>
-                <Text style={styles.textInInputText}>{selectedDate}</Text>
+                <Text style={styles.textInInputText}>{startDate}</Text>
                 <TouchableOpacity onPress={showDatePicker}>
                   {/* Icon */}
                   <MaterialIcons
@@ -359,7 +476,7 @@ export default function EditTaskScreen({ navigation }) {
                 <Text style={styles.title}>Due date</Text>
                 {/* inputText */}
                 <View style={styles.inputText}>
-                  <Text style={styles.textInInputText}>{selectedEndDate}</Text>
+                  <Text style={styles.textInInputText}>{endDate}</Text>
                   <TouchableOpacity onPress={showEndDatePicker}>
                     {/* Icon */}
                     <MaterialIcons
@@ -401,7 +518,7 @@ export default function EditTaskScreen({ navigation }) {
                     style={styles.smallInputText}
                     onPress={showStartTimePicker}
                   >
-                    <Text style={styles.textInInputText}>{startTime}</Text>
+                    <Text style={styles.textInInputText}>{task.StartTime}</Text>
                   </TouchableOpacity>
                   <DateTimePickerModal
                     isVisible={isStartTimePickerVisible}
@@ -413,7 +530,7 @@ export default function EditTaskScreen({ navigation }) {
                     style={styles.smallInputText}
                     onPress={showEndTimePicker}
                   >
-                    <Text style={styles.textInInputText}>{endTime}</Text>
+                    <Text style={styles.textInInputText}>{task.DueTime}</Text>
                   </TouchableOpacity>
                   <DateTimePickerModal
                     isVisible={isEndTimePickerVisible}
@@ -482,7 +599,7 @@ export default function EditTaskScreen({ navigation }) {
                     <Switch
                       trackColor={{ false: "#767577", true: "#81b0ff" }}
                       onValueChange={toggleSwitchDueDate}
-                      value={isEnableDueDate}
+                      value={dueDateVisible}
                     />
                   </View>
                 </View>
@@ -529,7 +646,9 @@ export default function EditTaskScreen({ navigation }) {
                     multiline={true}
                     placeholder="Your description here"
                     placeholderTextColor={Colors.placeholder}
-                  />
+                  >
+                    {task.Description}
+                  </TextInput>
                 </TouchableOpacity>
               </View>
             </View>
