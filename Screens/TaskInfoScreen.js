@@ -26,7 +26,7 @@ const inputText = {
   icon1: "arrow-drop-down-circle",
   icon3: "calendar-today",
   hintText: "Enter Username or Email",
-  disable: "false",
+  disable: false,
 };
 export default function TaskInfoScreen({ navigation }) {
   // Header Animation
@@ -91,7 +91,7 @@ export default function TaskInfoScreen({ navigation }) {
             style={styles.headerBehave}
             onPress={() => navigation.goBack()}
           >
-            <SimpleLineIcons name="arrow-left" size="20" color="black" />
+            <SimpleLineIcons name="arrow-left" size={20} color="black" />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.headerBehave}
