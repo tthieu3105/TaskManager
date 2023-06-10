@@ -10,15 +10,29 @@ import {
 } from "react-native";
 
 import React, { Component, useEffect, useRef } from "react";
+import {createContext, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { SimpleLineIcons } from "@expo/vector-icons";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import AntDesign from "../node_modules/@expo/vector-icons/AntDesign";
 import UserAvatar from "@muhzi/react-native-user-avatar";
+import { db } from "../components/FirestoreConfig";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  or,
+  and,
+} from "firebase/firestore";
+
+import { UserProvider } from "./LoginScreen";
+import { useContext } from 'react';
+import { UserContext } from "../contextObject";
 
 const CONTAINER_HEIGHT = 80;
 
-const AccountFeature = ({ navigation }) => {
+const AccountFeature = async ({ navigation }) => {
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
   const offsetAnim = useRef(new Animated.Value(0)).current;
@@ -33,8 +47,7 @@ const AccountFeature = ({ navigation }) => {
     ),
     0,
     CONTAINER_HEIGHT
-  );
-
+  );   
   var _clampedScrollValue = 0;
   var _offsetValue = 0;
   var _scrollValue = 0;
@@ -58,6 +71,10 @@ const AccountFeature = ({ navigation }) => {
     extrapolate: "clamp",
   });
   // End of header animation
+
+  const { userId } = useContext(UserContext);
+
+  
 
   return (
     <KeyboardAvoidingView
