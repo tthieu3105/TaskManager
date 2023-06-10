@@ -18,16 +18,16 @@ import CreateAccScreen from "./CreateAccScreen";
 import { useNavigation } from "react-router-native";
 
 import { ToastAndroid } from "react-native";
-
+// import { db } from "../components/FirebaseConfig";
 import { db } from "../components/FirestoreConfig";
 import {
-  collection,
-  getDocs,
-  query,
-  where,
-  or,
-  and,
-} from "firebase/firestore";
+  ref,
+  onValue,
+  get,
+  child,
+  orderByChild,
+  equalTo,
+} from "firebase/database";
 
 const CONTAINER_HEIGHT = 80;
 
@@ -44,7 +44,6 @@ const LoginScreen = ({ navigation }) => {
   };
 
   const LoginFunction = async (userName, password) => {
-
     // if (userName === "") {
     //   ToastAndroid.show(
     //     "UserName or Email cannot be empty",
@@ -93,7 +92,6 @@ const LoginScreen = ({ navigation }) => {
       console.log(doc.id, "=>", doc.data());
     });
 
-
     if (userName === "") {
       ToastAndroid.show(
         "UserName or Email cannot be empty",
@@ -106,66 +104,18 @@ const LoginScreen = ({ navigation }) => {
       return false;
     }
 
-
-    // const foundUser = doc.find(
-    //   (user) =>
-    //     (user.username === userName || user.email === userName) &&
-    //     user.password === password
-    // );
-    // if (foundUser) {
-    //   ToastAndroid.show("Login Successfully!", ToastAndroid.SHORT);
-
-
-    let userID = 0;
-    const q = query(
-      collection(db, "User"), and(or(where("UserName", "==", userName), where("Email", "==", userName)), where("Password", "==", password))
+    const foundUser = doc.find(
+      (user) =>
+        (user.username === userName || user.email === userName) &&
+        user.password === password
     );
-
-    const querySnapshot = await getDocs(q);
-
-    if (querySnapshot.size>0) {
-      for(const user of querySnapshot.docs) {
-        userID = user.data().UserID;
-      }
-      console.log("user id: ", userID);
+    if (foundUser) {
       ToastAndroid.show("Login Successfully!", ToastAndroid.SHORT);
 
       navigation.navigate("HomeNavigator");
     } else {
       ToastAndroid.show("Invalid UserName or Password!", ToastAndroid.SHORT);
     }
-
-
-    // Lấy reference đến node 'User' trong Firebase Realtime Database
-    // const usersRef = ref(db, "User");
-
-    // const userList = [];
-
-    // Lấy toàn bộ dữ liệu User và lưu vào list user
-    // get(usersRef).then((snapshot) => {
-    //   if (snapshot.exists()) {
-    //     const data = snapshot.val();
-    //     Object.keys(data).forEach((key) => {
-    //       const user = data[key];
-    //       userList.push({ username: user.UserName, email: user.Email, password: user.Password });
-    //     });
-    //     console.log("Users found:", userList);
-    //     const foundUser = userList.find(
-    //       (user) => (user.username === userName || user.email === userName)  && user.password === password
-    //     );
-    //     if (foundUser) {
-    //       ToastAndroid.show("Login Successfully!", ToastAndroid.SHORT);
-
-    //       navigation.navigate("HomeNavigator");
-
-    //     } else {
-    //       ToastAndroid.show("Invalid UserName or Password!", ToastAndroid.SHORT);
-    //     }
-    //   } else {
-    //     console.log("No users found");
-    //   }
-    // });
-
   };
 
   // Header Animation
