@@ -40,7 +40,7 @@ import {
 import { UserContext, UserProvider } from "../contextObject";
 const CONTAINER_HEIGHT = 80;
 
-const LoginScreen = ({ navigation, setUserId }) => {
+const LoginScreen = ({ navigation }) => {
   const [userName, setUserName] = useState("");
 
   // Lấy Password
@@ -54,6 +54,7 @@ const LoginScreen = ({ navigation, setUserId }) => {
     setShowPasswordIcon(hidePassword ? "eye-off-outline" : "eye-outline");
   };
 
+  const { setUserId } = useContext(UserContext);
   const LoginFunction = async (userName, password) => {
     if (userName === "") {
       ToastAndroid.show(
