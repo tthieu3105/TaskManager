@@ -18,6 +18,15 @@ import { Ionicons } from "@expo/vector-icons";
 import AntDesign from "../node_modules/@expo/vector-icons/AntDesign";
 import UserAvatar from "@muhzi/react-native-user-avatar";
 import TabContainer from "../components/TabContainer";
+import { db } from "../components/FirestoreConfig";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  where,
+} from "firebase/firestore";
 
 const CONTAINER_HEIGHT = 80;
 
@@ -52,6 +61,129 @@ const WorkSpaceScreen = ({ navigation }) => {
     0,
     CONTAINER_HEIGHT
   );
+
+  //Hello
+  const [userName, setUserName] = useState("");
+  const userID = 1;
+  const getName = async () => {
+    const docRef = doc(db, "User", userID.toString());
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      const fullName = docSnap.data().Name;
+      const nameArray = fullName.split(" ");
+      const lastName = nameArray[nameArray.length - 1];
+      setUserName(lastName);
+    } else {
+      // docSnap.data() will be undefined in this case
+      console.log("No such document!");
+      setUserName("John");
+    }
+  };
+
+  //project
+  const [count, setCount] = useState("");
+  const [projectList, setProjectList] = useState([]);
+
+  const getProject = async () => {
+    const q = query(collection(db, "Project"), where("CreatorID", "==", userID));
+    const querySnapshot = await getDocs(q);
+
+    const sl = querySnapshot.size;
+    setCount(sl);
+
+    const proList = [];
+    for (const pro of querySnapshot.docs) {
+      const proID = pro.data().ProjectID;
+
+      const q1 = query(
+        collection(db, "Project_Task"),
+        where("ProjectID", "==", proID)
+      );
+
+      const querySnapshot1 = await getDocs(q1);
+      const numberOfTask = querySnapshot1.size;
+
+      const userList = [];
+      const docRef = doc(db, "User", pro.data().CreatorID.toString());
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        userList.push({
+          UserID: docSnap.data().UserID,
+          Name: docSnap.data().Name,
+          Avatar: docSnap.data().Avatar,
+        });
+      }
+      const q3 = query(
+        collection(db, "Project_User"),
+        where("ProjectID", "==", proID)
+      );
+
+      const querySnapshot3 = await getDocs(q3);
+
+      if (querySnapshot3.size > 0) {
+        for (const pro_user of querySnapshot3.docs) {
+          const docRef = doc(db, "User", pro_user.data().AssigneeID.toString());
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            userList.push({
+              UserID: docSnap.data().UserID,
+              Name: docSnap.data().Name,
+              Avatar: docSnap.data().Avatar,
+            });
+          }
+        }
+      }
+
+      // Not Started / In Progress / Completed / Overdue
+      const status = { NotStarted: 0, InProgress: 0, Completed: 0, Overdue: 0 };
+      // querySnapshot1
+      for (const task of querySnapshot1.docs) {
+        const docRef = doc(db, "Task", task.data().TaskID.toString());
+        const docSnap = await getDoc(docRef);
+        console.log("status: ", docSnap.data().Status);
+        switch (docSnap.data().Status) {
+          case "Not Started":
+            status.NotStarted++;
+            break;
+          case "In Progress":
+            status.InProgress++;
+            break;
+          case "Completed":
+            status.Completed++;
+            break;
+          case "Overdue":
+            status.Overdue++;
+            break;
+        }
+      }
+      const sum =
+        status.NotStarted +
+        status.InProgress +
+        status.Completed +
+        status.Overdue;
+      let progress = 0;
+      if (sum != 0) {
+        progress = status.Completed / sum;
+        progress = progress.toFixed(4);
+      }
+      console.log("progress: ", status);
+
+      proList.push({
+        ProjectID: proID,
+        ProjectName: pro.data().ProjectName,
+        numberOfTask: numberOfTask,
+        userList: userList,
+        progress: progress,
+      });
+    }
+    setProjectList(proList);
+  };
+
+  useEffect(() => {
+    getName();
+    getProject();
+  }, []);
 
   var _clampedScrollValue = 0;
   var _offsetValue = 0;
@@ -125,7 +257,7 @@ const WorkSpaceScreen = ({ navigation }) => {
             {/* Layout welcome, ngày tháng, findbox */}
             <View style={{ backgroundColor: "white", flex: 20 }}>
               {/* Xử lý load tên người dùng + Hello */}
-              <Text style={styles.title}>Hello Josh</Text>
+              <Text style={styles.title}>Hello {userName}</Text>
 
               {/* Ngày tháng hiện tại */}
               <Text style={styles.normalTextOnBackGround}>{currentDate}</Text>
@@ -159,7 +291,7 @@ const WorkSpaceScreen = ({ navigation }) => {
               <View style={styles.row1}>
                 <Text style={styles.smallTitle}>Workspace</Text>
                 {/* Đếm số lượng workspace người dùng đang có và load lên text tại đây */}
-                <Text style={styles.numberOfProject}>4</Text>
+                <Text style={styles.numberOfProject}>{count}</Text>
 
                 {/* Xử lý button sắp xếp project tại đây */}
                 <TouchableOpacity>
@@ -168,21 +300,84 @@ const WorkSpaceScreen = ({ navigation }) => {
               </View>
 
               {/* Projects */}
-              {/* Đếm số lượng workspace của người dùng và hiển thị các workspace của người dùng lên màn hình*/}
+              {projectList.map((p) => {
+                let proName = p.ProjectName;
+                if (proName.length > 40) {
+                  proName = proName.slice(0, 39) + "...";
+                }
+                return (
+                  <View style={styles.projectFrame} key={p.ProjectID}>
+                    {/* Tên & số lượng công việc */}
+                    <View style={styles.smallFrame1}>
+                      <Text style={styles.smallTitle2}>{proName}</Text>
+                      <Text style={styles.numberOfProject2}>
+                        {p.numberOfTask} tasks
+                      </Text>
+                    </View>
+
+                    {/* Tiến độ hoàn thành & avatar thành viên */} 
+                    <View style={styles.smallFrame2}>
+                      {/* Xử lý lấy tiến độ hoàn thành và load lên text & view */}
+                      <View style={styles.smallFrame3}>
+                        <Text style={styles.progressText}>{`${
+                          p.progress * 100
+                        }%`}</Text>
+                        <View style={styles.progressBar}>
+                          <View style={[styles.progress, { width: `${p.progress * 100}%` }]} />
+                        </View>
+                      </View>
+
+                      <View style={styles.smallFrame4}>
+                        {p.userList.map((user) => {
+                          if (user.Avatar == "") {
+                            const name = user.Name;
+                            const initials = name
+                              .split(" ")
+                              .map((name) => name.charAt(0))
+                              .join("");
+                            const avatarUrl = `https://ui-avatars.com/api/?name=${name}&background=random&size=25`;
+                            return (
+                              <UserAvatar
+                                style={styles.avatar}
+                                key={user.UserID}
+                                size={25}
+                                src={avatarUrl}
+                                alt={user.Name}
+                              />
+                            );
+                          } else {
+                            return (
+                              <UserAvatar
+                                style={styles.avatar}
+                                key={user.UserID}
+                                size={25}
+                                src={user.Avatar}
+                                alt={user.Name}
+                              />
+                            );
+                          }
+                        })}
+                      </View>
+                    </View>
+                  </View>
+                );
+              })}
+
+              {/* Đếm số lượng task của project và hiển thị các workspace của người dùng lên màn hình
               <View style={styles.projectFrame}>
-                {/* Tên & số lượng công việc */}
+                Tên & số lượng công việc
                 <View style={styles.smallFrame1}>
-                  {/* xử lý lấy tên và số lượng project từ BE, load lên text tại đây */}
+                  xử lý lấy tên và số lượng project từ BE, load lên text tại đây
                   <Text style={styles.smallTitle2}>Web design</Text>
                   <Text style={styles.numberOfProject2}>12 Projects</Text>
                 </View>
 
-                {/* Tiến độ hoàn thành & avatar thành viên */}
+                Tiến độ hoàn thành & avatar thành viên
                 <View style={styles.smallFrame2}>
-                  {/* Xử lý lấy tiến độ hoàn thành và load lên text & view */}
-                  {/* Xử lý lấy avatar các thành viên trong workspace và load lên một vài avatar nhỏ */}
+                  Xử lý lấy tiến độ hoàn thành và load lên text & view
+                  Xử lý lấy avatar các thành viên trong workspace và load lên một vài avatar nhỏ
                 </View>
-              </View>
+              </View> */}
             </View>
           </View>
         </Animated.ScrollView>
@@ -256,6 +451,7 @@ const styles = StyleSheet.create({
     marginLeft: 15,
     marginRight: 5,
     color: "white",
+    fontWeight: "bold",
     fontSize: 18,
     marginTop: 30,
     marginBottom: 5,
@@ -295,14 +491,15 @@ const styles = StyleSheet.create({
   projectFrame: {
     backgroundColor: "white",
     marginTop: 15,
-    height: 135,
-    borderRadius: 10,
+    height: 145,
     shadowColor: "gray",
     shadowOpacity: 0.5,
     shadowOffset: {
       width: 2,
       height: 2,
     },
+    borderRadius: 15,
+    elevation: 15,
     marginHorizontal: 15,
     marginBottom: 15,
   },
@@ -319,6 +516,51 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 10,
     borderBottomRightRadius: 10,
     flex: 4,
+    display: "flex",
+    flexDirection: "row",
+  },
+
+  smallFrame3: {
+    marginTop: 15,
+    marginLeft: 10,
+    flex: 1,
+    borderRadius: 5,
+  },
+
+  progressBar: {
+    marginTop: 3,
+    marginLeft: 10,
+    height: 3,
+    backgroundColor: "lightgrey",
+    justifyContent: "center",
+    alignItems: "center",
+    position: "relative",
+  },
+
+  progress: {
+    height: "100%",
+    backgroundColor: "#0093E9",
+    position: "absolute",
+    left: 0,
+  },
+
+  progressText: {
+    fontSize: 14,
+    color: "#000000",
+    marginLeft: 15,
+  },
+
+  smallFrame4: {
+    marginTop: 15,
+    marginRight: 10,
+    flex: 1,
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "flex-end",
+  },
+
+  avatar: {
+    marginLeft: 5,
   },
 
   searchBox: {

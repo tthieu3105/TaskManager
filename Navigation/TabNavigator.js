@@ -171,7 +171,8 @@ function NewTaskNoteScreenStackNavigator() {
 }
 
 const getIconColor = (focused) => ({
-  tintColor: focused ? Colors.primary : Colors.dark,
+  color: focused ? Colors.primary : Colors.dark,
+  // tintColor: focused ? Colors.primary : Colors.dark,
 });
 
 const Tab = createBottomTabNavigator();
