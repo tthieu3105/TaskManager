@@ -23,8 +23,15 @@ import Header from "../components/HeaderWithTextAndIcon";
 import { MaterialIcons } from "@expo/vector-icons";
 import InputArea from "../components/InputAreaForTask";
 import { Colors } from "react-native/Libraries/NewAppScreen";
-import { firebase } from "../components/FirebaseConfig";
-
+import { db } from "../components/FirestoreConfig";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  where,
+} from "firebase/firestore";
 const CONTAINER_HEIGHT = 80;
 const inputText = {
   name1: "Project",
@@ -41,9 +48,15 @@ const inputText = {
 export default function TaskInfoScreen({ navigation, route }) {
   const { taskID } = route.params;
   const [task, setTask] = useState(null);
+  const [project, setProject] = useState(null);
+
   const [projectName, setProjectName] = useState(""); // Add state for project name
   const [startDate, setStartDate] = useState(null); // Add a state for start date
+  const [startTime, setStartTime] = useState(null); // Add a state for start date
+
   const [endDate, setEndDate] = useState(null); // Add a state for start date
+  const [endTime, setEndTime] = useState(null); // Add a state for start date
+
   const [dueDateVisible, setDueDateVisible] = useState(false); // Due date
   const [timeVisible, setTimeVisible] = useState(false); //Include time
   const [remindVisible, setRemindVisible] = useState(false); //Remind enable
@@ -58,19 +71,18 @@ export default function TaskInfoScreen({ navigation, route }) {
   useEffect(() => {
     const fetchTask = async () => {
       try {
-        const taskDoc = await firebase
-          .firestore()
-          .collection("Task")
-          .doc(taskID)
-          .get();
+        const taskDoc = await getDoc(doc(db, "Task", taskID));
 
         if (taskDoc.exists) {
           const taskData = taskDoc.data();
           setTask(taskData);
           //  Thực hiện tách ngày và giờ riêng của thuộc tính StartTime
-          const startDay = taskData.StartDate.toDate();
+          const startDay = taskData.StartTime.toDate();
           const startDate = startDay.toLocaleDateString();
+          const startTime = startDay.toLocaleTimeString();
+
           setStartDate(startDate); // Set the startDate state here
+          setStartTime(startTime);
           // Set giá trị includeEndDate, includeTime, Remind
           const includeEndDate = taskData.IncludeEndDate;
           const includeTime = taskData.IncludeTime;
@@ -81,9 +93,12 @@ export default function TaskInfoScreen({ navigation, route }) {
           setRemindVisible(remind);
           //Tách thuộc tính DueDate và DueTime
           if (includeEndDate) {
-            const endDay = taskData.DueDate.toDate();
+            const endDay = taskData.DueTime.toDate();
             const endDate = endDay.toLocaleDateString();
+            const endTime = endDay.toLocaleTimeString();
+
             setEndDate(endDate); // Set the endDate state here
+            setEndTime(endTime);
           }
           if (remind) {
             // Tính toán khoảng thời gian giữa DueDate và RemindTime
@@ -105,27 +120,27 @@ export default function TaskInfoScreen({ navigation, route }) {
           }
 
           // Fetch project ID from Project_Task table
-          const projectTaskSnapshot = await firebase
-            .firestore()
-            .collection("Project_Task")
-            .where("TaskID", "==", taskID)
-            .limit(1)
-            .get();
+          const projectTaskRef = collection(db, "Project_Task");
+          const queryProjectTask = query(
+            projectTaskRef,
+            where("TaskID", "==", taskID)
+          );
 
-          if (!projectTaskSnapshot.empty) {
-            const projectTaskData = projectTaskSnapshot.docs[0].data();
-            const projectID = projectTaskData.ProjectID;
-
+          const projectTaskSnapshot = await getDocs(queryProjectTask);
+          if (
+            !projectTaskSnapshot.empty &&
+            projectTaskSnapshot.docs.length > 0
+          ) {
+            const projectID = projectTaskSnapshot.docs[0].data().ProjectID;
+            console.log(projectID);
             // Fetch project name from Project table
-            const projectSnapshot = await firebase
-              .firestore()
-              .collection("Project")
-              .doc(projectID)
-              .get();
 
-            if (projectSnapshot.exists) {
+            const projectSnapshot = await getDoc(doc(db, "Project", projectID));
+
+            if (projectSnapshot.exists()) {
               const projectData = projectSnapshot.data();
-              setProjectName(projectData.ProjectName);
+              const nameProject = projectData.ProjectName;
+              setProjectName(nameProject);
             }
           }
         } else {
@@ -293,7 +308,7 @@ export default function TaskInfoScreen({ navigation, route }) {
                       dueDateVisible ? styles.width80 : null,
                     ]}
                   >
-                    <Text style={styles.textInInputText}>{task.StartTime}</Text>
+                    <Text style={styles.textInInputText}>{startTime}</Text>
                   </TouchableOpacity>
                 </View>
                 {dueDateVisible ? (
@@ -301,9 +316,7 @@ export default function TaskInfoScreen({ navigation, route }) {
                     <Text style={styles.timeTitle}>End Time</Text>
                     <View>
                       <TouchableOpacity style={styles.smallInputText}>
-                        <Text style={styles.textInInputText}>
-                          {task.DueTime}
-                        </Text>
+                        <Text style={styles.textInInputText}>{endTime}</Text>
                       </TouchableOpacity>
                     </View>
                   </View>

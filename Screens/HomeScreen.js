@@ -22,16 +22,15 @@ import TaskCard from "../components/TaskCardProgress";
 import TaskCardCP from "../components/TaskCardCompleted";
 import TaskCardOD from "../components/TaskCardOverdue";
 import TabContainer from "../components/TabContainer";
-import { firebase } from "../components/FirebaseConfig";
-import { db } from "../components/FirebaseConfig";
+import { db } from "../components/FirestoreConfig";
 import {
-  ref,
-  onValue,
-  get,
-  child,
-  orderByChild,
-  equalTo,
-} from "firebase/database";
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  where,
+} from "firebase/firestore";
 import { ScrollView } from "react-native";
 
 const CONTAINER_HEIGHT = 80;
@@ -54,35 +53,33 @@ const taskCard = {
 export default function HomeScreen({ navigation }) {
   const [isLoading, setIsLoading] = useState(true); // Add a state for loading indicator
   const [tasks, setTasks] = useState([]);
-  const todoRef = firebase.firestore().collection("Task");
   useEffect(() => {
     const fetchData = async () => {
-      const querySnapshot = await todoRef.get();
-      const tasks = querySnapshot.docs.map((doc) => {
-        const {
-          CreatedAt,
-          Description,
-          DueTime,
-          Remind,
-          RemindTime,
-          StartTime,
-          Status,
-          TaskID,
-          Title,
-          UserID,
-        } = doc.data();
+      try {
+        const querySnapshot = await getDocs(collection(db, "Task"));
+        const tasksData = querySnapshot.docs.map((doc) => {
+          const { Description, StartTime, DueTime, Status, Title } = doc.data();
+          const startDateTime = StartTime.toDate();
+          const startTime = startDateTime.toLocaleTimeString();
 
-        return {
-          id: doc.id,
-          Description,
-          StartTime,
-          Status,
-          Title,
-        };
-      });
+          const endDateTime = DueTime.toDate();
+          const endTime = endDateTime.toLocaleTimeString();
+          return {
+            id: doc.id,
+            Description,
+            StartTime,
+            DueTime,
+            Status,
+            Title,
+            startTime,
+          };
+        });
 
-      setTasks(tasks);
-      setIsLoading(false); // Set loading indicator to false when data is fetched
+        setTasks(tasksData);
+        setIsLoading(false);
+      } catch (error) {
+        console.log("Error fetching tasks:", error);
+      }
     };
 
     fetchData();
@@ -221,12 +218,12 @@ export default function HomeScreen({ navigation }) {
                     <TaskCard
                       title={item.Title}
                       subtitle={item.Description}
-                      time={item.StartTime}
+                      time={item.startTime}
                       taskStatus={item.Status}
                       iconName={taskCard.icon}
                       navigation={navigation}
                       screenName="TaskInfo"
-                      firebase={firebase}
+                      firebase={db}
                       taskID={item.id}
                     />
                   )}
@@ -247,12 +244,12 @@ export default function HomeScreen({ navigation }) {
                     <TaskCard
                       title={item.Title}
                       subtitle={item.Description}
-                      time={item.StartTime}
+                      time={item.startTime}
                       taskStatus={item.Status}
                       iconName={taskCard.icon}
                       navigation={navigation}
                       screenName="TaskInfo"
-                      firebase={firebase}
+                      firebase={db}
                       taskID={item.id}
                     />
                   )}
@@ -266,12 +263,12 @@ export default function HomeScreen({ navigation }) {
             <TaskCard
               title={item.Title}
               subtitle={item.Description}
-              time={item.StartTime}
+              time={item.startTime}
               taskStatus={item.Status}
               iconName={taskCard.icon}
               navigation={navigation}
               screenName="TaskInfo"
-              firebase={firebase}
+              firebase={db}
               taskID={item.id}
             />
           )}

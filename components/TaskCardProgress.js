@@ -2,7 +2,16 @@ import { View, StyleSheet, Text, TouchableOpacity } from "react-native";
 import React, { Component } from "react";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { Feather } from "@expo/vector-icons";
-import { firebase } from "./FirebaseConfig";
+import { db } from "./FirestoreConfig";
+import {
+  collection,
+  doc,
+  updateDoc,
+  getDoc,
+  getDocs,
+  query,
+  where,
+} from "firebase/firestore";
 export default class TaskCardOP extends Component {
   handlePress = () => {
     const { screenName, navigation, taskID } = this.props;
@@ -70,10 +79,9 @@ export default class TaskCardOP extends Component {
     }
     newColor = this.handleChangeColor(newStatus);
     try {
+      const taskRef = doc(collection(firebase, "Task"), taskID);
       // Update the status and color in Firestore
-      await firebase.firestore().collection("Task").doc(taskID).update({
-        Status: newStatus,
-      });
+      await updateDoc(taskRef, { Status: newStatus });
 
       // Update the state with the new status and color
       this.setState({ taskStatus: newStatus, statusColor: newColor });
