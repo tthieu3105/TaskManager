@@ -42,6 +42,8 @@ import { tabContextProvider, useTabMenu } from "../context/tabContext.js";
 import AddButton from "../components/AddButton.js";
 import { Colors } from "react-native/Libraries/NewAppScreen";
 
+import { UserContext, UserProvider } from "../contextObject";
+
 //updating
 
 const Stack = createStackNavigator();

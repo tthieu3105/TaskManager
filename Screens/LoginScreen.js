@@ -18,15 +18,6 @@ import CreateAccScreen from "./CreateAccScreen";
 import { useNavigation } from "react-router-native";
 
 import { ToastAndroid } from "react-native";
-// import { db } from "../components/FirebaseConfig";
-// import {
-//   ref,
-//   onValue,
-//   get,
-//   child,
-//   orderByChild,
-//   equalTo,
-// } from "firebase/database";
 import { db } from "../components/FirestoreConfig";
 import {
   collection,
