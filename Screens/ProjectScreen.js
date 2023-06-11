@@ -32,7 +32,7 @@ const Progress = ({ step, steps, height }) => {
     <>
       <Text
         style={{
-          fontFamily: "Menlo",
+          // fontFamily: "Menlo",
           marginHorizontal: 20,
           fontSize: 12,
           fontWeight: "500",

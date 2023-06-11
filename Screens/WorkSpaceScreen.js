@@ -278,7 +278,7 @@ const WorkSpaceScreen = ({ navigation }) => {
                   ></TextInput>
 
                   {/* Xử lý button tìm kiếm */}
-                  <TouchableOpacity>
+                  <TouchableOpacity onPress={()=>{navigation.navigate("OverdueWS")}}>
                     <AntDesign
                       name="search1"
                       size={25}
@@ -311,7 +311,7 @@ const WorkSpaceScreen = ({ navigation }) => {
                   proName = proName.slice(0, 39) + "...";
                 }
                 return (
-                  <View style={styles.projectFrame} key={p.ProjectID} navigation={navigation} screenName="Projects">
+                  <View style={styles.projectFrame} key={p.ProjectID} >
                     {/* Tên & số lượng công việc */}
                     <View style={styles.smallFrame1}>
                       <Text style={styles.smallTitle2}>{proName}</Text>

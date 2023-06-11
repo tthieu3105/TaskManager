@@ -32,7 +32,7 @@ const Progress = ({ step, steps, height }) => {
     <>
       <Text
         style={{
-          fontFamily: "Menlo",
+          // fontFamily: "Menlo",
           marginHorizontal: 20,
           fontSize: 12,
           fontWeight: "500",
@@ -82,7 +82,7 @@ const projectCard = {
   status1: "On Progress",
   icon: "user-circle",
 };
-export default function ProjectScreen() {
+export default function OverdueWSSreen() {
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
   const offsetAnim = useRef(new Animated.Value(0)).current;
@@ -149,7 +149,7 @@ export default function ProjectScreen() {
       >
         <View style={styles.rowSection}>
           <TouchableOpacity style={styles.headerBehave}>
-            <SimpleLineIcons name="arrow-left" size="24" color="black" />
+            <SimpleLineIcons name="arrow-left" size={24} color="black" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.headerBehave}>
             <UserAvatar
@@ -252,11 +252,11 @@ export default function ProjectScreen() {
         {/* End of TaskCard */}
         {/* TaskCard */}
         <TaskCard
-          title={this.projectCard.title1}
-          subtitle={this.projectCard.subtitle1}
-          time={this.projectCard.time1}
-          status={this.projectCard.status1}
-          iconName={this.projectCard.icon}
+          title={projectCard.title1}
+          subtitle={projectCard.subtitle1}
+          time={projectCard.time1}
+          status={projectCard.status1}
+          iconName={projectCard.icon}
         ></TaskCard>
         {/* End of TaskCard */}
         {/* End of My Task */}

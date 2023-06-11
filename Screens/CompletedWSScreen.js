@@ -82,7 +82,7 @@ const projectCard = {
   status1: "On Progress",
   icon: "user-circle",
 };
-export default function ProjectScreen() {
+export default function CompletedWSScreen() {
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
   const offsetAnim = useRef(new Animated.Value(0)).current;
@@ -150,7 +150,7 @@ export default function ProjectScreen() {
       >
         <View style={styles.rowSection}>
           <TouchableOpacity style={styles.headerBehave}>
-            <SimpleLineIcons name="arrow-left" size="24" color="black" />
+            <SimpleLineIcons name="arrow-left" size={24} color="black" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.headerBehave}>
             <UserAvatar

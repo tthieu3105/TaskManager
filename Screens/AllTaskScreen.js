@@ -31,7 +31,7 @@ const Progress = ({ step, steps, height }) => {
     <>
       <Text
         style={{
-          fontFamily: "Menlo",
+          // fontFamily: "Menlo",
           marginHorizontal: 20,
           fontSize: 12,
           fontWeight: "500",
@@ -81,8 +81,10 @@ const projectCard = {
   status1: "On Progress",
   icon: "user-circle",
 };
-export default function ProjectScreen() {
+export default function AllTaskSreen({navigation, route}) {
   // Header Animation
+  // const {id} = route.params ? route.params : {};
+  // console.log("id all task: ", id)
   const scrollY = useRef(new Animated.Value(0)).current;
   const offsetAnim = useRef(new Animated.Value(0)).current;
   const clampedScroll = Animated.diffClamp(
@@ -149,7 +151,7 @@ export default function ProjectScreen() {
       >
         <View style={styles.rowSection}>
           <TouchableOpacity style={styles.headerBehave}>
-            <SimpleLineIcons name="arrow-left" size="24" color="black" />
+            <SimpleLineIcons name="arrow-left" size={24} color="black" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.headerBehave}>
             <UserAvatar
