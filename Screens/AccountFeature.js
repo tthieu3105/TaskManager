@@ -70,7 +70,7 @@ const AccountFeature = ({ navigation }) => {
   const [Career, setCareer] = useState('');
   const [ULocation, setULocation] = useState('');
   const [UPhone, setUPhone] = useState('');
-  
+  const [UMail, setUMail] = useState('');
 
   const UserInfo = async (userID) => {
     const q = query(collection(db, "User"), where("UserID", "==", userId));
@@ -83,6 +83,7 @@ const AccountFeature = ({ navigation }) => {
         setCareer(user.data().Job);
         setULocation(user.data().Location);
         setUPhone(user.data().Phone);
+        setUMail(user.data().Email);
       }
       console.log("User id: ", userId);
       console.log(
@@ -240,7 +241,7 @@ const AccountFeature = ({ navigation }) => {
                     <Text style={styles.informationTitle}>Email</Text>
                     {/* Email here */}
                     <Text style={styles.information}>
-                      anonymous321@gmail.com
+                      {UMail}
                     </Text>
                   </View>
                 </View>
@@ -259,7 +260,7 @@ const AccountFeature = ({ navigation }) => {
                   <View style={styles.textFrame}>
                     <Text style={styles.informationTitle}>Phone</Text>
                     {/* Phone here */}
-                    <Text style={styles.information}>+84 946102837</Text>
+                    <Text style={styles.information}>{UPhone}</Text>
                   </View>
                 </View>
               </View>
