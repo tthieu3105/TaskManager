@@ -22,16 +22,11 @@ import TaskCard from "../components/TaskCardProgress";
 import TaskCardCP from "../components/TaskCardCompleted";
 import TaskCardOD from "../components/TaskCardOverdue";
 import TabContainer from "../components/TabContainer";
+
+import { useContext, useState } from "react";
 import { db } from "../components/FirestoreConfig";
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  query,
-  where,
-} from "firebase/firestore";
-import { ScrollView } from "react-native";
+import { collection, getDocs, query, where, or, and } from "firebase/firestore";
+import { UserContext, UserProvider } from "../contextObject";
 
 const CONTAINER_HEIGHT = 80;
 const sectionInHome = {
