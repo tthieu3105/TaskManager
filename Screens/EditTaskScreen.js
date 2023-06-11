@@ -22,7 +22,15 @@ import { Colors } from "react-native/Libraries/NewAppScreen";
 import { SelectList } from "react-native-dropdown-select-list";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { firebase } from "../components/FirebaseConfig";
-
+import { db } from "../components/FirestoreConfig";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  where,
+} from "firebase/firestore";
 const CONTAINER_HEIGHT = 80;
 const inputText = {
   name1: "Project",
@@ -40,11 +48,16 @@ export default function EditTaskScreen({ navigation, route }) {
   const [projectName, setProjectName] = useState(""); // Add state for project name
   const [projectNameData, setProjectNameData] = useState([]); // Add state for project name
   const [startDate, setStartDate] = useState(null); // Add a state for start date
+  const [startTime, setStartTime] = useState(null); // Add a state for start date
+
   const [endDate, setEndDate] = useState(null); // Add a state for start date
+  const [endTime, setEndTime] = useState(null);
   const [dueDateVisible, setDueDateVisible] = useState(false); // Due date
   const [timeVisible, setTimeVisible] = useState(false); //Include time
   const [remindVisible, setRemindVisible] = useState(false); //Remind enable
+  const [assignVisible, setAssignVisible] = useState(false);
   const [remindTime, setRemindTime] = useState("");
+  const [assignee, setAssignee] = useState("");
   const remindOptions = [
     // "On day of event",
     "1 days before",
@@ -55,40 +68,57 @@ export default function EditTaskScreen({ navigation, route }) {
   useEffect(() => {
     const fetchTask = async () => {
       try {
-        const taskDoc = await firebase
-          .firestore()
-          .collection("Task")
-          .doc(taskID)
-          .get();
+        const taskDoc = await getDoc(doc(db, "Task", taskID));
 
         if (taskDoc.exists) {
           const taskData = taskDoc.data();
           setTask(taskData);
           //  Thực hiện tách ngày và giờ riêng của thuộc tính StartTime
-          const startDay = taskData.StartDate.toDate();
+          const startDay = taskData.StartTime.toDate();
           const startDate = startDay.toLocaleDateString();
+          const startTime = startDay.toLocaleTimeString();
           setStartDate(startDate); // Set the startDate state here
+          setStartTime(startTime);
           // Set giá trị includeEndDate, includeTime, Remind
           const includeEndDate = taskData.IncludeEndDate;
           const includeTime = taskData.IncludeTime;
           const remind = taskData.Remind;
-
+          const assignTo = taskData.AssignTo;
+          //In ra kiểu dữ liệu của thuộc tính taskID mà truyền vào
+          console.log("Type of taskID:", typeof taskID); //string
+          //Chuyển kiểu dữ liệu sang int do thuộc tính TaskID trong Firestore là int
+          const task_ID = parseInt(taskID);
           setDueDateVisible(includeEndDate);
           setTimeVisible(includeTime);
           setRemindVisible(remind);
+          setAssignVisible(assignTo);
           //Tách thuộc tính DueDate và DueTime
           if (includeEndDate) {
-            const endDay = taskData.DueDate.toDate();
+            const endDay = taskData.DueTime.toDate();
             const endDate = endDay.toLocaleDateString();
+            const endTime = endDay.toLocaleTimeString();
             setEndDate(endDate); // Set the endDate state here
+            setEndTime(endTime);
           }
           if (remind) {
-            // Tính toán khoảng thời gian giữa DueDate và RemindTime
-            const dueDate = taskData.DueDate.toDate();
-            const remindTime = new Date(taskData.RemindTime); // Chuyển đổi chuỗi thành đối tượng Date
-            const timeDiff = dueDate.getTime() - remindTime.getTime();
-            const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+            //Lấy đối tượng Timestamp trong Firestore và chuyển sang Date
+            const dueTime = taskData.DueTime.toDate();
+            const remindTime = taskData.RemindTime.toDate();
+            // Lấy giá trị ngày từ RemindTime
+            const remindDay = remindTime.getDate();
+
+            // Lấy giá trị ngày từ DueTime
+            const dueDay = dueTime.getDate();
+            // Chuyển đổi giá trị ngày sang kiểu số nguyên
+            const remindDayInt = parseInt(remindDay);
+            const dueDayInt = parseInt(dueDay);
+            // Kết quả là một số nguyên tương ứng với ngày
+            console.log("Remind day:", remindDayInt);
+            console.log("Due day:", dueDayInt);
+            // Tính toán khoảng thời gian giữa DueTime và RemindTime
+            const daysDiff = dueDayInt - remindDayInt;
             // Tìm giá trị tương ứng dựa trên daysDiff
+            console.log("Days Difference:", daysDiff);
             let selectedOption;
             if (daysDiff === 0) {
               selectedOption = "On day of event";
@@ -101,35 +131,55 @@ export default function EditTaskScreen({ navigation, route }) {
             setRemindTime(selectedOption);
           }
 
+          if (assignTo) {
+            const taskUserRef = collection(db, "Task_User");
+            const queryTaskUser = query(
+              taskUserRef,
+              where("TaskID", "==", task_ID)
+            );
+            const taskUserSnapshot = await getDocs(queryTaskUser);
+            if (!taskUserSnapshot.empty) {
+              const assigneeID = taskUserSnapshot.docs[0].data().AssigneeID;
+              console.log("Type of assigneeID:", typeof assigneeID); //number
+              // Fetch project name from Project table
+
+              const userSnapshot = await getDoc(
+                doc(db, "User", assigneeID.toString())
+              );
+
+              if (userSnapshot.exists()) {
+                const userData = userSnapshot.data();
+                const userName = userData.Name;
+                setAssignee(userName);
+              }
+            }
+          }
+
           // Fetch project ID from Project_Task table
-          const projectTaskSnapshot = await firebase
-            .firestore()
-            .collection("Project_Task")
-            .where("TaskID", "==", taskID)
-            .limit(1)
-            .get();
+          const projectTaskRef = collection(db, "Project_Task");
+          const queryProjectTask = query(
+            projectTaskRef,
+            where("TaskID", "==", task_ID)
+          );
 
+          const projectTaskSnapshot = await getDocs(queryProjectTask);
           if (!projectTaskSnapshot.empty) {
-            const projectTaskData = projectTaskSnapshot.docs[0].data();
-            const projectID = projectTaskData.ProjectID;
-
+            const projectID = projectTaskSnapshot.docs[0].data().ProjectID;
+            console.log("Type of projectID:", typeof projectID); //number
             // Fetch project name from Project table
-            const projectSnapshot = await firebase
-              .firestore()
-              .collection("Project")
-              .doc(projectID)
-              .get();
 
-            if (projectSnapshot.exists) {
+            const projectSnapshot = await getDoc(
+              doc(db, "Project", projectID.toString())
+            );
+
+            if (projectSnapshot.exists()) {
               const projectData = projectSnapshot.data();
-              setProjectName(projectData.ProjectName);
+              const nameProject = projectData.ProjectName;
+              setProjectName(nameProject);
             }
           }
           //Fetch all Project's name
-          const projectSnapshot = await firebase
-            .firestore()
-            .collection("Project")
-            .get();
+          const projectSnapshot = await getDocs(collection(db, "Project"));
 
           const projectData = projectSnapshot.docs.map((doc) => {
             const project = doc.data();
@@ -187,20 +237,6 @@ export default function EditTaskScreen({ navigation, route }) {
     extrapolate: "clamp",
   });
   // End of header animation
-  // Drop down list
-  const [selected, setSelected] = React.useState("");
-
-  const data = [
-    { key: "1", value: "Web design" },
-    { key: "2", value: "Mobile" },
-    { key: "3", value: "Cameras" },
-    { key: "4", value: "Computers" },
-    { key: "5", value: "Vegetables" },
-    { key: "6", value: "Diary Products" },
-    { key: "7", value: "Drinks" },
-  ];
-  // End of drop down list
-
   // Calendar
   // Date
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
@@ -287,7 +323,6 @@ export default function EditTaskScreen({ navigation, route }) {
   // Start time
   const [isStartTimePickerVisible, setStartTimePickerVisibility] =
     useState(false);
-  const [startTime, setStartTime] = useState("");
   const [currentDate, setCurrentDate] = useState("");
 
   const showStartTimePicker = () => {
@@ -306,7 +341,6 @@ export default function EditTaskScreen({ navigation, route }) {
   };
   // End Time
   const [isEndTimePickerVisible, setEndTimePickerVisibility] = useState(false);
-  const [endTime, setEndTime] = useState("");
   const showEndTimePicker = () => {
     setEndTimePickerVisibility(true);
   };
@@ -324,7 +358,7 @@ export default function EditTaskScreen({ navigation, route }) {
   // End of calendar
   // Toggle Button
   // Remind
-  const [isEnableRemind, setIsEnableRemind] = useState(true);
+  const [isEnableRemind, setIsEnableRemind] = useState(remindVisible);
   // Hide an Element
   const toggleSwitchRemind = () => {
     if (isEnableRemind) {
@@ -335,7 +369,7 @@ export default function EditTaskScreen({ navigation, route }) {
     setIsEnableRemind((previousState) => !previousState);
   };
   // Due date
-  const [isEnableDueDate, setIsEnableDueDate] = useState(true);
+  const [isEnableDueDate, setIsEnableDueDate] = useState(dueDateVisible);
 
   const toggleSwitchDueDate = () => {
     if (isEnableDueDate) {
@@ -348,9 +382,8 @@ export default function EditTaskScreen({ navigation, route }) {
   // End date
 
   // Assign to
-  const [isEnableAssign, setIsEnableAssign] = useState(true);
+  const [isEnableAssign, setIsEnableAssign] = useState(assignVisible);
 
-  const [assignVisible, setAssignVisible] = useState(false);
   const toggleSwitchAssign = () => {
     if (isEnableAssign) {
       setAssignVisible(false);
@@ -429,6 +462,7 @@ export default function EditTaskScreen({ navigation, route }) {
                     borderWidth: "0",
                   }}
                   maxHeight={200}
+                  defaultValue={projectName}
                 />
               </View>
 
@@ -518,7 +552,7 @@ export default function EditTaskScreen({ navigation, route }) {
                     style={styles.smallInputText}
                     onPress={showStartTimePicker}
                   >
-                    <Text style={styles.textInInputText}>{task.StartTime}</Text>
+                    <Text style={styles.textInInputText}>{startTime}</Text>
                   </TouchableOpacity>
                   <DateTimePickerModal
                     isVisible={isStartTimePickerVisible}
@@ -530,7 +564,7 @@ export default function EditTaskScreen({ navigation, route }) {
                     style={styles.smallInputText}
                     onPress={showEndTimePicker}
                   >
-                    <Text style={styles.textInInputText}>{task.DueTime}</Text>
+                    <Text style={styles.textInInputText}>{endTime}</Text>
                   </TouchableOpacity>
                   <DateTimePickerModal
                     isVisible={isEndTimePickerVisible}
@@ -579,7 +613,7 @@ export default function EditTaskScreen({ navigation, route }) {
                     <Switch
                       trackColor={{ false: "#767577", true: "#81b0ff" }}
                       onValueChange={toggleSwitchRemind}
-                      value={isEnableRemind}
+                      value={remindVisible}
                     />
                   </View>
                 </View>
@@ -619,7 +653,7 @@ export default function EditTaskScreen({ navigation, route }) {
                     <Switch
                       trackColor={{ false: "#767577", true: "#81b0ff" }}
                       onValueChange={toggleSwitchAssign}
-                      value={isEnableAssign}
+                      value={assignVisible}
                     />
                   </View>
                 </View>
@@ -631,7 +665,9 @@ export default function EditTaskScreen({ navigation, route }) {
                         style={styles.textInInputText}
                         placeholder="Enter Username or Email"
                         placeholderTextColor={Colors.placeholder}
-                      ></TextInput>
+                      >
+                        {assignee}
+                      </TextInput>
                     </View>
                   ) : null}
                 </View>

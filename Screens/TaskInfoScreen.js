@@ -42,7 +42,7 @@ const inputText = {
   icon1: "arrow-drop-down-circle",
   icon3: "calendar-today",
   hintText: "Enter Username or Email",
-  disable: "false",
+  disable: false,
 };
 
 export default function TaskInfoScreen({ navigation, route }) {
@@ -60,7 +60,10 @@ export default function TaskInfoScreen({ navigation, route }) {
   const [dueDateVisible, setDueDateVisible] = useState(false); // Due date
   const [timeVisible, setTimeVisible] = useState(false); //Include time
   const [remindVisible, setRemindVisible] = useState(false); //Remind enable
+
   const [remindTime, setRemindTime] = useState("");
+  const [assignVisible, setAssignVisible] = useState(false);
+  const [assignee, setAssignee] = useState("");
   const remindOptions = [
     // "On day of event",
     "1 days before",
@@ -83,14 +86,19 @@ export default function TaskInfoScreen({ navigation, route }) {
 
           setStartDate(startDate); // Set the startDate state here
           setStartTime(startTime);
-          // Set giá trị includeEndDate, includeTime, Remind
+          // Set giá trị includeEndDate, includeTime, Remind, Assign to
           const includeEndDate = taskData.IncludeEndDate;
           const includeTime = taskData.IncludeTime;
           const remind = taskData.Remind;
-
+          const assignTo = taskData.AssignTo;
           setDueDateVisible(includeEndDate);
           setTimeVisible(includeTime);
           setRemindVisible(remind);
+          setAssignVisible(assignTo);
+          //In ra kiểu dữ liệu của thuộc tính taskID mà truyền vào
+          console.log("Type of taskID:", typeof taskID); //string
+          //Chuyển kiểu dữ liệu sang int do thuộc tính TaskID trong Firestore là int
+          const task_ID = parseInt(taskID);
           //Tách thuộc tính DueDate và DueTime
           if (includeEndDate) {
             const endDay = taskData.DueTime.toDate();
@@ -101,12 +109,24 @@ export default function TaskInfoScreen({ navigation, route }) {
             setEndTime(endTime);
           }
           if (remind) {
-            // Tính toán khoảng thời gian giữa DueDate và RemindTime
-            const dueDate = taskData.DueDate.toDate();
-            const remindTime = new Date(taskData.RemindTime); // Chuyển đổi chuỗi thành đối tượng Date
-            const timeDiff = dueDate.getTime() - remindTime.getTime();
-            const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+            //Lấy đối tượng Timestamp trong Firestore và chuyển sang Date
+            const dueTime = taskData.DueTime.toDate();
+            const remindTime = taskData.RemindTime.toDate();
+            // Lấy giá trị ngày từ RemindTime
+            const remindDay = remindTime.getDate();
+
+            // Lấy giá trị ngày từ DueTime
+            const dueDay = dueTime.getDate();
+            // Chuyển đổi giá trị ngày sang kiểu số nguyên
+            const remindDayInt = parseInt(remindDay);
+            const dueDayInt = parseInt(dueDay);
+            // Kết quả là một số nguyên tương ứng với ngày
+            console.log("Remind day:", remindDayInt);
+            console.log("Due day:", dueDayInt);
+            // Tính toán khoảng thời gian giữa DueTime và RemindTime
+            const daysDiff = dueDayInt - remindDayInt;
             // Tìm giá trị tương ứng dựa trên daysDiff
+            console.log("Days Difference:", daysDiff);
             let selectedOption;
             if (daysDiff === 0) {
               selectedOption = "On day of event";
@@ -118,24 +138,46 @@ export default function TaskInfoScreen({ navigation, route }) {
 
             setRemindTime(selectedOption);
           }
+          if (assignTo) {
+            const taskUserRef = collection(db, "Task_User");
+            const queryTaskUser = query(
+              taskUserRef,
+              where("TaskID", "==", task_ID)
+            );
+            const taskUserSnapshot = await getDocs(queryTaskUser);
+            if (!taskUserSnapshot.empty) {
+              const assigneeID = taskUserSnapshot.docs[0].data().AssigneeID;
+              console.log("Type of assigneeID:", typeof assigneeID); //number
+              // Fetch project name from Project table
+
+              const userSnapshot = await getDoc(
+                doc(db, "User", assigneeID.toString())
+              );
+
+              if (userSnapshot.exists()) {
+                const userData = userSnapshot.data();
+                const userName = userData.Name;
+                setAssignee(userName);
+              }
+            }
+          }
 
           // Fetch project ID from Project_Task table
           const projectTaskRef = collection(db, "Project_Task");
           const queryProjectTask = query(
             projectTaskRef,
-            where("TaskID", "==", taskID)
+            where("TaskID", "==", task_ID)
           );
 
           const projectTaskSnapshot = await getDocs(queryProjectTask);
-          if (
-            !projectTaskSnapshot.empty &&
-            projectTaskSnapshot.docs.length > 0
-          ) {
+          if (!projectTaskSnapshot.empty) {
             const projectID = projectTaskSnapshot.docs[0].data().ProjectID;
-            console.log(projectID);
+            console.log("Type of projectID:", typeof projectID); //number
             // Fetch project name from Project table
 
-            const projectSnapshot = await getDoc(doc(db, "Project", projectID));
+            const projectSnapshot = await getDoc(
+              doc(db, "Project", projectID.toString())
+            );
 
             if (projectSnapshot.exists()) {
               const projectData = projectSnapshot.data();
@@ -220,7 +262,7 @@ export default function TaskInfoScreen({ navigation, route }) {
             style={styles.headerBehave}
             onPress={() => navigation.goBack()}
           >
-            <SimpleLineIcons name="arrow-left" size="20" color="black" />
+            <SimpleLineIcons name="arrow-left" size={20} color="black" />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.headerBehave}
@@ -413,19 +455,27 @@ export default function TaskInfoScreen({ navigation, route }) {
                     <Text style={styles.titleInEnableRow}>Assign to</Text>
                   </View>
                   <View style={styles.childRowEnable}>
-                    <Text style={styles.textInEnableRow}>Enable</Text>
+                    <Switch
+                      trackColor={{ false: "#767577", true: "#81b0ff" }}
+                      value={assignVisible}
+                      disabled={true}
+                    />
                   </View>
                 </View>
-                <View>
-                  {/* inputText */}
-                  <View style={styles.inputText}>
-                    <TextInput
-                      style={styles.textInInputText}
-                      placeholderTextColor={Colors.placeholder}
-                      editable={false}
-                    ></TextInput>
+                {assignVisible ? (
+                  <View>
+                    {/* inputText */}
+                    <View style={styles.inputText}>
+                      <TextInput
+                        style={styles.textInInputText}
+                        placeholderTextColor={Colors.placeholder}
+                        editable={false}
+                      >
+                        {assignee}
+                      </TextInput>
+                    </View>
                   </View>
-                </View>
+                ) : null}
               </View>
               {/* End of Remind, End date and Assign to */}
               {/* Description */}
