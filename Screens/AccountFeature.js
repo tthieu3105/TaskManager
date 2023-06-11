@@ -16,6 +16,7 @@ import { SimpleLineIcons } from "@expo/vector-icons";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import AntDesign from "../node_modules/@expo/vector-icons/AntDesign";
 import UserAvatar from "@muhzi/react-native-user-avatar";
+
 import { db } from "../components/FirestoreConfig";
 import {
   collection,
@@ -25,12 +26,11 @@ import {
   or,
   and,
 } from "firebase/firestore";
-
 import { UserContext, UserProvider } from "../contextObject";
 
 const CONTAINER_HEIGHT = 80;
 
-const AccountFeature = async ({ navigation }) => {
+const AccountFeature = ({ navigation }) => {
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
   const offsetAnim = useRef(new Animated.Value(0)).current;
@@ -45,7 +45,8 @@ const AccountFeature = async ({ navigation }) => {
     ),
     0,
     CONTAINER_HEIGHT
-  );   
+  );
+
   var _clampedScrollValue = 0;
   var _offsetValue = 0;
   var _scrollValue = 0;
