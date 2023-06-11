@@ -16,8 +16,8 @@ import {useContext, useState } from "react";
 import { StatusBar } from "expo-status-bar";
 import CreateAccScreen from "./CreateAccScreen";
 import { useNavigation } from "react-router-native";
-
 import { ToastAndroid } from "react-native";
+
 import { db } from "../components/FirestoreConfig";
 import {
   collection,
@@ -27,7 +27,6 @@ import {
   or,
   and,
 } from "firebase/firestore";
-
 import { UserContext, UserProvider } from "../contextObject";
 
 const CONTAINER_HEIGHT = 80;
@@ -80,8 +79,6 @@ const LoginScreen = ({ navigation }) => {
     } else {
       ToastAndroid.show("Invalid UserName or Password!", ToastAndroid.SHORT);
     }
-
-    
 
     // Lấy reference đến node 'User' trong Firebase Realtime Database
     // const usersRef = ref(db, "User");
