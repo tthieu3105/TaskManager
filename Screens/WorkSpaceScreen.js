@@ -185,6 +185,10 @@ const WorkSpaceScreen = ({ navigation }) => {
     getProject();
   }, []);
 
+  // find box
+  const [keyword, setKeyword] = useState("");
+
+
   var _clampedScrollValue = 0;
   var _offsetValue = 0;
   var _scrollValue = 0;
@@ -270,6 +274,7 @@ const WorkSpaceScreen = ({ navigation }) => {
                     style={styles.textInSearchBox}
                     placeholder="Find your project"
                     placeholderTextColor={Colors.placeholder}
+                    onChangeText={(text)=>setKeyword(text)}
                   ></TextInput>
 
                   {/* Xử lý button tìm kiếm */}
@@ -306,7 +311,7 @@ const WorkSpaceScreen = ({ navigation }) => {
                   proName = proName.slice(0, 39) + "...";
                 }
                 return (
-                  <View style={styles.projectFrame} key={p.ProjectID}>
+                  <View style={styles.projectFrame} key={p.ProjectID} navigation={navigation} screenName="Projects">
                     {/* Tên & số lượng công việc */}
                     <View style={styles.smallFrame1}>
                       <Text style={styles.smallTitle2}>{proName}</Text>
