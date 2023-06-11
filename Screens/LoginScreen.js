@@ -61,7 +61,9 @@ const LoginScreen = ({ navigation }) => {
 
     let userID = 0;
     const q = query(
-      collection(db, "User"), and(or(where("UserName", "==", userName), where("Email", "==", userName)), where("Password", "==", password))
+      collection(db, "User"), and(or(where("UserName", "==", userName),
+      where("Email", "==", userName)),
+      where("Password", "==", password))
     );
 
     const querySnapshot = await getDocs(q);
@@ -74,10 +76,10 @@ const LoginScreen = ({ navigation }) => {
 
       setUserId(userID);
 
-      ToastAndroid.show("Login Successfully!", ToastAndroid.SHORT);
+      console.log("Login Successfully!");
       navigation.navigate("HomeNavigator", { userID: userID });
     } else {
-      ToastAndroid.show("Invalid UserName or Password!", ToastAndroid.SHORT);
+      console.log("Invalid UserName or Password!");
     }
 
     // Lấy reference đến node 'User' trong Firebase Realtime Database

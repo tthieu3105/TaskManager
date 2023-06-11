@@ -30,6 +30,8 @@ import { UserContext, UserProvider } from "../contextObject";
 
 const CONTAINER_HEIGHT = 80;
 
+
+
 const AccountFeature = ({ navigation }) => {
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -70,6 +72,30 @@ const AccountFeature = ({ navigation }) => {
     extrapolate: "clamp",
   });
   // End of header animation
+
+  // const {userID} = useContext(UserContext);
+  // const UserInfo = async (userID) => {
+
+
+  //   const q = query(
+  //     collection(db, "User"), where("UserID","==",userID)
+  //   );
+
+  //   const querySnapshot = await getDocs(q);
+
+  //   if(querySnapshot.size>0){
+  //     for(const user of querySnapshot.docs){
+  //       Uname = user.data().Name;
+  //       Career = user.data().Job;
+  //       ULocation = user.data().Location;
+  //       UPhone = user.data().Phone;
+  //     }
+  //     console.log("User data: ", Uname, " ", Career, " ", ULocation, " ", UPhone);
+
+  //   }else{
+  //     console.log("Can't read user's data");
+  //   }
+  // };
 
   return (
     <KeyboardAvoidingView
