@@ -13,7 +13,7 @@ import {
   FlatList,
   ActivityIndicator,
 } from "react-native";
-import React, { Component, useEffect, useRef, useState } from "react";
+import React, { Component, useEffect, useRef } from "react";
 import { Colors } from "react-native/Libraries/NewAppScreen";
 import UserAvatar from "@muhzi/react-native-user-avatar";
 import { Feather, SimpleLineIcons, Ionicons } from "@expo/vector-icons";
