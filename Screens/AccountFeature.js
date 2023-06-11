@@ -9,8 +9,8 @@ import {
   Animated,
 } from "react-native";
 
-import React, { Component, useEffect, useRef, useContext } from "react";
-import {createContext, useState } from "react";
+import React, { Component, useEffect, useRef } from "react";
+import {useContext, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { SimpleLineIcons } from "@expo/vector-icons";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
