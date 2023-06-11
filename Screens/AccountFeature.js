@@ -10,13 +10,27 @@ import {
 } from "react-native";
 
 import React, { Component, useEffect, useRef } from "react";
+import {useContext, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { SimpleLineIcons } from "@expo/vector-icons";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import AntDesign from "../node_modules/@expo/vector-icons/AntDesign";
 import UserAvatar from "@muhzi/react-native-user-avatar";
 
+import { db } from "../components/FirestoreConfig";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  or,
+  and,
+} from "firebase/firestore";
+import { UserContext, UserProvider } from "../contextObject";
+
 const CONTAINER_HEIGHT = 80;
+
+
 
 const AccountFeature = ({ navigation }) => {
   // Header Animation
@@ -58,6 +72,30 @@ const AccountFeature = ({ navigation }) => {
     extrapolate: "clamp",
   });
   // End of header animation
+
+  // const {userID} = useContext(UserContext);
+  // const UserInfo = async (userID) => {
+
+
+  //   const q = query(
+  //     collection(db, "User"), where("UserID","==",userID)
+  //   );
+
+  //   const querySnapshot = await getDocs(q);
+
+  //   if(querySnapshot.size>0){
+  //     for(const user of querySnapshot.docs){
+  //       Uname = user.data().Name;
+  //       Career = user.data().Job;
+  //       ULocation = user.data().Location;
+  //       UPhone = user.data().Phone;
+  //     }
+  //     console.log("User data: ", Uname, " ", Career, " ", ULocation, " ", UPhone);
+
+  //   }else{
+  //     console.log("Can't read user's data");
+  //   }
+  // };
 
   return (
     <KeyboardAvoidingView

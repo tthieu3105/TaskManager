@@ -33,6 +33,11 @@ import {
 } from "firebase/firestore";
 import { ScrollView } from "react-native";
 
+import { useContext, useState } from "react";
+import { db } from "../components/FirestoreConfig";
+import { collection, getDocs, query, where, or, and } from "firebase/firestore";
+import { UserContext, UserProvider } from "../contextObject";
+
 const CONTAINER_HEIGHT = 80;
 const sectionInHome = {
   sectionName: "My Tasks",
@@ -124,6 +129,36 @@ export default function HomeScreen({ navigation }) {
     extrapolate: "clamp",
   });
   // End of header animation
+
+  const { userID } = useContext(UserContext);
+  const UserInfo = async (userID) => {
+    const q = query(collection(db, "User"), where("UserID", "==", userID));
+
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.size > 0) {
+      for (const user of querySnapshot.docs) {
+        Uname = user.data().Name;
+        Career = user.data().Job;
+        ULocation = user.data().Location;
+        UPhone = user.data().Phone;
+      }
+      console.log("User id: ", userID);
+      console.log(
+        "User data: ",
+        Uname,
+        " ",
+        Career,
+        " ",
+        ULocation,
+        " ",
+        UPhone
+      );
+      navigation.navigate("AccountFeature");
+    } else {
+      console.log("Can't read user's data");
+    }
+  };
   if (isLoading) {
     return <ActivityIndicator size="large" color="#0000ff" />;
   }
@@ -154,7 +189,7 @@ export default function HomeScreen({ navigation }) {
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.headerBehave}
-              onPress={() => navigation.navigate("AccountFeature")}
+              onPress={() => UserInfo(userID)}
             >
               <UserAvatar
                 size={40}
