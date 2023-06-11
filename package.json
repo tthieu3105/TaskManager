@@ -10,7 +10,6 @@
   },
   "dependencies": {
     "@muhzi/react-native-user-avatar": "^1.0.7",
-    "@react-native-community/datetimepicker": "6.2.0",
     "@react-navigation/bottom-tabs": "^6.5.7",
     "@react-navigation/stack": "^6.3.16",
     "axios": "^1.4.0",
@@ -20,7 +19,7 @@
     "react": "18.2.0",
     "react-native": "0.71.7",
     "react-native-dropdown-select-list": "^2.0.4",
-    "react-native-modal-datetime-picker": "^15.0.1",
+    "react-native-modal-datetime-picker": "^6.2.0",
     "react-router-native": "^6.11.1"
   },
   "devDependencies": {

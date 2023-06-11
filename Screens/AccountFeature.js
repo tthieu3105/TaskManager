@@ -10,11 +10,23 @@ import {
 } from "react-native";
 
 import React, { Component, useEffect, useRef } from "react";
+import {useContext, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { SimpleLineIcons } from "@expo/vector-icons";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import AntDesign from "../node_modules/@expo/vector-icons/AntDesign";
 import UserAvatar from "@muhzi/react-native-user-avatar";
+
+import { db } from "../components/FirestoreConfig";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  or,
+  and,
+} from "firebase/firestore";
+import { UserContext, UserProvider } from "../contextObject";
 
 const CONTAINER_HEIGHT = 80;
 
