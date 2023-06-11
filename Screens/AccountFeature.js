@@ -9,7 +9,7 @@ import {
   Animated,
 } from "react-native";
 
-import React, { Component, useEffect, useRef } from "react";
+import React, { Component, useEffect, useRef, useContext } from "react";
 import {createContext, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { SimpleLineIcons } from "@expo/vector-icons";
@@ -26,9 +26,7 @@ import {
   and,
 } from "firebase/firestore";
 
-import { UserProvider } from "./LoginScreen";
-import { useContext } from 'react';
-import { UserContext } from "../contextObject";
+import { UserContext, UserProvider } from "../contextObject";
 
 const CONTAINER_HEIGHT = 80;
 
@@ -71,10 +69,6 @@ const AccountFeature = async ({ navigation }) => {
     extrapolate: "clamp",
   });
   // End of header animation
-
-  const { userId } = useContext(UserContext);
-
-  
 
   return (
     <KeyboardAvoidingView

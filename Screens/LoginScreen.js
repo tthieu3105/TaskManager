@@ -38,6 +38,7 @@ import {
 } from "firebase/firestore";
 
 import { UserContext, UserProvider } from "../contextObject";
+
 const CONTAINER_HEIGHT = 80;
 
 const LoginScreen = ({ navigation }) => {
