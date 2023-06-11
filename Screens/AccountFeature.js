@@ -65,12 +65,12 @@ const AccountFeature = ({ navigation }) => {
   // End of header animation
 
   const { userId } = useContext(UserContext);
-  
-  const [Uname, setUname] = useState('');
-  const [Career, setCareer] = useState('');
-  const [ULocation, setULocation] = useState('');
-  const [UPhone, setUPhone] = useState('');
-  const [UMail, setUMail] = useState('');
+
+  const [Uname, setUname] = useState("");
+  const [Career, setCareer] = useState("");
+  const [ULocation, setULocation] = useState("");
+  const [UPhone, setUPhone] = useState("");
+  const [UMail, setUMail] = useState("");
 
   const UserInfo = async (userID) => {
     const q = query(collection(db, "User"), where("UserID", "==", userId));
@@ -93,6 +93,8 @@ const AccountFeature = ({ navigation }) => {
         Career,
         " ",
         ULocation,
+        " ",
+        UMail,
         " ",
         UPhone
       );
@@ -220,9 +222,7 @@ const AccountFeature = ({ navigation }) => {
                   <View style={styles.textFrame}>
                     <Text style={styles.informationTitle}>Location</Text>
                     {/* Location here */}
-                    <Text style={styles.information}>
-                      {ULocation}
-                    </Text>
+                    <Text style={styles.information}>{ULocation}</Text>
                   </View>
                 </View>
               </View>
@@ -240,9 +240,7 @@ const AccountFeature = ({ navigation }) => {
                   <View style={styles.textFrame}>
                     <Text style={styles.informationTitle}>Email</Text>
                     {/* Email here */}
-                    <Text style={styles.information}>
-                      {UMail}
-                    </Text>
+                    <Text style={styles.information}>{UMail}</Text>
                   </View>
                 </View>
               </View>
