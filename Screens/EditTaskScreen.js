@@ -30,6 +30,7 @@ import {
   getDocs,
   query,
   where,
+  updateDoc,
 } from "firebase/firestore";
 const CONTAINER_HEIGHT = 80;
 const inputText = {
@@ -46,6 +47,7 @@ export default function EditTaskScreen({ navigation, route }) {
   const { taskID } = route.params;
   const [task, setTask] = useState(null);
   const [projectName, setProjectName] = useState(""); // Add state for project name
+  const [idProject, setIDProject] = useState("");
   const [projectNameData, setProjectNameData] = useState([]); // Add state for project name
   const [startDate, setStartDate] = useState(null); // Add a state for start date
   const [startTime, setStartTime] = useState(null); // Add a state for start date
@@ -58,6 +60,9 @@ export default function EditTaskScreen({ navigation, route }) {
   const [assignVisible, setAssignVisible] = useState(false);
   const [remindTime, setRemindTime] = useState("");
   const [assignee, setAssignee] = useState("");
+
+  const [selected, setSelected] = React.useState("");
+
   const remindOptions = [
     // "On day of event",
     "1 days before",
@@ -141,7 +146,7 @@ export default function EditTaskScreen({ navigation, route }) {
             if (!taskUserSnapshot.empty) {
               const assigneeID = taskUserSnapshot.docs[0].data().AssigneeID;
               console.log("Type of assigneeID:", typeof assigneeID); //number
-              // Fetch project name from Project table
+              // Fetch assignee name from Project table
 
               const userSnapshot = await getDoc(
                 doc(db, "User", assigneeID.toString())
@@ -175,7 +180,10 @@ export default function EditTaskScreen({ navigation, route }) {
             if (projectSnapshot.exists()) {
               const projectData = projectSnapshot.data();
               const nameProject = projectData.ProjectName;
+              const IdProject = projectData.ProjectID;
               setProjectName(nameProject);
+              setIDProject(IdProject);
+              console.log("Type of Project ID:", IdProject);
             }
           }
           //Fetch all Project's name
@@ -198,6 +206,30 @@ export default function EditTaskScreen({ navigation, route }) {
 
     fetchTask();
   }, [taskID]);
+  //Các trường cần cập nhật dữ liệu
+  const [newTitle, setNewTitle] = useState("");
+  const handleTitleChange = (event) => {
+    setNewTitle(event.target.value); // Cập nhật giá trị mới của newTitle khi người dùng chỉnh sửa trường Title
+  };
+  //Cập nhật dữ liệu
+  const handleDonePress = async () => {
+    try {
+      // Cập nhật giá trị trong Firestore
+      await updateDoc(doc(db, "Task", taskID), {
+        // Các trường cần cập nhật và giá trị mới
+        Title: newTitle,
+
+        // Các trường khác...
+      });
+
+      console.log("Cập nhật thành công");
+      // Thực hiện các hành động khác sau khi cập nhật thành công
+    } catch (error) {
+      console.log("Lỗi khi cập nhật:", error);
+      // Xử lý lỗi nếu có
+    }
+    navigation.goBack();
+  };
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
   const offsetAnim = useRef(new Animated.Value(0)).current;
@@ -421,7 +453,7 @@ export default function EditTaskScreen({ navigation, route }) {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.headerBehave}
-            onPress={() => navigation.goBack()}
+            onPress={handleDonePress}
           >
             <Text style={styles.textHeader}>Done</Text>
           </TouchableOpacity>
@@ -447,7 +479,7 @@ export default function EditTaskScreen({ navigation, route }) {
               <Text style={styles.title}>Project</Text>
               <View style={{ marginHorizontal: 20, marginTop: 10 }}>
                 <SelectList
-                  setSelected={(val) => setSelected(val)}
+                  setSelected={setSelected}
                   data={projectNameData}
                   save="value"
                   boxStyles={{
@@ -462,7 +494,7 @@ export default function EditTaskScreen({ navigation, route }) {
                     borderWidth: "0",
                   }}
                   maxHeight={200}
-                  defaultValue={projectName}
+                  defaultOption={{ key: idProject, value: projectName }}
                 />
               </View>
 
@@ -472,7 +504,12 @@ export default function EditTaskScreen({ navigation, route }) {
 
             {/* Title name */}
             {/* TextInput */}
-            <InputArea name={inputText.name2} content={task.Title}></InputArea>
+            <InputArea
+              value={newTitle}
+              onChange={handleTitleChange}
+              name={inputText.name2}
+              content={task.Title}
+            ></InputArea>
 
             {/* End of TextInput */}
 

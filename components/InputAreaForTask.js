@@ -5,9 +5,10 @@ import {
   TextInput,
   TouchableOpacity,
 } from "react-native";
-import React, { Component } from "react";
+import React, { Component, useState } from "react";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Colors } from "react-native/Libraries/NewAppScreen";
+
 export default class InputArea extends Component {
   render() {
     return (
