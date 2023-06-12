@@ -12,21 +12,14 @@ import {
 import React, { Component, useEffect, useRef } from "react";
 import { Colors } from "react-native/Libraries/NewAppScreen";
 import { Ionicons } from "@expo/vector-icons";
-import {useContext, useState } from "react";
+import { useContext, useState } from "react";
 import { StatusBar } from "expo-status-bar";
 import CreateAccScreen from "./CreateAccScreen";
 import { useNavigation } from "react-router-native";
 import { ToastAndroid } from "react-native";
 
 import { db } from "../components/FirestoreConfig";
-import {
-  collection,
-  getDocs,
-  query,
-  where,
-  or,
-  and,
-} from "firebase/firestore";
+import { collection, getDocs, query, where, or, and } from "firebase/firestore";
 import { UserContext, UserProvider } from "../contextObject";
 
 const CONTAINER_HEIGHT = 80;
@@ -61,15 +54,17 @@ const LoginScreen = ({ navigation }) => {
 
     let userID = 0;
     const q = query(
-      collection(db, "User"), and(or(where("UserName", "==", userName),
-      where("Email", "==", userName)),
-      where("Password", "==", password))
+      collection(db, "User"),
+      and(
+        or(where("UserName", "==", userName), where("Email", "==", userName)),
+        where("Password", "==", password)
+      )
     );
 
     const querySnapshot = await getDocs(q);
 
-    if (querySnapshot.size>0) {
-      for(const user of querySnapshot.docs) {
+    if (querySnapshot.size > 0) {
+      for (const user of querySnapshot.docs) {
         userID = user.data().UserID;
       }
       console.log("user id: ", userID);
@@ -112,8 +107,6 @@ const LoginScreen = ({ navigation }) => {
     //   }
     // });
 
-
-
     // const usersRef = db.collection("User");
     // const snapshot = await usersRef.get();
     // snapshot.forEach((doc) => {
@@ -146,7 +139,6 @@ const LoginScreen = ({ navigation }) => {
     // }
   };
 
-  
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
   const offsetAnim = useRef(new Animated.Value(0)).current;
@@ -259,7 +251,7 @@ const LoginScreen = ({ navigation }) => {
             {/* <TouchableOpacity style={styles.buttonLogin} onPress={() => navigation.navigate("Home")}> */}
             <TouchableOpacity
               style={styles.buttonLogin}
-              onPress={() => LoginFunction(userName, password) }
+              onPress={() => LoginFunction(userName, password)}
             >
               <Text style={styles.textInButton}>Login</Text>
             </TouchableOpacity>

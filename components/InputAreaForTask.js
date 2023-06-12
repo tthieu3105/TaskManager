@@ -5,9 +5,10 @@ import {
   TextInput,
   TouchableOpacity,
 } from "react-native";
-import React, { Component } from "react";
+import React, { Component, useState } from "react";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Colors } from "react-native/Libraries/NewAppScreen";
+
 export default class InputArea extends Component {
   render() {
     return (
@@ -20,7 +21,9 @@ export default class InputArea extends Component {
             placeholder={this.props.placeHolder}
             placeholderTextColor={Colors.placeholder}
             editable={this.props.editableState}
-          ></TextInput>
+          >
+            {this.props.content}
+          </TextInput>
           <TouchableOpacity>
             {/* Icon */}
             <MaterialIcons name={this.props.icon} size={24} color="#363942" />

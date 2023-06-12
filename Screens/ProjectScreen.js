@@ -11,7 +11,8 @@ import HomeSection from "../components/HomeSection";
 import TaskCard from "../components/TaskCardProgress";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRef } from "react";
-
+import AntDesign from "../node_modules/@expo/vector-icons/AntDesign";
+import { BottomPopup } from "../components/BotttomPopup";
 import UserAvatar from "@muhzi/react-native-user-avatar";
 const Progress = ({ step, steps, height }) => {
   const [width, setWidth] = React.useState(0);
@@ -86,7 +87,7 @@ const projectCard = {
   status1: "On Progress",
   icon: "user-circle",
 };
-export default function ProjectScreen() {
+export default function ProjectScreen({ navigation }) {
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
   const offsetAnim = useRef(new Animated.Value(0)).current;
@@ -136,6 +137,24 @@ export default function ProjectScreen() {
       clearInterval(interval);
     };
   }, [index]);
+  // Popup
+  let popupRef = React.createRef();
+  const onShowPopup = () => {
+    popupRef.show();
+  };
+  const onClosePopup = () => {
+    popupRef.close();
+  };
+  // const popupList = [
+  //   {
+  //     id: 1,
+  //     name: "Edit Project",
+  //   },
+  //   {
+  //     id: 2,
+  //     name: "Delete Project",
+  //   },
+  // ];
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -153,8 +172,12 @@ export default function ProjectScreen() {
         ]}
       >
         <View style={styles.rowSection}>
-          <TouchableOpacity style={styles.headerBehave}>
-            <SimpleLineIcons name="bell" size={30} color="black" />
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <AntDesign
+              name="left"
+              size={30}
+              style={styles.headerBehave}
+            ></AntDesign>
           </TouchableOpacity>
           <TouchableOpacity style={styles.headerBehave}>
             <UserAvatar
@@ -185,7 +208,7 @@ export default function ProjectScreen() {
             }}
           >
             <Text style={styles.title}>Web Design</Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={onShowPopup}>
               <MaterialCommunityIcons
                 name="dots-horizontal"
                 size={30}
@@ -193,6 +216,14 @@ export default function ProjectScreen() {
                 style={{ marginHorizontal: 20, marginTop: 20 }}
               />
             </TouchableOpacity>
+            <BottomPopup
+              titleEdit="Edit Project"
+              titleDelete="Delete this Project"
+              navigation={navigation}
+              screenName="EditProject"
+              ref={(target) => (popupRef = target)}
+              onTouchOutside={onClosePopup}
+            />
           </View>
 
           <Text style={styles.detailText}>created in 20/03/2023</Text>

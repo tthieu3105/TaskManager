@@ -10,25 +10,193 @@ import {
   Animated,
   ScrollView,
   KeyboardAvoidingView,
+  ActivityIndicator,
+  Switch,
 } from "react-native";
-import React, { Component, useEffect, useRef } from "react";
-import { Feather, SimpleLineIcons } from "@expo/vector-icons";
+import React, { Component, useEffect, useState, useRef } from "react";
+import {
+  Feather,
+  SimpleLineIcons,
+  MaterialCommunityIcons,
+} from "@expo/vector-icons";
 import Header from "../components/HeaderWithTextAndIcon";
 import { MaterialIcons } from "@expo/vector-icons";
 import InputArea from "../components/InputAreaForTask";
 import { Colors } from "react-native/Libraries/NewAppScreen";
+import { db } from "../components/FirestoreConfig";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  where,
+} from "firebase/firestore";
 const CONTAINER_HEIGHT = 80;
 const inputText = {
   name1: "Project",
   name2: "Title",
-  name3: "Date",
+  name3: "Start date",
+  name5: "Due date",
   name4: "Description",
   icon1: "arrow-drop-down-circle",
   icon3: "calendar-today",
   hintText: "Enter Username or Email",
   disable: false,
 };
-export default function TaskInfoScreen({ navigation }) {
+
+export default function TaskInfoScreen({ navigation, route }) {
+  const { taskID } = route.params;
+  const [task, setTask] = useState(null);
+  const [project, setProject] = useState(null);
+
+  const [projectName, setProjectName] = useState(""); // Add state for project name
+  const [startDate, setStartDate] = useState(null); // Add a state for start date
+  const [startTime, setStartTime] = useState(null); // Add a state for start date
+
+  const [endDate, setEndDate] = useState(null); // Add a state for start date
+  const [endTime, setEndTime] = useState(null); // Add a state for start date
+
+  const [dueDateVisible, setDueDateVisible] = useState(false); // Due date
+  const [timeVisible, setTimeVisible] = useState(false); //Include time
+  const [remindVisible, setRemindVisible] = useState(false); //Remind enable
+
+  const [remindTime, setRemindTime] = useState("");
+  const [assignVisible, setAssignVisible] = useState(false);
+  const [assignee, setAssignee] = useState("");
+  const remindOptions = [
+    // "On day of event",
+    "1 days before",
+    "2 days before",
+    "7 days before",
+    // ...Thêm các giá trị khác vào đây
+  ];
+  useEffect(() => {
+    const fetchTask = async () => {
+      try {
+        const taskDoc = await getDoc(doc(db, "Task", taskID));
+
+        if (taskDoc.exists) {
+          const taskData = taskDoc.data();
+          setTask(taskData);
+          //  Thực hiện tách ngày và giờ riêng của thuộc tính StartTime
+          const startDay = taskData.StartTime.toDate();
+          const startDate = startDay.toLocaleDateString();
+          const startTime = startDay.toLocaleTimeString();
+
+          setStartDate(startDate); // Set the startDate state here
+          setStartTime(startTime);
+          // Set giá trị includeEndDate, includeTime, Remind, Assign to
+          const includeEndDate = taskData.IncludeEndDate;
+          const includeTime = taskData.IncludeTime;
+          const remind = taskData.Remind;
+          const assignTo = taskData.AssignTo;
+          setDueDateVisible(includeEndDate);
+          setTimeVisible(includeTime);
+          setRemindVisible(remind);
+          setAssignVisible(assignTo);
+          //In ra kiểu dữ liệu của thuộc tính taskID mà truyền vào
+          console.log("Type of taskID:", typeof taskID); //string
+          //Chuyển kiểu dữ liệu sang int do thuộc tính TaskID trong Firestore là int
+          const task_ID = parseInt(taskID);
+          //Tách thuộc tính DueDate và DueTime
+          if (includeEndDate) {
+            const endDay = taskData.DueTime.toDate();
+            const endDate = endDay.toLocaleDateString();
+            const endTime = endDay.toLocaleTimeString();
+
+            setEndDate(endDate); // Set the endDate state here
+            setEndTime(endTime);
+          }
+          if (remind) {
+            //Lấy đối tượng Timestamp trong Firestore và chuyển sang Date
+            const dueTime = taskData.DueTime.toDate();
+            const remindTime = taskData.RemindTime.toDate();
+            // Lấy giá trị ngày từ RemindTime
+            const remindDay = remindTime.getDate();
+
+            // Lấy giá trị ngày từ DueTime
+            const dueDay = dueTime.getDate();
+            // Chuyển đổi giá trị ngày sang kiểu số nguyên
+            const remindDayInt = parseInt(remindDay);
+            const dueDayInt = parseInt(dueDay);
+            // Kết quả là một số nguyên tương ứng với ngày
+            console.log("Remind day:", remindDayInt);
+            console.log("Due day:", dueDayInt);
+            // Tính toán khoảng thời gian giữa DueTime và RemindTime
+            const daysDiff = dueDayInt - remindDayInt;
+            // Tìm giá trị tương ứng dựa trên daysDiff
+            console.log("Days Difference:", daysDiff);
+            let selectedOption;
+            if (daysDiff === 0) {
+              selectedOption = "On day of event";
+            } else {
+              selectedOption = remindOptions.find(
+                (option) => parseInt(option) === daysDiff
+              );
+            }
+
+            setRemindTime(selectedOption);
+          }
+          if (assignTo) {
+            const taskUserRef = collection(db, "Task_User");
+            const queryTaskUser = query(
+              taskUserRef,
+              where("TaskID", "==", task_ID)
+            );
+            const taskUserSnapshot = await getDocs(queryTaskUser);
+            if (!taskUserSnapshot.empty) {
+              const assigneeID = taskUserSnapshot.docs[0].data().AssigneeID;
+              console.log("Type of assigneeID:", typeof assigneeID); //number
+              // Fetch project name from Project table
+
+              const userSnapshot = await getDoc(
+                doc(db, "User", assigneeID.toString())
+              );
+
+              if (userSnapshot.exists()) {
+                const userData = userSnapshot.data();
+                const userName = userData.Name;
+                setAssignee(userName);
+              }
+            }
+          }
+
+          // Fetch project ID from Project_Task table
+          const projectTaskRef = collection(db, "Project_Task");
+          const queryProjectTask = query(
+            projectTaskRef,
+            where("TaskID", "==", task_ID)
+          );
+
+          const projectTaskSnapshot = await getDocs(queryProjectTask);
+          if (!projectTaskSnapshot.empty) {
+            const projectID = projectTaskSnapshot.docs[0].data().ProjectID;
+            console.log("Type of projectID:", typeof projectID); //number
+            // Fetch project name from Project table
+
+            const projectSnapshot = await getDoc(
+              doc(db, "Project", projectID.toString())
+            );
+
+            if (projectSnapshot.exists()) {
+              const projectData = projectSnapshot.data();
+              const nameProject = projectData.ProjectName;
+              setProjectName(nameProject);
+            }
+          }
+        } else {
+          // Handle case when task doesn't exist
+          console.log("Task not found");
+        }
+      } catch (error) {
+        console.log("Error fetching task:", error);
+      }
+    };
+
+    fetchTask();
+  }, [taskID]);
+
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
   const offsetAnim = useRef(new Animated.Value(0)).current;
@@ -68,7 +236,10 @@ export default function TaskInfoScreen({ navigation }) {
     extrapolate: "clamp",
   });
   // End of header animation
-
+  if (!task) {
+    // Add a loading indicator or other placeholder component while the task is being fetched
+    return <ActivityIndicator />;
+  }
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -95,7 +266,7 @@ export default function TaskInfoScreen({ navigation }) {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.headerBehave}
-            onPress={() => navigation.navigate("EditTask")}
+            onPress={() => navigation.navigate("EditTask", { taskID })}
           >
             <Text style={styles.textHeader}>Edit</Text>
           </TouchableOpacity>
@@ -119,6 +290,7 @@ export default function TaskInfoScreen({ navigation }) {
             <InputArea
               name={inputText.name1}
               icon={inputText.icon1}
+              content={projectName}
               editableState={inputText.disable}
             ></InputArea>
 
@@ -129,55 +301,72 @@ export default function TaskInfoScreen({ navigation }) {
             {/* TextInput */}
             <InputArea
               name={inputText.name2}
+              content={task.Title}
               editableState={inputText.disable}
             ></InputArea>
-
             {/* End of TextInput */}
 
-            {/* Date  */}
+            {/* Start date  */}
             {/* TextInput */}
             <InputArea
               name={inputText.name3}
+              content={startDate}
               icon={inputText.icon3}
               editableState={inputText.disable}
             ></InputArea>
 
             {/* End of TextInput */}
+            {/* End Date  */}
+            {/* TextInput */}
+            {dueDateVisible ? (
+              <InputArea
+                name={inputText.name5}
+                icon={inputText.icon3}
+                content={endDate}
+                editableState={inputText.disable}
+              ></InputArea>
+            ) : null}
 
+            {/* End of TextInput */}
             {/* Time */}
             {/* TextInput */}
-            <View
-              style={{
-                display: "flex",
-                flexDirection: "row",
-              }}
-            >
-              <Text style={styles.timeTitle}>Start Time</Text>
-              <Text style={styles.timeTitle}>End Time</Text>
-            </View>
+            {timeVisible ? (
+              <View
+                style={{
+                  display: "flex",
+                  flexDirection: "row",
+                  marginHorizontal: 20,
+                  marginTop: 20,
+                }}
+              >
+                {/* Start time */}
+                <View
+                  style={dueDateVisible ? { width: "55%" } : { width: "100%" }}
+                >
+                  <Text style={styles.timeTitle}>Start Time</Text>
+                  <TouchableOpacity
+                    style={[
+                      styles.smallInputText,
+                      dueDateVisible ? styles.width80 : null,
+                    ]}
+                  >
+                    <Text style={styles.textInInputText}>{startTime}</Text>
+                  </TouchableOpacity>
+                </View>
+                {dueDateVisible ? (
+                  <View style={{ width: "45%" }}>
+                    <Text style={styles.timeTitle}>End Time</Text>
+                    <View>
+                      <TouchableOpacity style={styles.smallInputText}>
+                        <Text style={styles.textInInputText}>{endTime}</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ) : null}
+              </View>
+            ) : null}
 
             <View>
-              <View>
-                {/* Input Text */}
-                <View style={styles.inputTextWithTime}>
-                  <View style={styles.smallInputText}>
-                    <TextInput
-                      style={styles.textInInputText}
-                      editable={false}
-                    ></TextInput>
-                    {/* Load dữ liệu lên */}
-                  </View>
-                  <View style={styles.smallInputText}>
-                    <TextInput
-                      style={styles.textInInputText}
-                      editable={false}
-                    ></TextInput>
-                    {/* Load dữ liệu lên */}
-                  </View>
-                </View>
-              </View>
-              {/* End of TextInput */}
-
               {/* Remind, End date and Assign to*/}
               <View style={styles.itemsEnable}>
                 {/* Remind */}
@@ -193,19 +382,25 @@ export default function TaskInfoScreen({ navigation }) {
                     </TouchableOpacity>
                     <Text style={styles.titleInEnableRow}>Remind</Text>
                   </View>
-                  <View style={styles.childRowEnableMiddle}>
-                    <Text style={styles.textInEnableRow}>1 days before</Text>
-                    <TouchableOpacity>
-                      <MaterialIcons
-                        name="arrow-drop-down-circle"
-                        size={24}
-                        color="#363942"
-                        style={{ padding: 3 }}
-                      />
-                    </TouchableOpacity>
-                  </View>
+                  {remindVisible ? (
+                    <View style={styles.childRowEnableMiddle}>
+                      <Text style={styles.textInEnableRow}>{remindTime}</Text>
+                      <TouchableOpacity>
+                        <MaterialIcons
+                          name="arrow-drop-down-circle"
+                          size={24}
+                          color="#363942"
+                          style={{ padding: 3 }}
+                        />
+                      </TouchableOpacity>
+                    </View>
+                  ) : null}
                   <View style={styles.childRowEnable}>
-                    <Text style={styles.textInEnableRow}>Enable</Text>
+                    <Switch
+                      trackColor={{ false: "#767577", true: "#81b0ff" }}
+                      value={remindVisible}
+                      disabled={true}
+                    />
                   </View>
                 </View>
                 {/* End of Remind */}
@@ -221,10 +416,33 @@ export default function TaskInfoScreen({ navigation }) {
                     <Text style={styles.titleInEnableRow}>End date</Text>
                   </View>
                   <View style={styles.childRowEnable}>
-                    <Text style={styles.textInEnableRow}>Enable</Text>
+                    <Switch
+                      trackColor={{ false: "#767577", true: "#81b0ff" }}
+                      value={dueDateVisible}
+                      disabled={true}
+                    />
                   </View>
                 </View>
                 {/* End of due date */}
+                {/* Inlcude time */}
+                <View style={styles.rowEnable}>
+                  <View style={styles.childRowEnable}>
+                    <MaterialCommunityIcons
+                      name="timer-sand-empty"
+                      size={24}
+                      color="black"
+                    />
+                    <Text style={styles.titleInEnableRow}>Include time</Text>
+                  </View>
+                  <View style={styles.childRowEnable}>
+                    <Switch
+                      trackColor={{ false: "#767577", true: "#81b0ff" }}
+                      value={timeVisible}
+                      disabled={true}
+                    />
+                  </View>
+                </View>
+                {/* End of Include time */}
                 {/* Assign to */}
                 <View style={styles.rowEnable}>
                   <View style={styles.childRowEnable}>
@@ -237,19 +455,27 @@ export default function TaskInfoScreen({ navigation }) {
                     <Text style={styles.titleInEnableRow}>Assign to</Text>
                   </View>
                   <View style={styles.childRowEnable}>
-                    <Text style={styles.textInEnableRow}>Enable</Text>
+                    <Switch
+                      trackColor={{ false: "#767577", true: "#81b0ff" }}
+                      value={assignVisible}
+                      disabled={true}
+                    />
                   </View>
                 </View>
-                <View>
-                  {/* inputText */}
-                  <View style={styles.inputText}>
-                    <TextInput
-                      style={styles.textInInputText}
-                      placeholderTextColor={Colors.placeholder}
-                      editable={false}
-                    ></TextInput>
+                {assignVisible ? (
+                  <View>
+                    {/* inputText */}
+                    <View style={styles.inputText}>
+                      <TextInput
+                        style={styles.textInInputText}
+                        placeholderTextColor={Colors.placeholder}
+                        editable={false}
+                      >
+                        {assignee}
+                      </TextInput>
+                    </View>
                   </View>
-                </View>
+                ) : null}
               </View>
               {/* End of Remind, End date and Assign to */}
               {/* Description */}
@@ -262,7 +488,9 @@ export default function TaskInfoScreen({ navigation }) {
                     multiline={true}
                     placeholderTextColor={Colors.placeholder}
                     editable={false}
-                  />
+                  >
+                    {task.Description}
+                  </TextInput>
                 </View>
               </View>
             </View>
@@ -272,8 +500,8 @@ export default function TaskInfoScreen({ navigation }) {
       <View style={styles.createTask}>
         {/*Btn Create Task */}
         <TouchableOpacity>
-          <View style={styles.btnCreateTask}>
-            <Text style={styles.textInBtnCreateTask}>Delete this task</Text>
+          <View style={styles.btnDeleteTask}>
+            <Text style={styles.textInBtnDeleteTask}>Delete this task</Text>
           </View>
         </TouchableOpacity>
       </View>
@@ -307,7 +535,7 @@ const styles = StyleSheet.create({
   textHeader: {
     color: "#3379E4",
     fontWeight: "500",
-    fontSize: 18
+    fontSize: 18,
   },
   inputText: {
     backgroundColor: "#F5F5F5",
@@ -327,20 +555,22 @@ const styles = StyleSheet.create({
   smallInputText: {
     backgroundColor: "#F5F5F5",
     borderRadius: 10,
-    marginHorizontal: 20,
     marginTop: 10,
     alignItems: "center",
     padding: 10,
     flexDirection: "row",
-    width: "40%",
-    height: 38,
     shadowColor: "gray",
     shadowOpacity: 0.5,
     shadowOffset: {
       width: 2,
       height: 2,
     },
+    height: 38,
   },
+  width80: {
+    width: "80%",
+  },
+
   textInInputText: {
     fontSize: 16,
     width: "90%",
@@ -353,9 +583,6 @@ const styles = StyleSheet.create({
     color: "#363942",
     fontSize: 12,
     fontWeight: "bold",
-    marginHorizontal: 20,
-    marginTop: 20,
-    width: "40%",
     shadowColor: "gray",
     shadowOpacity: 0.5,
     shadowOffset: {
@@ -411,7 +638,7 @@ const styles = StyleSheet.create({
     zIndex: 1000,
     elevation: 1000,
   },
-  btnCreateTask: {
+  btnDeleteTask: {
     backgroundColor: "#E7272D",
     borderRadius: 10,
     marginHorizontal: 20,
@@ -425,7 +652,7 @@ const styles = StyleSheet.create({
       height: 2,
     },
   },
-  textInBtnCreateTask: {
+  textInBtnDeleteTask: {
     color: "#F8F6FF",
     fontWeight: "bold",
     fontSize: 16,
