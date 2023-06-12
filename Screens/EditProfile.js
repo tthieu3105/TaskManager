@@ -13,6 +13,8 @@ import React, { Component, useEffect, useRef } from "react";
 import { Feather } from "@expo/vector-icons";
 import AntDesign from "../node_modules/@expo/vector-icons/AntDesign";
 import UserAvatar from "@muhzi/react-native-user-avatar";
+import { db } from "../components/FirebaseConfig";
+import {collection, doc, getDoc, getDocs, query, where,} from "firebase/firestore";
 
 const CONTAINER_HEIGHT = 80;
 

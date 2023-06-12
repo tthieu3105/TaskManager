@@ -12,12 +12,12 @@ import {
 import React, { Component, useEffect, useRef } from "react";
 import { Colors } from "react-native/Libraries/NewAppScreen";
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
+import {useContext, useState } from "react";
 import { StatusBar } from "expo-status-bar";
 import CreateAccScreen from "./CreateAccScreen";
 import { useNavigation } from "react-router-native";
-
 import { ToastAndroid } from "react-native";
+
 import { db } from "../components/FirestoreConfig";
 import {
   collection,
@@ -27,21 +27,25 @@ import {
   or,
   and,
 } from "firebase/firestore";
+import { UserContext, UserProvider } from "../contextObject";
 
 const CONTAINER_HEIGHT = 80;
 
 const LoginScreen = ({ navigation }) => {
   const [userName, setUserName] = useState("");
+
   // Lấy Password
   const [password, setPassword] = useState("");
   const [hidePassword, setHidePassword] = useState(true);
   const [showPasswordIcon, setShowPasswordIcon] = useState("eye-outline");
+
   // Button hiển thị password
   const toggleHidePassword = () => {
     setHidePassword(!hidePassword);
     setShowPasswordIcon(hidePassword ? "eye-off-outline" : "eye-outline");
   };
 
+  const { setUserId } = useContext(UserContext);
   const LoginFunction = async (userName, password) => {
     if (userName === "") {
       ToastAndroid.show(
@@ -57,7 +61,9 @@ const LoginScreen = ({ navigation }) => {
 
     let userID = 0;
     const q = query(
-      collection(db, "User"), and(or(where("UserName", "==", userName), where("Email", "==", userName)), where("Password", "==", password))
+      collection(db, "User"), and(or(where("UserName", "==", userName),
+      where("Email", "==", userName)),
+      where("Password", "==", password))
     );
 
     const querySnapshot = await getDocs(q);
@@ -67,10 +73,13 @@ const LoginScreen = ({ navigation }) => {
         userID = user.data().UserID;
       }
       console.log("user id: ", userID);
-      ToastAndroid.show("Login Successfully!", ToastAndroid.SHORT);
+
+      setUserId(userID);
+
+      console.log("Login Successfully!");
       navigation.navigate("HomeNavigator", { userID: userID });
     } else {
-      ToastAndroid.show("Invalid UserName or Password!", ToastAndroid.SHORT);
+      console.log("Invalid UserName or Password!");
     }
 
     // Lấy reference đến node 'User' trong Firebase Realtime Database
@@ -102,8 +111,42 @@ const LoginScreen = ({ navigation }) => {
     //     console.log("No users found");
     //   }
     // });
+
+
+
+    // const usersRef = db.collection("User");
+    // const snapshot = await usersRef.get();
+    // snapshot.forEach((doc) => {
+    //   console.log(doc.id, "=>", doc.data());
+    // });
+
+    // if (userName === "") {
+    //   ToastAndroid.show(
+    //     "UserName or Email cannot be empty",
+    //     ToastAndroid.SHORT
+    //   );
+    //   return false;
+    // }
+    // if (password === "") {
+    //   ToastAndroid.show("Password cannot be empty", ToastAndroid.SHORT);
+    //   return false;
+    // }
+
+    // const foundUser = doc.find(
+    //   (user) =>
+    //     (user.username === userName || user.email === userName) &&
+    //     user.password === password
+    // );
+    // if (foundUser) {
+    //   ToastAndroid.show("Login Successfully!", ToastAndroid.SHORT);
+
+    //   navigation.navigate("HomeNavigator");
+    // } else {
+    //   ToastAndroid.show("Invalid UserName or Password!", ToastAndroid.SHORT);
+    // }
   };
 
+  
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
   const offsetAnim = useRef(new Animated.Value(0)).current;
@@ -216,7 +259,7 @@ const LoginScreen = ({ navigation }) => {
             {/* <TouchableOpacity style={styles.buttonLogin} onPress={() => navigation.navigate("Home")}> */}
             <TouchableOpacity
               style={styles.buttonLogin}
-              onPress={() => LoginFunction(userName, password)}
+              onPress={() => LoginFunction(userName, password) }
             >
               <Text style={styles.textInButton}>Login</Text>
             </TouchableOpacity>
