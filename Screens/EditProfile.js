@@ -95,6 +95,8 @@ const EditProfile = ({ navigation, route }) => {
     // const oldPhone = user.data().Phone;
     
     
+
+    
     if (Uname != useState(route.params.userName)){
       for (const user of querySnapshot.docs){
         update(user , {Name: newUname});
