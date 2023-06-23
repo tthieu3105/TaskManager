@@ -23,7 +23,7 @@ import { UserContext, UserProvider } from "../contextObject";
 
 const CONTAINER_HEIGHT = 80;
 
-const AccountFeature = ({ navigation }) => {
+const AccountFeature = ({ navigation, route }) => {
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
   const offsetAnim = useRef(new Animated.Value(0)).current;
@@ -71,8 +71,9 @@ const AccountFeature = ({ navigation }) => {
   const [ULocation, setULocation] = useState("");
   const [UPhone, setUPhone] = useState("");
   const [UMail, setUMail] = useState("");
+  const [UGender, setUGender] = useState("");
 
-  const UserInfo = async (userID) => {
+  const UserInfo = async () => {
     const q = query(collection(db, "User"), where("UserID", "==", userId));
 
     const querySnapshot = await getDocs(q);
@@ -84,20 +85,8 @@ const AccountFeature = ({ navigation }) => {
         setULocation(user.data().Location);
         setUPhone(user.data().Phone);
         setUMail(user.data().Email);
+        setUGender(user.data().Gender);
       }
-      console.log("User id: ", userId);
-      console.log(
-        "User data: ",
-        Uname,
-        " ",
-        Career,
-        " ",
-        ULocation,
-        " ",
-        UMail,
-        " ",
-        UPhone
-      );
       navigation.navigate("AccountFeature");
     } else {
       console.log("Can't read user's data");
@@ -126,7 +115,6 @@ const AccountFeature = ({ navigation }) => {
   //     console.log("Can't read user's data");
   //   }
   // };
-
 
   return (
     UserInfo(userId),
@@ -196,7 +184,16 @@ const AccountFeature = ({ navigation }) => {
                 {/* Button: Edit profile */}
                 <TouchableOpacity
                   style={styles.buttonEditProfile}
-                  onPress={() => navigation.navigate("EditProfile")}
+                  onPress={() =>
+                    navigation.navigate("EditProfile", {
+                      userName: Uname,
+                      userEmail: UMail,
+                      userJob: Career,
+                      userGender: UGender,
+                      userPhoneNum: UPhone,
+                      userLocation: ULocation,
+                    })
+                  }
                 >
                   <Text style={styles.textInButton1}>Edit profile</Text>
                 </TouchableOpacity>
