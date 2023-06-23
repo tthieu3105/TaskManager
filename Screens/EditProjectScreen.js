@@ -20,7 +20,7 @@ import { SimpleLineIcons } from "@expo/vector-icons";
 
 const CONTAINER_HEIGHT = 80;
 
-const AddProjectScreen = ({ navigation }) => {
+const EditProjectScreen = ({ navigation }) => {
   // Date
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const [selectedDate, setSelectedDate] = useState("");
@@ -162,7 +162,7 @@ const AddProjectScreen = ({ navigation }) => {
             style={styles.headerBehave}
             onPress={() => navigation.goBack()}
           >
-            <SimpleLineIcons name="arrow-left" size="20" color="black" />
+            <SimpleLineIcons name="arrow-left" size={20} color="black" />
           </TouchableOpacity>
 
           {/* Done  */}
@@ -398,4 +398,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AddProjectScreen;
+export default EditProjectScreen;

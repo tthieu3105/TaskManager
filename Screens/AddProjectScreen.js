@@ -166,11 +166,16 @@ const AddProjectScreen = ({ navigation }) => {
 
           {/* small avatar */}
           <View style={styles.headerBehave}>
-            <UserAvatar
-              size={40}
-              active
-              src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=2900&q=80"
-            />
+          <TouchableOpacity
+              onPress={() => navigation.navigate("AccountFeature")}
+            >
+              <UserAvatar
+                size={40}
+                active
+                src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=2900&q=80"
+              />
+            </TouchableOpacity>
+            
           </View>
         </View>
       </Animated.View>

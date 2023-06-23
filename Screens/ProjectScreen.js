@@ -1,5 +1,5 @@
 import { Text, StyleSheet, View, KeyboardAvoidingView } from "react-native";
-import React, { Component, useEffect } from "react";
+import React, { Component, useEffect, useState } from "react";
 import { StatusBar, Animated } from "react-native";
 import Header from "../components/HeaderWithTextAndAvatar";
 import { ScrollView } from "react-native";
@@ -14,6 +14,16 @@ import { useRef } from "react";
 import AntDesign from "../node_modules/@expo/vector-icons/AntDesign";
 import { BottomPopup } from "../components/BotttomPopup";
 import UserAvatar from "@muhzi/react-native-user-avatar";
+import { db } from "../components/FirestoreConfig";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  where,
+} from "firebase/firestore";
+
 const Progress = ({ step, steps, height }) => {
   const [width, setWidth] = React.useState(0);
   const animatedValue = React.useRef(new Animated.Value(-1000)).current;
@@ -27,7 +37,12 @@ const Progress = ({ step, steps, height }) => {
   }, []);
   React.useEffect(() => {
     //-width + width * step/steps
-    reactive.setValue(-width + (width * step) / steps);
+    if(steps!=0) {
+      reactive.setValue(-width + (width * step) / steps);
+    } else {
+      reactive.setValue(width);
+    }
+    
   }, [step, width]);
   return (
     <>
@@ -87,7 +102,8 @@ const projectCard = {
   status1: "On Progress",
   icon: "user-circle",
 };
-export default function ProjectScreen({ navigation }) {
+
+export default function ProjectScreen({ navigation, route }) {
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
   const offsetAnim = useRef(new Animated.Value(0)).current;
@@ -155,6 +171,102 @@ export default function ProjectScreen({ navigation }) {
   //     name: "Delete Project",
   //   },
   // ];
+
+  const { ProjectID } = route.params ? route.params : {};
+  const [taskList, setTaskList] = useState([]);
+  const [numberOfTask, setNumberOfTask] = useState(0);
+  const [numberOfCompleted, setNumberOfCompleted] = useState(0);
+  const [project, setProject] = useState({});
+
+  const getProjectInfo = async () => {
+    const q1 = query(
+      collection(db, "Project_Task"),
+      where("ProjectID", "==", ProjectID)
+    );
+
+    const querySnapshot1 = await getDocs(q1);
+    const tasks = []
+    let numOfCompleted = 0;
+    if (querySnapshot1.size > 0) {
+      for (const pro_task of querySnapshot1.docs) {
+        const taskRef = doc(db, "Task", pro_task.data().TaskID.toString());
+        const taskSnap = await getDoc(taskRef);
+
+        if (taskSnap.exists()) {
+          let userID = 0;
+          let userAvatar = "";
+          if (taskSnap.data().AssignTo) {
+            const q2 = query(
+              collection(db, "Task_User"),
+              where("TaskID", "==", taskSnap.data().TaskID)
+            );
+            const querySnapshot2 = await getDocs(q2);
+            if (querySnapshot2.size > 0) {
+              const userRef = doc(
+                db,
+                "User",
+                querySnapshot2.docs[0].data().AssigneeID.toString()
+              );
+              const userSnap = await getDoc(userRef);
+              if (userSnap.exists()) {
+                userID = userSnap.data().UserID;
+                userAvatar = userSnap.data().Avatar;
+              }
+            }
+          } else {
+            const userRef = doc(
+              db,
+              "User",
+              taskSnap.data().CreatorID.toString()
+            );
+            const userSnap = await getDoc(userRef);
+            userID = userSnap.data().UserID;
+            userAvatar = userSnap.data().Avatar;
+          }
+          if(taskSnap.data().Status == "Completed") {
+            numOfCompleted++;
+          }
+
+          tasks.push({
+            TaskID: taskSnap.data().TaskID,
+            Title: taskSnap.data().Title,
+            Description: taskSnap.data().Description,
+            Status: taskSnap.data().Status,
+            StartTime: taskSnap.data().StartTime.toDate().toLocaleTimeString(),
+            DueTime: taskSnap.data().DueTime.toDate().toLocaleTimeString(),
+            UserID: userID,
+            UserAvatar: userAvatar,
+          });
+        }
+      }
+      setTaskList(tasks);
+      setNumberOfTask(querySnapshot1.size);
+      setNumberOfCompleted(numOfCompleted);
+    }
+
+    const proRef = doc(db, "Project", ProjectID.toString());
+    const proSnap = await getDoc(proRef);
+    
+    if (proSnap.exists()) {
+      const pro = {
+        ProjectID: ProjectID,
+        ProjectName: proSnap.data().ProjectName,
+        CreatorID: proSnap.data().CreatorID,
+        StartTime: proSnap.data().StartTime.toDate().toLocaleDateString(),
+        EndTime: proSnap.data().EndTime.toDate().toLocaleDateString(),
+      };
+      setProject(pro);
+    }
+  };
+
+  useEffect(() => {
+    getProjectInfo();
+  }, []);
+
+  const DeleteProject = () => {
+    console.log("DeleteProject");
+  };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -179,13 +291,14 @@ export default function ProjectScreen({ navigation }) {
               style={styles.headerBehave}
             ></AntDesign>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.headerBehave}>
+          <TouchableOpacity
+            style={styles.headerBehave}
+            onPress={() => navigation.navigate("AccountFeature")}
+          >
             <UserAvatar
-              initialName="SK"
-              fontSize={15}
               size={40}
-              rounded={true}
-              backgroundColors={["#4B7BE5"]}
+              active
+              src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=2900&q=80"
             />
           </TouchableOpacity>
         </View>
@@ -207,7 +320,7 @@ export default function ProjectScreen({ navigation }) {
               alignItems: "center",
             }}
           >
-            <Text style={styles.title}>Web Design</Text>
+            <Text style={styles.title}>{project.ProjectName}</Text>
             <TouchableOpacity onPress={onShowPopup}>
               <MaterialCommunityIcons
                 name="dots-horizontal"
@@ -221,14 +334,22 @@ export default function ProjectScreen({ navigation }) {
               titleDelete="Delete this Project"
               navigation={navigation}
               screenName="EditProject"
+              projectID={ProjectID}
+              funcDeleteProject={DeleteProject}
               ref={(target) => (popupRef = target)}
               onTouchOutside={onClosePopup}
             />
           </View>
 
-          <Text style={styles.detailText}>created in 20/03/2023</Text>
+          <Text style={styles.detailText}>
+            Started in {project.StartTime}
+          </Text>
           {/* Progress Bar */}
-          <Progress step={5} steps={10} height={20} />
+          <Progress
+            step={numberOfCompleted}
+            steps={numberOfTask}
+            height={20}
+          />
           {/* SearchBox */}
           <View style={styles.SearchBox}>
             <TextInput

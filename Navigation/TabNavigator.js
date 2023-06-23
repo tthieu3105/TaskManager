@@ -28,10 +28,11 @@ import NoteScreen from "../Screens/NoteScreen.js";
 import CreateTaskScreen from "../Screens/CreateTaskScreen.js";
 import NotifyScreen from "../Screens/NotifyScreen.js";
 import TaskInfoScreen from "../Screens/TaskInfoScreen.js";
-// import EditTaskScreen from "../Screens/EditTaskScreen.js";
 import EditNoteScreen from "../Screens/EditNoteScreen.js";
 import EditTaskScreen from "../Screens/EditTaskScreen.js";
 
+import AddProjectScreen from "../Screens/AddProjectScreen.js";
+import EditProjectScreen from "../Screens/EditProjectScreen.js";
 import ProjectScreen from "../Screens/ProjectScreen.js";
 import AllTaskSreen from "../Screens/AllTaskScreen.js";
 import OverdueWSSreen from "../Screens/OverdueWSScreen.js";
@@ -156,6 +157,8 @@ function WorkSpaceScreenStackNavigator() {
       />
       <WorkSpaceScreenStack.Screen name="EditProfile" component={EditProfile} />
       <WorkSpaceScreenStack.Screen name="Projects" component={ProjectScreen} />
+      <WorkSpaceScreenStack.Screen name="AddProject" component={AddProjectScreen} />
+      <WorkSpaceScreenStack.Screen name="EditProject" component={EditProjectScreen} />
       <WorkSpaceScreenStack.Screen name="AllTask" component={AllTaskSreen} />
       <WorkSpaceScreenStack.Screen name="Tasks" component={TaskInfoScreen} />
       <WorkSpaceScreenStack.Screen name="OverdueWS" component={OverdueWSSreen} />
