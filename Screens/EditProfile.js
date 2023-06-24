@@ -16,7 +16,7 @@ import AntDesign from "../node_modules/@expo/vector-icons/AntDesign";
 import UserAvatar from "@muhzi/react-native-user-avatar";
 // import { Dropdown } from 'react-native-element-dropdown';
 
-import { db } from "../components/FirebaseConfig";
+import { db } from "../components/FirestoreConfig";
 import {
   collection,
   doc,
@@ -24,11 +24,12 @@ import {
   getDocs,
   query,
   where,
+  batch,
+  updateDoc,
 } from "firebase/firestore";
 import { UserContext, UserProvider } from "../contextObject";
 import { Colors } from "react-native/Libraries/NewAppScreen";
-import { update } from "firebase/database";
-
+import { ToastAndroid } from "react-native";
 
 const CONTAINER_HEIGHT = 80;
 
@@ -84,10 +85,12 @@ const EditProfile = ({ navigation, route }) => {
   const newUname = Uname;
 
   const reWriteData = async () => {
-    const q = query(collection(db, "User"), where("UserID", "==", userId));
 
-    const querySnapshot = await getDocs(q);
-    
+    // const q = query(collection(db, "User"), where("UserID", "==", userId));
+    // const querySnapshot = await getDocs(q);
+    console.log("user: ", userId, typeof userId);
+    const docRef = doc(db, "User", userId.toString());
+
     // const oldName =  user.data().Name;
     // const oldGender = user.data().Gender;
     // const oldJob = user.data().Job;
@@ -95,18 +98,27 @@ const EditProfile = ({ navigation, route }) => {
     // const oldMail = user.data().Email;
     // const oldPhone = user.data().Phone;
 
-    if (Uname != useState(route.params.userName)){
-      for (const user of querySnapshot.docs){
-        update(user , {Name: newUname});
-      }
-      
+    
+    // if (Uname != useState(route.params.userName)){
+    //   for (const user of querySnapshot.docs){
+    //     update(user , {Name: newUname});
+    //   }
+    //   console.log("Updated");
+    //   // const newName = querySnapshot.update( doc(q) , {Name: newUname})
+    // }else {
+    //   console.log("Nothing to update");
+    // }
+    
+    // Bỏ khoảng trắng ở cuối tên .trim()
+    if (Uname.trim() != route.params.userName){
+      await updateDoc(docRef, {Name: Uname});
+      ToastAndroid.show("Updated", ToastAndroid.SHORT);
       console.log("Updated");
-      // const newName = querySnapshot.update( doc(q) , {Name: newUname})
+      navigation.replace("AccountFeature");
     }else {
       console.log("Nothing to update");
+      navigation.goBack();
     }
-    
-
   };
 
   // const UserInfo = async () => {

@@ -28,4 +28,4 @@ const app = initializeApp(firebaseConfig);
 //const analytics = getAnalytics(app);
 // export const auth = firebase.auth();
 
-export const db = getDatabase(app);
+export const realtimeDb = getDatabase(app);
