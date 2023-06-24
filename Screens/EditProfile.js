@@ -82,8 +82,9 @@ const EditProfile = ({ navigation, route }) => {
   const [UPhone, setUPhone] = useState(route.params.userPhoneNum);
   const [UMail, setUMail] = useState(route.params.userEmail);
   const newUname = Uname;
+
   const reWriteData = async () => {
-    // const q = query(collection(db, "User"), where("UserID", "==", userId));
+    const q = query(collection(db, "User"), where("UserID", "==", userId));
 
     const querySnapshot = await getDocs(q);
     
@@ -93,10 +94,7 @@ const EditProfile = ({ navigation, route }) => {
     // const oldLocation = user.data().Location;
     // const oldMail = user.data().Email;
     // const oldPhone = user.data().Phone;
-    
-    
 
-    
     if (Uname != useState(route.params.userName)){
       for (const user of querySnapshot.docs){
         update(user , {Name: newUname});
@@ -563,7 +561,7 @@ const styles = StyleSheet.create({
     marginBottom: "auto",
     marginTop: "auto",
     marginLeft: 15,
-    marginRight: "auto",
+    marginRight:  15,
   },
   userName: {
     marginLeft: "auto",
