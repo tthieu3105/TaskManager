@@ -17,7 +17,6 @@ import AntDesign from "../node_modules/@expo/vector-icons/AntDesign";
 import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { ToastAndroid } from "react-native";
-import { db } from "../components/FirebaseConfig";
 import {
   ref,
   onValue,
@@ -33,11 +32,33 @@ import {
   createUserWithEmailAndPassword,
 } from "firebase/auth";
 
+import { db } from "../components/FirestoreConfig";
+import { collection, getDocs, query, where, or, and } from "firebase/firestore";
+import { UserContext, UserProvider } from "../contextObject";
+import PopupModal from "./../components/PopUpNotify";
+
+
 const auth = getAuth();
 
 const CONTAINER_HEIGHT = 80;
 
 const CreateAccScreen = ({ navigation }) => {
+  //Popup
+  const [modalVisible, setModalVisible] = useState(false);
+  const [popupType, setPopupType] = useState("");
+  const [popupTitle, setPopupTitle] = useState("");
+  const [popupMessage, setPopupMessage] = useState("");
+  const openModal = (type, title, message) => {
+    setPopupType(type);
+    setPopupTitle(title);
+    setPopupMessage(message);
+    setModalVisible(true);
+  };
+  const closeModal = () => {
+    setModalVisible(false);
+    // navigation.navigate("HomeScreen");
+  };
+
   // Lấy Password & email
   const [password, setPassword] = useState("");
   const [password2, setPassword2] = useState("");
@@ -47,10 +68,10 @@ const CreateAccScreen = ({ navigation }) => {
   const [showPasswordIcon2, setShowPasswordIcon2] = useState("eye-outline");
 
   const [email, setEmail] = useState("");
-
+  const [userNameLogin, setUserNameLogin] = useState("");
   // Thông tin người dùng
   const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
+  // const [lastName, setLastName] = useState("");
   // Button hiển thị password
   const toggleHidePassword = () => {
     setHidePassword(!hidePassword);
@@ -64,22 +85,22 @@ const CreateAccScreen = ({ navigation }) => {
   const auth = getAuth();
 
   //Create account
-  const handleSignUp = () => {
-    auth
-      .createUserWithEmailAndPassword(email, password)
-      .then((userCredentials) => {
-        const user = userCredentials.user;
-        console.log("Loi", user.email);
-      })
-      .catch((error) => alert(error.message));
-  };
+  // const handleSignUp = () => {
+  //   auth
+  //     .createUserWithEmailAndPassword(email, password)
+  //     .then((userCredentials) => {
+  //       const user = userCredentials.user;
+  //       console.log("Loi", user.email);
+  //     })
+  //     .catch((error) => alert(error.message));
+  // };
 
   //confirm password
   const checkConfirm = (email, password, password2) => {
     if (password != password2) {
-      ToastAndroid.show("Your passwords does not match", ToastAndroid.SHORT);
+      openModal("error", "Your passwords don't matched!", "Try again!!!");
     } else {
-      handleSignUp(email, password);
+      // handleSignUp(email, password);
     }
   };
 
@@ -174,13 +195,13 @@ const CreateAccScreen = ({ navigation }) => {
 
           {/* Layout điền tên */}
           <View style={{ flex: 60, backgroundColor: "white" }}>
-            <Text style={styles.smallTitle}>Name</Text>
+            <Text style={styles.smallTitle}>Your information</Text>
 
-            {/* Nhập first name */}
+            {/* Nhập full name */}
             <View style={styles.insertBox}>
               <TextInput
                 style={styles.textInInsertBox}
-                placeholder="First name"
+                placeholder="Your full name"
                 multiline
                 placeholderTextColor={Colors.placeholder}
                 value={firstName}
@@ -189,7 +210,7 @@ const CreateAccScreen = ({ navigation }) => {
             </View>
 
             {/* Nhập last name */}
-            <View style={styles.insertBox}>
+            {/* <View style={styles.insertBox}>
               <TextInput
                 style={styles.textInInsertBox}
                 placeholder="Last name"
@@ -198,7 +219,7 @@ const CreateAccScreen = ({ navigation }) => {
                 value={lastName}
                 onChangeText={(text) => setLastName(text)}
               ></TextInput>
-            </View>
+            </View> */}
 
             {/* Layout thông tin account và button Next */}
             <View>
@@ -217,14 +238,16 @@ const CreateAccScreen = ({ navigation }) => {
               </View>
 
               {/* Nhập username */}
-              {/* <View style={styles.insertBox}>
+              <View style={styles.insertBox}>
                 <TextInput
                   style={styles.textInInsertBox}
                   placeholder="Username"
                   multiline
+                  value = {userNameLogin}
+                  onChangeText={(text) => setUserNameLogin(text)}
                   placeholderTextColor={Colors.placeholder}
                 ></TextInput>
-              </View> */}
+              </View>
 
               {/* Nhập Password */}
               <View style={styles.insertBox}>
@@ -281,6 +304,13 @@ const CreateAccScreen = ({ navigation }) => {
               </TouchableOpacity>
             </View>
           </View>
+          <PopupModal
+            visible={modalVisible}
+            type={popupType}
+            title={popupTitle}
+            message={popupMessage}
+            onClose={closeModal}
+          />
         </View>
       </Animated.ScrollView>
     </KeyboardAvoidingView>

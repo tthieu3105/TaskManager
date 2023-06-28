@@ -30,6 +30,8 @@ import {
 import { UserContext, UserProvider } from "../contextObject";
 import { Colors } from "react-native/Libraries/NewAppScreen";
 import { ToastAndroid } from "react-native";
+import { update } from "firebase/database";
+import PopupModal from "./../components/PopUpNotify";
 
 const CONTAINER_HEIGHT = 80;
 
@@ -84,265 +86,281 @@ const EditProfile = ({ navigation, route }) => {
   const [UMail, setUMail] = useState(route.params.userEmail);
   const newUname = Uname;
 
-  const reWriteData = async () => {
-
-    // const q = query(collection(db, "User"), where("UserID", "==", userId));
-    // const querySnapshot = await getDocs(q);
-    console.log("user: ", userId, typeof userId);
-    const docRef = doc(db, "User", userId.toString());
-
-    // const oldName =  user.data().Name;
-    // const oldGender = user.data().Gender;
-    // const oldJob = user.data().Job;
-    // const oldLocation = user.data().Location;
-    // const oldMail = user.data().Email;
-    // const oldPhone = user.data().Phone;
-
-    
-    // if (Uname != useState(route.params.userName)){
-    //   for (const user of querySnapshot.docs){
-    //     update(user , {Name: newUname});
-    //   }
-    //   console.log("Updated");
-    //   // const newName = querySnapshot.update( doc(q) , {Name: newUname})
-    // }else {
-    //   console.log("Nothing to update");
-    // }
-    
-    // Bỏ khoảng trắng ở cuối tên .trim()
-    if (Uname.trim() != route.params.userName){
-      await updateDoc(docRef, {Name: Uname});
-      ToastAndroid.show("Updated", ToastAndroid.SHORT);
-      console.log("Updated");
-      navigation.replace("AccountFeature");
-    }else {
-      console.log("Nothing to update");
-      navigation.goBack();
-    }
+  const [modalVisible, setModalVisible] = useState(false);
+  const [popupType, setPopupType] = useState("");
+  const [popupTitle, setPopupTitle] = useState("");
+  const [popupMessage, setPopupMessage] = useState("");
+  const openModal = (type, title, message) => {
+    setPopupType(type);
+    setPopupTitle(title);
+    setPopupMessage(message);
+    setModalVisible(true);
+  };
+  const closeModal = () => {
+    setModalVisible(false);
+    navigation.navigate("HomeScreen");
   };
 
-  // const UserInfo = async () => {
-  //   const q = query(collection(db, "User"), where("UserID", "==", userId));
+  //Update thông tin user
+  const reWriteData = async () => {
+    console.log("doing in user: ", userId);
+    const docRef = doc(db, "User", userId.toString());
 
-  //   const querySnapshot = await getDocs(q);
+    if (
+      Uname.trim() == route.params.userName &&
+      Career.trim() == route.params.userJob &&
+      UMail.trim() == route.params.userEmail &&
+      UPhone.trim() == route.params.userPhoneNum &&
+      ULocation.trim() == route.params.userLocation
+    ) {
+      openModal("error", "Nothing to updated!");
+      console.log("Nothing to update");
+      // navigation.navigate("AccountFeature");
+    } else {
+      await updateDoc(docRef, { Name: Uname });
+      console.log("User name updated!");
+      navigation.setParams({ userName: Uname });
 
-  //   if (querySnapshot.size > 0) {
-  //     for (const user of querySnapshot.docs) {
-  //       setUname(user.data().Name);
-  //       setCareer(user.data().Job);
-  //       setULocation(user.data().Location);
-  //       setUPhone(user.data().Phone);
-  //       setUMail(user.data().Email);
-  //     }
+      await updateDoc(docRef, { Job: Career });
+      console.log("User career updated");
+      navigation.setParams({ userJob: Career });
 
-  //     navigation.navigate("AccountFeature");
-  //   } else {
-  //     console.log("Can't read user's data");
-  //   }
-  // };
+      await updateDoc(docRef, { Email: UMail });
+      console.log("User email updated");
+      navigation.setParams({ userEmail: UMail });
+
+      await updateDoc(docRef, { Phone: UPhone });
+      console.log("User phone updated");
+      navigation.setParams({ userPhoneNum: UPhone });
+
+      await updateDoc(docRef, { Location: ULocation });
+      console.log("User Location updated");
+      navigation.setParams({ userLocation: ULocation });
+
+      openModal("success", "Update Successful!");
+      // navigation.navigate("HomeScreen");
+    }
+
+    // Bỏ khoảng trắng ở cuối tên .trim()
+    // if (Uname.trim() != route.params.userName) {
+    //   await updateDoc(docRef, { Name: Uname } );
+    //   console.log("User Name Updated");
+    //   navigation.setParams({ userName: Uname });
+    //   openModal("success", "Update Successful!");
+    //   navigation.navigate("HomeScreen");
+    // }
+    // else {
+    //   openModal("error", "Nothing to updated!");
+    //   console.log("Nothing to update");
+    //   navigation.navigate("AccountFeature");
+    // }
+  };
 
   return (
     // UserInfo(userId),
-    console.log("User name:", Uname, " ", UMail),
-    (
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={{ backgroundColor: "white", flex: 100 }}
-        enabled
-        keyboardVerticalOffset={Platform.select({ ios: 0, android: 500 })}
+    // console.log("User name:", Uname, " ", UMail),
+
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={{ backgroundColor: "white", flex: 100 }}
+      enabled
+      keyboardVerticalOffset={Platform.select({ ios: 0, android: 500 })}
+    >
+      <Animated.View
+        style={[
+          styles.header,
+          { transform: [{ translateY: headerTranslate }] },
+        ]}
       >
-        <Animated.View
-          style={[
-            styles.header,
-            { transform: [{ translateY: headerTranslate }] },
-          ]}
-        >
-          {/* Layout button back và title */}
-          <View style={styles.row}>
-            {/* Button: back to previous screen */}
-            <TouchableOpacity>
-              <AntDesign
-                name="left"
-                size={30}
-                style={styles.arrowIcon}
-                onPress={() => navigation.goBack()}
-              ></AntDesign>
-            </TouchableOpacity>
-            {/* Title */}
-            <Text style={styles.title}>Edit your profile</Text>
-          </View>
-        </Animated.View>
+        {/* Layout button back và title */}
+        <View style={styles.row}>
+          {/* Button: back to previous screen */}
+          <TouchableOpacity>
+            <AntDesign
+              name="left"
+              size={30}
+              style={styles.arrowIcon}
+              onPress={() => navigation.navigate("AccountFeature")}
+            ></AntDesign>
+          </TouchableOpacity>
+          {/* Title */}
+          <Text style={styles.title}>Edit your profile</Text>
+        </View>
+      </Animated.View>
 
-        <Animated.ScrollView
-          onScroll={Animated.event(
-            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-            { useNativeDriver: true }
-          )}
-        >
-          <View>
-            {/* Layout avatar, button Change avatar */}
-            <View
-              style={{
-                flex: 25,
-                backgroundColor: "white",
-              }}
-            >
-              <View>
-                {/* Avatar */}
-                <View style={styles.image}>
-                  <UserAvatar
-                    size={80}
-                    src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=2900&q=80"
-                  />
-
-                  {/* Button: Change avatar */}
-                  <TouchableOpacity style={styles.buttonChangeAvatar}>
-                    <View style={styles.row}>
-                      <Text style={styles.textInButton2}>Change</Text>
-                      <Feather
-                        name="camera"
-                        size={22}
-                        style={styles.whiteIcon}
-                      />
-                    </View>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
-          </View>
-
-          {/* user information */}
+      <Animated.ScrollView
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: true }
+        )}
+      >
+        <View>
+          {/* Layout avatar, button Change avatar */}
           <View
             style={{
-              flex: 75,
+              flex: 25,
               backgroundColor: "white",
             }}
           >
-            {/* Basic information */}
             <View>
-              <Text style={styles.smallTitle}>Basic information</Text>
-              {/* Name */}
+              {/* Avatar */}
+              <View style={styles.image}>
+                <UserAvatar
+                  size={80}
+                  src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=2900&q=80"
+                />
 
-              <Text style={styles.infoTitle}> Name</Text>
-              <View style={styles.insertBox}>
-                <TextInput
-                  style={styles.textInInsertBox}
-                  value={Uname}
-                  onChangeText={(text) => setUname(text)}
-                  placeholderTextColor={Colors.black}
-                ></TextInput>
+                {/* Button: Change avatar */}
+                <TouchableOpacity style={styles.buttonChangeAvatar}>
+                  <View style={styles.row}>
+                    <Text style={styles.textInButton2}>Change</Text>
+                    <Feather name="camera" size={22} style={styles.whiteIcon} />
+                  </View>
+                </TouchableOpacity>
               </View>
-
-              {/* Job */}
-
-              <Text style={styles.infoTitle}>Career</Text>
-              <View style={styles.insertBox}>
-                <TextInput
-                  style={styles.textInInsertBox}
-                  value={Career}
-                  onChangeText={(text) => setCareer(text)}
-                  placeholderTextColor={Colors.black}
-                ></TextInput>
-              </View>
-
-              {/* Gender */}
-              <View>
-                <Text style={styles.infoTitle}>Gender</Text>
-                <View style={styles.insertBox}>
-                  <TouchableOpacity style={styles.frameToInsert}>
-                    {/* Lấy dữ liệu giới tính user cho vào <text/> */}
-                    <Text style={styles.textInInsertBox}></Text>
-                    {/* Button: back to previous screen */}
-                    <TouchableOpacity>
-                      <AntDesign
-                        name="down"
-                        size={30}
-                        style={styles.downIcon}
-                      ></AntDesign>
-                    </TouchableOpacity>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
-
-            {/* Contact information */}
-            <View>
-              <Text style={styles.smallTitle}>Contact information</Text>
-              {/* Email */}
-              <Text style={styles.infoTitle}>Email</Text>
-              <View style={styles.insertBox}>
-                <TextInput
-                  style={styles.textInInsertBox}
-                  value={UMail}
-                  onChangeText={(text) => setUMail(text)}
-                  placeholderTextColor={Colors.black}
-                ></TextInput>
-              </View>
-
-              {/* Phone */}
-              <Text style={styles.infoTitle}>Phone number</Text>
-              <View style={styles.insertBox}>
-                <TextInput
-                  style={styles.textInInsertBox}
-                  value={UPhone}
-                  onChangeText={(text) => setUPhone(text)}
-                  placeholderTextColor={Colors.black}
-                ></TextInput>
-              </View>
-            </View>
-
-            {/* Location & Language */}
-            <View>
-              <Text style={styles.smallTitle}>Location & Language</Text>
-              {/* Location */}
-              <Text style={styles.infoTitle}>Location</Text>
-              <View style={styles.insertBox}>
-                <TextInput
-                  style={styles.textInInsertBox}
-                  value={ULocation}
-                  onChangeText={(text) => setULocation(text)}
-                  placeholderTextColor={Colors.black}
-                ></TextInput>
-              </View>
-
-              {/* Language */}
-              <View>
-                <Text style={styles.infoTitle}>Language</Text>
-                <View style={styles.insertBox}>
-                  <TouchableOpacity style={styles.frameToInsert}>
-                    {/* Lấy dữ liệu giới tính user cho vào <text/> */}
-                    <Text style={styles.textInInsertBox}></Text>
-                    {/* Button: back to previous screen */}
-                    <TouchableOpacity>
-                      <AntDesign
-                        name="down"
-                        size={30}
-                        style={styles.downIcon}
-                      ></AntDesign>
-                    </TouchableOpacity>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
-
-            {/* Button save / discard */}
-            <View style={styles.row}>
-              {/* Discard */}
-              <TouchableOpacity style={styles.buttonDiscard}>
-                <Text style={styles.textInButton1}>Discard</Text>
-              </TouchableOpacity>
-
-              {/* Save */}
-              <TouchableOpacity style={styles.buttonSave}
-                onPress={() => reWriteData()}
-              >
-                <Text style={styles.textInButton}>Save</Text>
-              </TouchableOpacity>
             </View>
           </View>
-        </Animated.ScrollView>
-      </KeyboardAvoidingView>
-    )
+        </View>
+
+        {/* user information */}
+        <View
+          style={{
+            flex: 75,
+            backgroundColor: "white",
+          }}
+        >
+          {/* Basic information */}
+          <View>
+            <Text style={styles.smallTitle}>Basic information</Text>
+            {/* Name */}
+
+            <Text style={styles.infoTitle}> Name</Text>
+            <View style={styles.insertBox}>
+              <TextInput
+                style={styles.textInInsertBox}
+                value={Uname}
+                onChangeText={(text) => setUname(text)}
+                placeholderTextColor={Colors.black}
+              ></TextInput>
+            </View>
+
+            {/* Job */}
+
+            <Text style={styles.infoTitle}>Career</Text>
+            <View style={styles.insertBox}>
+              <TextInput
+                style={styles.textInInsertBox}
+                value={Career}
+                onChangeText={(text) => setCareer(text)}
+                placeholderTextColor={Colors.black}
+              ></TextInput>
+            </View>
+
+            {/* Gender */}
+            <View>
+              <Text style={styles.infoTitle}>Gender</Text>
+              <View style={styles.insertBox}>
+                <TouchableOpacity style={styles.frameToInsert}>
+                  {/* Lấy dữ liệu giới tính user cho vào <text/> */}
+                  <Text style={styles.textInInsertBox}></Text>
+                  {/* Button: back to previous screen */}
+                  <TouchableOpacity>
+                    <AntDesign
+                      name="down"
+                      size={30}
+                      style={styles.downIcon}
+                    ></AntDesign>
+                  </TouchableOpacity>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+
+          {/* Contact information */}
+          <View>
+            <Text style={styles.smallTitle}>Contact information</Text>
+            {/* Email */}
+            <Text style={styles.infoTitle}>Email</Text>
+            <View style={styles.insertBox}>
+              <TextInput
+                style={styles.textInInsertBox}
+                value={UMail}
+                onChangeText={(text) => setUMail(text)}
+                placeholderTextColor={Colors.black}
+              ></TextInput>
+            </View>
+
+            {/* Phone */}
+            <Text style={styles.infoTitle}>Phone number</Text>
+            <View style={styles.insertBox}>
+              <TextInput
+                style={styles.textInInsertBox}
+                value={UPhone}
+                onChangeText={(text) => setUPhone(text)}
+                placeholderTextColor={Colors.black}
+              ></TextInput>
+            </View>
+          </View>
+
+          {/* Location & Language */}
+          <View>
+            <Text style={styles.smallTitle}>Location & Language</Text>
+            {/* Location */}
+            <Text style={styles.infoTitle}>Location</Text>
+            <View style={styles.insertBox}>
+              <TextInput
+                style={styles.textInInsertBox}
+                value={ULocation}
+                onChangeText={(text) => setULocation(text)}
+                placeholderTextColor={Colors.black}
+              ></TextInput>
+            </View>
+
+            {/* Language */}
+            <View>
+              <Text style={styles.infoTitle}>Language</Text>
+              <View style={styles.insertBox}>
+                <TouchableOpacity style={styles.frameToInsert}>
+                  {/* Lấy dữ liệu giới tính user cho vào <text/> */}
+                  <Text style={styles.textInInsertBox}></Text>
+                  {/* Button: back to previous screen */}
+                  <TouchableOpacity>
+                    <AntDesign
+                      name="down"
+                      size={30}
+                      style={styles.downIcon}
+                    ></AntDesign>
+                  </TouchableOpacity>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+
+          {/* Button save / discard */}
+          <View style={styles.row}>
+            {/* Discard */}
+            <TouchableOpacity style={styles.buttonDiscard}>
+              <Text style={styles.textInButton1}>Discard</Text>
+            </TouchableOpacity>
+
+            {/* Save */}
+            <TouchableOpacity
+              style={styles.buttonSave}
+              onPress={() => reWriteData()}
+            >
+              <Text style={styles.textInButton}>Save</Text>
+            </TouchableOpacity>
+          </View>
+          <PopupModal
+            visible={modalVisible}
+            type={popupType}
+            title={popupTitle}
+            message={popupMessage}
+            onClose={closeModal}
+          />
+        </View>
+      </Animated.ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -573,7 +591,7 @@ const styles = StyleSheet.create({
     marginBottom: "auto",
     marginTop: "auto",
     marginLeft: 15,
-    marginRight:  15,
+    marginRight: 15,
   },
   userName: {
     marginLeft: "auto",

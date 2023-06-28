@@ -93,6 +93,17 @@ const AccountFeature = ({ navigation, route }) => {
     }
   };
 
+  // //Hàm logout
+  // const [userLoginName, setUserName] = useState("");
+  // // Lấy Password
+  // const [password, setPassword] = useState("");
+  const LogoutFunction = async (userLoginName, password) => {
+    // setUserName("");
+    // setPassword("");
+    navigation.navigate("Login");
+    console.log("Logout user");
+  };
+
   // const {userID} = useContext(UserContext);
   // const UserInfo = async (userID) => {
 
@@ -302,7 +313,7 @@ const AccountFeature = ({ navigation, route }) => {
               {/* Logout button */}
               <TouchableOpacity
                 style={styles.buttonWarn}
-                onPress={() => navigation.navigate("Login")}
+                onPress={() => LogoutFunction()}
               >
                 <View style={styles.row}>
                   <SimpleLineIcons
