@@ -13,7 +13,13 @@ import {
   KeyboardAvoidingView,
   Switch,
 } from "react-native";
-import React, { Component, useEffect, useRef, useState } from "react";
+import React, {
+  Component,
+  useEffect,
+  useRef,
+  useState,
+  useContext,
+} from "react";
 import {
   Feather,
   MaterialCommunityIcons,
@@ -27,12 +33,217 @@ import { Colors } from "react-native/Libraries/NewAppScreen";
 import UserAvatar from "@muhzi/react-native-user-avatar";
 import { SelectList } from "react-native-dropdown-select-list";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
+import { db } from "../components/FirestoreConfig";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  where,
+  updateDoc,
+  serverTimestamp,
+  addDoc,
+  setDoc,
+} from "firebase/firestore";
+import { UserContext, UserProvider } from "../contextObject";
 
 const CONTAINER_HEIGHT = 80;
 const inputText = {
   name2: "Title",
 };
 export default function CreateTaskScreen({ navigation }) {
+  const { userId } = useContext(UserContext);
+  const [task, setTask] = useState(null);
+  const [projectName, setProjectName] = useState(""); // Add state for project name
+  const [IDProject, setIDProject] = useState("");
+  const [projectNameData, setProjectNameData] = useState([]);
+  const [selectedProject, setSelectedProject] = React.useState(""); // Add state for project name
+  const [startTime, setStartTime] = useState(null); // Add a state for start date
+  const [endTime, setEndTime] = useState(null);
+  const [dueDateVisible, setDueDateVisible] = useState(false); // Due date
+  const [timeVisible, setTimeVisible] = useState(false); //Include time
+  //Remind
+  const [remindVisible, setRemindVisible] = useState(false); //Remind enable
+  const [remindTime, setRemindTime] = useState("");
+  const [idRemind, setIDRemind] = useState("");
+  const [selectedRemind, setSelectedRemind] = React.useState("");
+
+  //Assign
+  const [assignee, setAssignee] = useState("");
+  const [IDAssignee, setIDAssignee] = useState("");
+  const [assigneeNameData, setAssigneeNameData] = useState([]); // Add state for assignee name
+  const [assignVisible, setAssignVisible] = useState(false);
+  const [selectedAssignee, setSelectedAssignee] = React.useState("");
+
+  const [selectedStartDate, setSelectedStartDate] = useState("");
+  const [selectedEndDate, setSelectedEndDate] = useState("");
+  const remindOptions = [
+    { key: "0", value: "On day of event" },
+    { key: "1", value: "1 days before" },
+    { key: "2", value: "2 days before" },
+    { key: "3", value: "7 days before" },
+    // ...Thêm các giá trị khác vào đây
+  ];
+  const handleTitleChange = (value) => {
+    setNewTitle(value); // Cập nhật giá trị mới khi người dùng thay đổi trong InputArea
+  };
+  const handleDescriptionChange = (value) => {
+    setNewDescription(value);
+  };
+  useEffect(() => {
+    // Lấy ngày tháng năm hiện tại và định dạng thành chuỗi
+    const date = new Date();
+    const options = {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    };
+    const formattedDate = date.toLocaleDateString("en-US", options);
+    // Cập nhật state currentDate
+    setSelectedStartDate(formattedDate);
+  }, []);
+
+  useEffect(() => {
+    const fetchProjectNames = async () => {
+      try {
+        const projectSnapshot = await getDocs(collection(db, "Project"));
+        const projectData = projectSnapshot.docs.map((doc) => {
+          const project = doc.data();
+          return { key: doc.id, value: project.ProjectName };
+        });
+        setProjectNameData(projectData);
+      } catch (error) {
+        console.error("Error fetching project names: ", error);
+      }
+    };
+
+    fetchProjectNames();
+  }, []);
+  const handleProjectChange = async (selectedProject) => {
+    const SelectedProject = parseInt(selectedProject);
+    try {
+      const q_projectUser = query(
+        collection(db, "Project_User"),
+        where("ProjectID", "==", SelectedProject)
+      );
+      const projectUserSnapshot = await getDocs(q_projectUser);
+      const assigneeIDs = projectUserSnapshot.docs.map(
+        (doc) => doc.data().AssigneeID
+      );
+      if (assigneeIDs.length > 0) {
+        const q_user = query(
+          collection(db, "User"),
+          where("UserID", "in", assigneeIDs)
+        );
+        const userSnapshot = await getDocs(q_user);
+
+        const assigneeNames = userSnapshot.docs.map((doc) => {
+          const assignee = doc.data();
+          return { key: doc.id, value: assignee.Name };
+        });
+
+        setAssigneeNameData(assigneeNames);
+      } else {
+        setAssigneeNameData([]);
+      }
+    } catch (error) {
+      console.error("Error fetching assignee name: ", error);
+    }
+  };
+
+  const [newTask, setNewTask] = useState({
+    TaskID: 0,
+    CreatedAt: "",
+    CreatorID: "",
+    Title: "",
+    Description: "",
+    ImportantTask: "",
+    Remind: "",
+    RemindTime: "",
+    IncludeEndDate: "",
+    IncludeTime: "",
+    AssignTo: "",
+    StartTime: "",
+    DueTime: "",
+    // ...Thêm các trường dữ liệu khác của task vào đây
+  });
+  const [newTitle, setNewTitle] = useState("");
+  const [newDescription, setNewDescription] = useState("");
+
+  const handleCreateTask = async () => {
+    console.log("selectedStartDate", selectedStartDate);
+    console.log("selectedEndDate", selectedEndDate);
+    console.log("startTime", startTime);
+    console.log("endTime", endTime);
+
+    try {
+      const startDateTime = new Date(
+        `${selectedStartDate} ${timeVisible ? startTime : "09:00 AM"}`
+      );
+      let endDateTime = null;
+      // Set the default value of endDateTime as startDateTime plus 7 days
+      const defaultEndDateTime = new Date(startDateTime);
+      defaultEndDateTime.setDate(defaultEndDateTime.getDate() + 7);
+
+      // Update endDateTime if it is null or undefined
+      if (dueDateVisible) {
+        endDateTime = new Date(
+          `${selectedEndDate} ${timeVisible ? endTime : "09:00 AM"}`
+        );
+      } else {
+        endDateTime = defaultEndDateTime;
+      }
+      console.log("startDateTime", startDateTime);
+      console.log("endDateTime", endDateTime);
+
+      const tasksSnapshot = await getDocs(collection(db, "Task"));
+      const existingTasks = tasksSnapshot.docs.map((doc) => doc.data());
+      // Tìm taskID lớn nhất trong danh sách
+      const maxTaskID = Math.max(
+        ...existingTasks.map((task) => parseInt(task.TaskID))
+      );
+      console.log("maxTaskID", maxTaskID);
+      const newTaskID = maxTaskID + 1;
+      const docRef = doc(collection(db, "Task"), newTaskID.toString());
+
+      console.log("Task created with ID: ", docRef.id);
+      //remindTime
+      let RemindTime = null;
+      if (selectedRemind == "On day of event") {
+        RemindTime = new Date(endDateTime);
+      } else if (selectedRemind == "1 days before") {
+        RemindTime = new Date(endDateTime).setDate(endDateTime.getDate() - 1);
+      } else if (selectedRemind == "2 days before") {
+        RemindTime = new Date(endDateTime).setDate(endDateTime.getDate() - 2);
+      } else if (selectedRemind == "7 days before") {
+        RemindTime = new Date(endDateTime).setDate(endDateTime.getDate() - 7);
+      }
+      setRemindTime(RemindTime);
+
+      console.log("remindTime", remindTime);
+      // Thực hiện các hành động khác sau khi thêm task thành công
+      await setDoc(docRef, {
+        // Document data
+        TaskID: newTaskID,
+        Title: newTitle,
+        Remind: remindVisible,
+        RemindTime: remindTime,
+        IncludeEndDate: dueDateVisible,
+        IncludeTime: timeVisible,
+        AssignTo: assignVisible,
+        Description: newDescription,
+        StartTime: startDateTime,
+        DueTime: endDateTime,
+        // ...
+      });
+    } catch (error) {
+      console.error("Error creating task: ", error);
+      // Xử lý lỗi nếu có
+    }
+    navigation.goBack();
+  };
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
   const offsetAnim = useRef(new Animated.Value(0)).current;
@@ -73,20 +284,6 @@ export default function CreateTaskScreen({ navigation }) {
   });
   // End of header animation
 
-  // Drop down list
-  const [selected, setSelected] = React.useState("");
-
-  const data = [
-    { key: "1", value: "Web design" },
-    { key: "2", value: "Mobile" },
-    { key: "3", value: "Cameras" },
-    { key: "4", value: "Computers" },
-    { key: "5", value: "Vegetables" },
-    { key: "6", value: "Diary Products" },
-    { key: "7", value: "Drinks" },
-  ];
-  // End of drop down list
-
   // Calendar
   // Date
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
@@ -114,7 +311,7 @@ export default function CreateTaskScreen({ navigation }) {
     setDatePickerVisibility(false);
   };
 
-  const handleDateConfirm = (date) => {
+  const handleStartDateConfirm = (date) => {
     // console.warn("A date has been picked: ", date);
 
     // Có 2 cách để hiển thị date dd/mm/yyyy
@@ -133,12 +330,11 @@ export default function CreateTaskScreen({ navigation }) {
       day: "numeric",
     };
     const x = dt.toLocaleDateString("en-US", options);
-    setSelectedDate(x);
+    setSelectedStartDate(x);
     hideDatePicker();
   };
   // End date
   const [isEndDatePickerVisible, setEndDatePickerVisibility] = useState(false);
-  const [selectedEndDate, setSelectedEndDate] = useState("");
   const showEndDatePicker = () => {
     setEndDatePickerVisibility(true);
   };
@@ -173,7 +369,6 @@ export default function CreateTaskScreen({ navigation }) {
   // Start time
   const [isStartTimePickerVisible, setStartTimePickerVisibility] =
     useState(false);
-  const [startTime, setStartTime] = useState("");
   const [currentDate, setCurrentDate] = useState("");
 
   const showStartTimePicker = () => {
@@ -192,7 +387,6 @@ export default function CreateTaskScreen({ navigation }) {
   };
   // End Time
   const [isEndTimePickerVisible, setEndTimePickerVisibility] = useState(false);
-  const [endTime, setEndTime] = useState("");
   const showEndTimePicker = () => {
     setEndTimePickerVisibility(true);
   };
@@ -212,7 +406,6 @@ export default function CreateTaskScreen({ navigation }) {
   // Remind
   const [isEnableRemind, setIsEnableRemind] = useState(false);
   // Hide an Element
-  const [remindVisible, setRemindVisible] = useState(false);
   const toggleSwitchRemind = () => {
     if (isEnableRemind) {
       setRemindVisible(false);
@@ -225,7 +418,6 @@ export default function CreateTaskScreen({ navigation }) {
   const [isEnableDueDate, setIsEnableDueDate] = useState(false);
   const appearDuedate = useRef(new Animated.Value(0)).current;
 
-  const [dueDateVisible, setDueDateVisible] = useState(false);
   const toggleSwitchDueDate = () => {
     if (isEnableDueDate) {
       setDueDateVisible(false);
@@ -244,7 +436,6 @@ export default function CreateTaskScreen({ navigation }) {
   // Include time
   const [isEnableTime, setIsEnableTime] = useState(false);
 
-  const [timeVisible, setTimeVisible] = useState(false);
   const toggleSwitchTime = () => {
     if (isEnableTime) {
       setTimeVisible(false);
@@ -256,7 +447,6 @@ export default function CreateTaskScreen({ navigation }) {
   // Assign to
   const [isEnableAssign, setIsEnableAssign] = useState(false);
 
-  const [assignVisible, setAssignVisible] = useState(false);
   const toggleSwitchAssign = () => {
     if (isEnableAssign) {
       setAssignVisible(false);
@@ -298,7 +488,6 @@ export default function CreateTaskScreen({ navigation }) {
               <UserAvatar
                 initialName="SK"
                 fontSize={15}
-
                 size={40}
                 active
                 src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=2900&q=80"
@@ -325,9 +514,9 @@ export default function CreateTaskScreen({ navigation }) {
                 <Text style={styles.title}>Project</Text>
                 <View style={{ marginHorizontal: 20, marginTop: 10 }}>
                   <SelectList
-                    setSelected={(val) => setSelected(val)}
-                    data={data}
-                    save="value"
+                    setSelected={handleProjectChange}
+                    data={projectNameData}
+                    save="key"
                     boxStyles={{
                       backgroundColor: "#F5F5F5",
                       borderRadius: 10,
@@ -337,7 +526,7 @@ export default function CreateTaskScreen({ navigation }) {
                         width: 2,
                         height: 2,
                       },
-                      borderWidth: 0,
+                      borderWidth: "0",
                     }}
                     maxHeight={200}
                   />
@@ -350,7 +539,13 @@ export default function CreateTaskScreen({ navigation }) {
 
               {/* Title name */}
               {/* TextInput */}
-              <InputArea name={inputText.name2}></InputArea>
+              <InputArea
+                onInputChange={(value) => setNewTitle(value)}
+                value={newTitle}
+                name={inputText.name2}
+                content={newTitle}
+                onChange={handleTitleChange}
+              ></InputArea>
 
               {/* End of TextInput */}
 
@@ -360,7 +555,15 @@ export default function CreateTaskScreen({ navigation }) {
                 <Text style={styles.title}>Start date</Text>
                 {/* inputText */}
                 <View style={styles.inputText}>
-                  <Text style={styles.textInInputText}>{selectedDate}</Text>
+                  <TextInput
+                    value={
+                      selectedStartDate
+                        ? selectedStartDate.toLocaleString()
+                        : ""
+                    }
+                    style={styles.textInInputText}
+                    onChangeText={(text) => setSelectedStartDate(text)}
+                  />
                   <TouchableOpacity onPress={showDatePicker}>
                     {/* Icon */}
                     <MaterialIcons
@@ -375,7 +578,7 @@ export default function CreateTaskScreen({ navigation }) {
                   display="spinner"
                   isVisible={isDatePickerVisible}
                   mode="date"
-                  onConfirm={handleDateConfirm}
+                  onConfirm={handleStartDateConfirm}
                   onCancel={hideDatePicker}
                 />
               </View>
@@ -387,9 +590,14 @@ export default function CreateTaskScreen({ navigation }) {
                   <Text style={styles.title}>Due date</Text>
                   {/* inputText */}
                   <View style={styles.inputText}>
-                    <Text style={styles.textInInputText}>
-                      {selectedEndDate}
-                    </Text>
+                    <TextInput
+                      value={
+                        selectedEndDate ? selectedEndDate.toLocaleString() : ""
+                      }
+                      editable={false}
+                      style={styles.textInInputText}
+                      onChangeText={(text) => setSelectedEndDate(text)}
+                    />
                     <TouchableOpacity onPress={showEndDatePicker}>
                       {/* Icon */}
                       <MaterialIcons
@@ -436,7 +644,12 @@ export default function CreateTaskScreen({ navigation }) {
                       ]}
                       onPress={showStartTimePicker}
                     >
-                      <Text style={styles.textInInputText}>{startTime}</Text>
+                      <TextInput
+                        value={startTime ? startTime.toLocaleString() : ""}
+                        style={styles.textInInputText}
+                        editable={false}
+                        onChangeText={(text) => setStartTime(text)}
+                      />
                     </TouchableOpacity>
                     <DateTimePickerModal
                       isVisible={isStartTimePickerVisible}
@@ -453,7 +666,12 @@ export default function CreateTaskScreen({ navigation }) {
                           style={styles.smallInputText}
                           onPress={showEndTimePicker}
                         >
-                          <Text style={styles.textInInputText}>{endTime}</Text>
+                          <TextInput
+                            value={endTime ? endTime.toLocaleString() : ""}
+                            style={styles.textInInputText}
+                            editable={false}
+                            onChangeText={(text) => setEndTime(text)}
+                          />
                         </TouchableOpacity>
                         <DateTimePickerModal
                           isVisible={isEndTimePickerVisible}
@@ -473,45 +691,6 @@ export default function CreateTaskScreen({ navigation }) {
 
               {/* Remind, End date and Assign to*/}
               <View style={styles.itemsEnable}>
-                {/* Remind */}
-                <View style={styles.rowEnable}>
-                  <View style={styles.childRowEnable}>
-                    <TouchableOpacity>
-                      <MaterialIcons
-                        name="access-alarm"
-                        size={24}
-                        color="black"
-                        style={{ marginRight: 3 }}
-                      />
-                    </TouchableOpacity>
-                    <Text style={styles.titleInEnableRow}>Remind</Text>
-                  </View>
-                  <View style={styles.childRowEnableMiddle}>
-                    {remindVisible ? (
-                      <View style={styles.childRowEnable}>
-                        <Text style={styles.textInEnableRow}>
-                          1 days before
-                        </Text>
-                        <TouchableOpacity>
-                          <MaterialIcons
-                            name="arrow-drop-down-circle"
-                            size={24}
-                            color="#363942"
-                            style={{ padding: 3 }}
-                          />
-                        </TouchableOpacity>
-                      </View>
-                    ) : null}
-                  </View>
-                  <View style={styles.childRowEnable}>
-                    <Switch
-                      trackColor={{ false: "#767577", true: "#81b0ff" }}
-                      onValueChange={toggleSwitchRemind}
-                      value={isEnableRemind}
-                    />
-                  </View>
-                </View>
-                {/* End of Remind */}
                 {/* Due date */}
                 <View style={styles.rowEnable}>
                   <View style={styles.childRowEnable}>
@@ -551,6 +730,51 @@ export default function CreateTaskScreen({ navigation }) {
                   </View>
                 </View>
                 {/* End of Include time */}
+                {/* Remind */}
+                <View style={styles.rowEnable}>
+                  <View style={styles.childRowEnable}>
+                    <TouchableOpacity>
+                      <MaterialIcons
+                        name="access-alarm"
+                        size={24}
+                        color="black"
+                        style={{ marginRight: 3 }}
+                      />
+                    </TouchableOpacity>
+                    <Text style={styles.titleInEnableRow}>Remind</Text>
+                  </View>
+
+                  <View style={styles.childRowEnable}>
+                    <Switch
+                      trackColor={{ false: "#767577", true: "#81b0ff" }}
+                      onValueChange={toggleSwitchRemind}
+                      value={remindVisible}
+                      disabled={dueDateVisible ? false : true}
+                    />
+                  </View>
+                </View>
+                {remindVisible ? (
+                  <View style={{ marginHorizontal: 20, marginVertical: 10 }}>
+                    <SelectList
+                      setSelected={setSelectedRemind}
+                      data={remindOptions}
+                      save="value"
+                      boxStyles={{
+                        backgroundColor: "#F5F5F5",
+                        borderRadius: 10,
+                        shadowColor: "gray",
+                        shadowOpacity: 0.5,
+                        shadowOffset: {
+                          width: 2,
+                          height: 2,
+                        },
+                        borderWidth: "0",
+                      }}
+                      maxHeight={200}
+                    />
+                  </View>
+                ) : null}
+                {/* End of Remind */}
                 {/* Assign to */}
                 <View style={styles.rowEnable}>
                   <View style={styles.childRowEnable}>
@@ -573,13 +797,24 @@ export default function CreateTaskScreen({ navigation }) {
                 <View>
                   {/* inputText */}
                   {assignVisible ? (
-                    <View style={styles.inputText}>
-                      <TextInput
-                        style={styles.textInInputText}
-                        multiline={true}
-                        placeholder="Enter Username or Email"
-                        placeholderTextColor={Colors.placeholder}
-                      ></TextInput>
+                    <View style={{ marginHorizontal: 20, marginVertical: 10 }}>
+                      <SelectList
+                        setSelected={setSelectedAssignee}
+                        data={assigneeNameData}
+                        save="key"
+                        boxStyles={{
+                          backgroundColor: "#F5F5F5",
+                          borderRadius: 10,
+                          shadowColor: "gray",
+                          shadowOpacity: 0.5,
+                          shadowOffset: {
+                            width: 2,
+                            height: 2,
+                          },
+                          borderWidth: "0",
+                        }}
+                        maxHeight={200}
+                      />
                     </View>
                   ) : null}
                 </View>
@@ -594,6 +829,7 @@ export default function CreateTaskScreen({ navigation }) {
                     multiline={true}
                     placeholder="Your description here"
                     placeholderTextColor={Colors.placeholder}
+                    onChangeText={(value) => handleDescriptionChange(value)}
                   />
                 </TouchableOpacity>
               </View>
@@ -602,7 +838,7 @@ export default function CreateTaskScreen({ navigation }) {
         </Animated.ScrollView>
         <View style={styles.createTask}>
           {/*Btn Create Task */}
-          <TouchableOpacity style={styles.button}>
+          <TouchableOpacity style={styles.button} onPress={handleCreateTask}>
             <Text style={styles.textInButton}>Create a new task</Text>
           </TouchableOpacity>
         </View>

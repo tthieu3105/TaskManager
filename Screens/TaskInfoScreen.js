@@ -80,8 +80,14 @@ export default function TaskInfoScreen({ navigation, route }) {
           const taskData = taskDoc.data();
           setTask(taskData);
           //  Thực hiện tách ngày và giờ riêng của thuộc tính StartTime
+          const options = {
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          };
           const startDay = taskData.StartTime.toDate();
-          const startDate = startDay.toLocaleDateString();
+          const startDate = startDay.toLocaleDateString("en-US", options);
           const startTime = startDay.toLocaleTimeString();
 
           setStartDate(startDate); // Set the startDate state here
@@ -102,7 +108,7 @@ export default function TaskInfoScreen({ navigation, route }) {
           //Tách thuộc tính DueDate và DueTime
           if (includeEndDate) {
             const endDay = taskData.DueTime.toDate();
-            const endDate = endDay.toLocaleDateString();
+            const endDate = endDay.toLocaleDateString("en-US", options);
             const endTime = endDay.toLocaleTimeString();
 
             setEndDate(endDate); // Set the endDate state here

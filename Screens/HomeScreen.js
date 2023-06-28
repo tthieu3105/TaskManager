@@ -13,7 +13,13 @@ import {
   FlatList,
   ActivityIndicator,
 } from "react-native";
-import React, { Component, useEffect, useRef } from "react";
+import React, {
+  Component,
+  useEffect,
+  useRef,
+  useContext,
+  useState,
+} from "react";
 import { Colors } from "react-native/Libraries/NewAppScreen";
 import UserAvatar from "@muhzi/react-native-user-avatar";
 import { Feather, SimpleLineIcons, Ionicons } from "@expo/vector-icons";
@@ -23,7 +29,6 @@ import TaskCardCP from "../components/TaskCardCompleted";
 import TaskCardOD from "../components/TaskCardOverdue";
 import TabContainer from "../components/TabContainer";
 
-import { useContext, useState } from "react";
 import { db } from "../components/FirestoreConfig";
 import { collection, getDocs, query, where, or, and } from "firebase/firestore";
 import { UserContext, UserProvider } from "../contextObject";
@@ -46,12 +51,18 @@ const taskCard = {
 };
 
 export default function HomeScreen({ navigation }) {
+  const { userId } = useContext(UserContext);
   const [isLoading, setIsLoading] = useState(true); // Add a state for loading indicator
   const [tasks, setTasks] = useState([]);
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, "Task"));
+        const q = query(
+          collection(db, "Task"),
+          where("CreatorID", "==", userId)
+        );
+        // const querySnapshot = await getDocs(collection(db, "Task"));
+        const querySnapshot = await getDocs(q);
         const tasksData = querySnapshot.docs.map((doc) => {
           const { Description, StartTime, DueTime, Status, Title } = doc.data();
           const startDateTime = StartTime.toDate();
