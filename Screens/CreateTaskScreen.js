@@ -45,6 +45,7 @@ import {
   serverTimestamp,
   addDoc,
   setDoc,
+  Timestamp,
 } from "firebase/firestore";
 import { UserContext, UserProvider } from "../contextObject";
 
@@ -65,7 +66,7 @@ export default function CreateTaskScreen({ navigation }) {
   const [timeVisible, setTimeVisible] = useState(false); //Include time
   //Remind
   const [remindVisible, setRemindVisible] = useState(false); //Remind enable
-  const [remindTime, setRemindTime] = useState("");
+  const [remindTime, setRemindTime] = useState(null);
   const [idRemind, setIDRemind] = useState("");
   const [selectedRemind, setSelectedRemind] = React.useState("");
 
@@ -153,22 +154,6 @@ export default function CreateTaskScreen({ navigation }) {
     }
   };
 
-  const [newTask, setNewTask] = useState({
-    TaskID: 0,
-    CreatedAt: "",
-    CreatorID: "",
-    Title: "",
-    Description: "",
-    ImportantTask: "",
-    Remind: "",
-    RemindTime: "",
-    IncludeEndDate: "",
-    IncludeTime: "",
-    AssignTo: "",
-    StartTime: "",
-    DueTime: "",
-    // ...Thêm các trường dữ liệu khác của task vào đây
-  });
   const [newTitle, setNewTitle] = useState("");
   const [newDescription, setNewDescription] = useState("");
 
@@ -177,12 +162,14 @@ export default function CreateTaskScreen({ navigation }) {
     console.log("selectedEndDate", selectedEndDate);
     console.log("startTime", startTime);
     console.log("endTime", endTime);
-
+    console.log("selectedRemind", selectedRemind);
     try {
       const startDateTime = new Date(
         `${selectedStartDate} ${timeVisible ? startTime : "09:00 AM"}`
       );
       let endDateTime = null;
+      let Remind = null;
+
       // Set the default value of endDateTime as startDateTime plus 7 days
       const defaultEndDateTime = new Date(startDateTime);
       defaultEndDateTime.setDate(defaultEndDateTime.getDate() + 7);
@@ -192,12 +179,30 @@ export default function CreateTaskScreen({ navigation }) {
         endDateTime = new Date(
           `${selectedEndDate} ${timeVisible ? endTime : "09:00 AM"}`
         );
+        if (remindVisible) {
+          if (selectedRemind === "0") {
+            Remind = new Date(endDateTime);
+            setRemindTime(Remind);
+          } else if (selectedRemind === "1") {
+            Remind = new Date(endDateTime);
+            Remind.setDate(Remind.getDate() - 1);
+            setRemindTime(Remind);
+          } else if (selectedRemind === "2") {
+            Remind = new Date(endDateTime);
+            Remind.setDate(Remind.getDate() - 2);
+            setRemindTime(Remind);
+          } else if (selectedRemind === "3") {
+            Remind = new Date(endDateTime);
+            Remind.setDate(Remind.getDate() - 7);
+            setRemindTime(Remind);
+          }
+        }
       } else {
         endDateTime = defaultEndDateTime;
       }
       console.log("startDateTime", startDateTime);
       console.log("endDateTime", endDateTime);
-
+      console.log("Remind", Remind);
       const tasksSnapshot = await getDocs(collection(db, "Task"));
       const existingTasks = tasksSnapshot.docs.map((doc) => doc.data());
       // Tìm taskID lớn nhất trong danh sách
@@ -209,33 +214,29 @@ export default function CreateTaskScreen({ navigation }) {
       const docRef = doc(collection(db, "Task"), newTaskID.toString());
 
       console.log("Task created with ID: ", docRef.id);
-      //remindTime
-      let RemindTime = null;
-      if (selectedRemind == "On day of event") {
-        RemindTime = new Date(endDateTime);
-      } else if (selectedRemind == "1 days before") {
-        RemindTime = new Date(endDateTime).setDate(endDateTime.getDate() - 1);
-      } else if (selectedRemind == "2 days before") {
-        RemindTime = new Date(endDateTime).setDate(endDateTime.getDate() - 2);
-      } else if (selectedRemind == "7 days before") {
-        RemindTime = new Date(endDateTime).setDate(endDateTime.getDate() - 7);
-      }
-      setRemindTime(RemindTime);
-
-      console.log("remindTime", remindTime);
+      //Create at
+      const timestamp = new Date();
+      //Status
+      const status = "On Progress";
+      //ImportantTask
+      const isDefault = false;
       // Thực hiện các hành động khác sau khi thêm task thành công
       await setDoc(docRef, {
         // Document data
-        TaskID: newTaskID,
-        Title: newTitle,
-        Remind: remindVisible,
-        RemindTime: remindTime,
+        AssignTo: assignVisible,
+        CreatedAt: timestamp,
+        CreatorID: userId,
+        Description: newDescription,
+        DueTime: endDateTime,
+        ImportantTask: isDefault,
         IncludeEndDate: dueDateVisible,
         IncludeTime: timeVisible,
-        AssignTo: assignVisible,
-        Description: newDescription,
+        Remind: remindVisible,
+        RemindTime: Remind,
         StartTime: startDateTime,
-        DueTime: endDateTime,
+        Status: status,
+        TaskID: newTaskID,
+        Title: newTitle,
         // ...
       });
     } catch (error) {
@@ -758,7 +759,7 @@ export default function CreateTaskScreen({ navigation }) {
                     <SelectList
                       setSelected={setSelectedRemind}
                       data={remindOptions}
-                      save="value"
+                      save="key"
                       boxStyles={{
                         backgroundColor: "#F5F5F5",
                         borderRadius: 10,
