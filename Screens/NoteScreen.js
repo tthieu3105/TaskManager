@@ -8,6 +8,7 @@ import {
   TextInput,
   Animated,
   KeyboardAvoidingView,
+  ActivityIndicator,
 } from "react-native";
 import React, { Component, useEffect, useRef } from "react";
 import { useState } from "react";
@@ -26,6 +27,8 @@ import { collection, getDocs } from "firebase/firestore";
 import { db } from "../components/FirestoreConfig";
 const CONTAINER_HEIGHT = 80;
 export default function NoteScreen({ navigation }) {
+  const [isLoading, setIsLoading] = useState(true); // Add a state for loading indicator
+
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
   const offsetAnim = useRef(new Animated.Value(0)).current;
@@ -85,6 +88,7 @@ export default function NoteScreen({ navigation }) {
           notes.push({ ...data, CreateAt: formattedDate });
         });
         setnoteList(notes);
+        setIsLoading(false);
       } catch (error) {
         console.error("Lỗi lấy ds note: ", error);
       }
@@ -104,7 +108,7 @@ export default function NoteScreen({ navigation }) {
   // Render danh sách note
   const rendernoteList = () => {
     return noteList.map((note) => (
-      <NoteCard 
+      <NoteCard
         title={note.Title}
         content={note.Description}
         date={note.CreateAt}
@@ -115,7 +119,9 @@ export default function NoteScreen({ navigation }) {
     ));
   };
 
-
+  if (isLoading) {
+    return <ActivityIndicator size="large" color="#0000ff" />;
+  }
   return (
     <TabContainer>
       <KeyboardAvoidingView
