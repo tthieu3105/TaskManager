@@ -76,6 +76,7 @@ export default function NoteScreen({ navigation }) {
         const notes = [];
         querySnapshot.forEach((doc) => {
           const data = doc.data();
+          // console.log(data.NodeID);
           // console.log('key: ', doc.id);
           // console.log('key: ', doc.id);
           const timestamp = data.CreateAt;
@@ -110,7 +111,7 @@ export default function NoteScreen({ navigation }) {
         date={note.CreateAt}
         navigation={navigation}
         screenName="NoteInfo"
-        key={note.NodeID}
+        id = {note.NodeID}
       />
     ));
   };

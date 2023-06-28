@@ -32,41 +32,44 @@ import NoteCard from "../components/NoteCard";
 const CONTAINER_HEIGHT = 80;
 
 const NoteInforScreen = ({ navigation, route }) => {
-  const [note, setNote] = useState('');
-  const { key } = route.params;
-  // console.log("key:", key);
-  // useEffect(() => {
-  //   const fetchNote = async () => {
-  //     try {
-  //       const noteDoc = await getDoc(doc(db, "Note", key));
-  //       if (noteDoc.exists()) {
-  //         const noteData = noteDoc.data();
-  //         setNote(noteData);
-  //       } else {
-  //         console.log("Note key does not exist");
-  //       }
-  //     } catch (error) {
-  //       console.log("Error getting document:", error);
-  //     }
-  //   };
-  //   fetchNote();
-  // }, [key]);
-
   const [currentDate, setCurrentDate] = useState("");
-  // Hiển thị ngày tháng năm hiện tại lên textView:
+  const [note, setNote] = useState('');
+  const { id } = route.params;
+  const node = id.toString();
+
+  //Lấy note đã touch ở NoteScreen
   useEffect(() => {
-    // Lấy ngày tháng năm hiện tại và định dạng thành chuỗi
-    const date = new Date();
-    const options = {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
+    const fetchNote = async () => {
+      try {
+        const noteDoc = await getDoc(doc(db, "Note", node));
+        if (noteDoc.exists()) {
+          const noteData = noteDoc.data();
+          setNote(noteData);
+          const timestamp = noteData.CreateAt;
+          const seconds = timestamp.seconds;
+          const date = new Date(seconds * 1000); // Chuyển đổi thành đối tượng Date
+          const formattedDate = formatDate(date);
+          setCurrentDate(formattedDate); // Định dạng ngày tháng
+        } else {
+          console.log("Note id does not exist");
+        }
+      } catch (error) {
+        console.log("Error getting document:", error);
+      }
     };
-    const formattedDate = date.toLocaleDateString("en-US", options);
-    // Cập nhật state currentDate
-    setCurrentDate(formattedDate);
-  }, []);
+    fetchNote();
+  }, [id]);
+
+  //Format lại định dạng ngày tháng
+  const formatDate = (date) => {
+    const day = ("0" + date.getDate()).slice(-2);
+    const month = ("0" + (date.getMonth() + 1)).slice(-2);
+    const year = date.getFullYear();
+    const hours = ("0" + date.getHours()).slice(-2);
+    const minutes = ("0" + date.getMinutes()).slice(-2);
+
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
+  };
 
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -153,7 +156,7 @@ const NoteInforScreen = ({ navigation, route }) => {
             <Text style={styles.smallTitle}>Title</Text>
             <View style={styles.insertBox}>
               {/* Load title của note lên <text> */}
-              <Text style={styles.textInInsertBox}></Text>
+              <Text style={styles.textInInsertBox}>{note.Title}</Text>
             </View>
 
             {/* Date */}
@@ -170,7 +173,7 @@ const NoteInforScreen = ({ navigation, route }) => {
             <Text style={styles.smallTitle}>Description</Text>
             <View style={styles.noteBox}>
               {/* load nội dung note lên text */}
-              <Text style={styles.textInInsertBox}></Text>
+              <Text style={styles.textInInsertBox}>{note.Description}</Text>
             </View>
           </View>
 

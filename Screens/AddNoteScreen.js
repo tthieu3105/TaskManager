@@ -58,7 +58,7 @@ const AddNoteScreen = ({ navigation }) => {
           Title: noteTitle,
           Description: noteDescription,
           CreateAt: Timestamp.now(),
-          NodeId: sum + 1,
+          NodeID: sum + 1,
           CreatorID: 1,
         };
         const count = {
