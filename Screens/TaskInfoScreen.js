@@ -74,8 +74,8 @@ export default function TaskInfoScreen({ navigation, route }) {
   useEffect(() => {
     const fetchTask = async () => {
       try {
+        console.log("task id:", taskID);
         const taskDoc = await getDoc(doc(db, "Task", taskID));
-
         if (taskDoc.exists) {
           const taskData = taskDoc.data();
           setTask(taskData);

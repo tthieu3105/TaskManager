@@ -18,10 +18,40 @@ import FontAwesome from "../node_modules/@expo/vector-icons/FontAwesome";
 import EvilIcon from "../node_modules/@expo/vector-icons/EvilIcons";
 import AntDesign from "../node_modules/@expo/vector-icons/AntDesign";
 import UserAvatar from "@muhzi/react-native-user-avatar";
+import { db } from "../components/FirestoreConfig";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  where,
+} from "firebase/firestore";
+import NoteCard from "../components/NoteCard";
 
 const CONTAINER_HEIGHT = 80;
 
-const NoteInforScreen = ({ navigation }) => {
+const NoteInforScreen = ({ navigation, route }) => {
+  const [note, setNote] = useState('');
+  const { key } = route.params;
+  console.log("key:", key);
+  useEffect(() => {
+    const fetchNote = async () => {
+      try {
+        const noteDoc = await getDoc(doc(db, "Note", key));
+        if (noteDoc.exists()) {
+          const noteData = noteDoc.data();
+          setNote(noteData);
+        } else {
+          console.log("Note key does not exist");
+        }
+      } catch (error) {
+        console.log("Error getting document:", error);
+      }
+    };
+    fetchNote();
+  }, [key]);
+
   const [currentDate, setCurrentDate] = useState("");
   // Hiển thị ngày tháng năm hiện tại lên textView:
   useEffect(() => {
@@ -123,7 +153,7 @@ const NoteInforScreen = ({ navigation }) => {
             <Text style={styles.smallTitle}>Title</Text>
             <View style={styles.insertBox}>
               {/* Load title của note lên <text> */}
-              <Text style={styles.textInInsertBox}></Text>
+              <Text style={styles.textInInsertBox}>{note.Title}</Text>
             </View>
 
             {/* Date */}
@@ -144,7 +174,7 @@ const NoteInforScreen = ({ navigation }) => {
             </View>
           </View>
 
-          {/* Create note button */}
+          {/* Delete note button */}
           <TouchableOpacity style={styles.button}>
             <Text style={styles.textInButton}>Delete this note</Text>
           </TouchableOpacity>
@@ -153,10 +183,6 @@ const NoteInforScreen = ({ navigation }) => {
     </KeyboardAvoidingView>
   );
 };
-
-// const AddNoteScreen = () => {
-
-// };
 
 const styles = StyleSheet.create({
   header: {

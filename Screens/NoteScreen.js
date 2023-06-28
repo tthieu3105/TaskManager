@@ -66,23 +66,23 @@ export default function NoteScreen({ navigation }) {
   });
   // End of header animation
 
-  //Hiển thị danh sách node đã có trên csdl
+  //Hiển thị danh sách note đã có trên csdl
   const notesCollection = collection(db, "Note");
-  const [nodeList, setNodeList] = useState([]);
+  const [noteList, setnoteList] = useState([]);
   useEffect(() => {
     const fetchData = async () => {
       try {
         const querySnapshot = await getDocs(notesCollection);
-        const nodes = [];
+        const notes = [];
         querySnapshot.forEach((doc) => {
           const data = doc.data();
           const timestamp = data.CreateAt;
           const seconds = timestamp.seconds;
           const date = new Date(seconds * 1000); // Chuyển đổi thành đối tượng Date
           const formattedDate = formatDate(date); // Định dạng ngày tháng
-          nodes.push({ ...data, CreateAt: formattedDate });
+          notes.push({ ...data, CreateAt: formattedDate });
         });
-        setNodeList(nodes);
+        setnoteList(notes);
       } catch (error) {
         console.error("Lỗi lấy ds note: ", error);
       }
@@ -99,17 +99,16 @@ export default function NoteScreen({ navigation }) {
     return `${day}/${month}/${year} ${hours}:${minutes}`;
   };
 
-  // Render danh sách node
-  const renderNodeList = () => {
-    return nodeList.map((node) => (
+  // Render danh sách note
+  const rendernoteList = () => {
+    return noteList.map((note) => (
       <NoteCard 
-        title={node.Title}
-        content={node.Description}
-        date={node.CreateAt}
+        key={note.NodeID}
+        title={note.Title}
+        content={note.Description}
+        date={note.CreateAt}
         navigation={navigation}
         screenName="NoteInfo"
-        firebase={db}
-        key={node.NodeID}
       />
     ));
   };
@@ -196,7 +195,7 @@ export default function NoteScreen({ navigation }) {
                 <FontAwesome name="sort" size={20} color="black" />
               </TouchableOpacity>
             </View>
-            {renderNodeList()}
+            {rendernoteList()}
           </View>
         </Animated.ScrollView>
       </KeyboardAvoidingView>
