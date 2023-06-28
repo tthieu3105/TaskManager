@@ -76,6 +76,8 @@ export default function NoteScreen({ navigation }) {
         const notes = [];
         querySnapshot.forEach((doc) => {
           const data = doc.data();
+          // console.log('key: ', doc.id);
+          // console.log('key: ', doc.id);
           const timestamp = data.CreateAt;
           const seconds = timestamp.seconds;
           const date = new Date(seconds * 1000); // Chuyển đổi thành đối tượng Date
@@ -103,12 +105,12 @@ export default function NoteScreen({ navigation }) {
   const rendernoteList = () => {
     return noteList.map((note) => (
       <NoteCard 
-        key={note.NodeID}
         title={note.Title}
         content={note.Description}
         date={note.CreateAt}
         navigation={navigation}
         screenName="NoteInfo"
+        key={note.NodeID}
       />
     ));
   };
