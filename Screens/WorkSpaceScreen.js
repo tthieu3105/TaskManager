@@ -139,8 +139,8 @@ const WorkSpaceScreen = ({ navigation }) => {
         }
       }
 
-      // Not Started / In Progress / Completed / Overdue
-      const status = { NotStarted: 0, InProgress: 0, Completed: 0, Overdue: 0 };
+      // Not Started / On Progress / Completed / Overdue
+      const status = { NotStarted: 0, OnProgress: 0, Completed: 0, Overdue: 0 };
       // querySnapshot1
       for (const task of querySnapshot1.docs) {
         const docRef = doc(db, "Task", task.data().TaskID.toString());
@@ -149,8 +149,8 @@ const WorkSpaceScreen = ({ navigation }) => {
           case "Not Started":
             status.NotStarted++;
             break;
-          case "In Progress":
-            status.InProgress++;
+          case "On Progress":
+            status.OnProgress++;
             break;
           case "Completed":
             status.Completed++;
@@ -162,7 +162,7 @@ const WorkSpaceScreen = ({ navigation }) => {
       }
       const sum =
         status.NotStarted +
-        status.InProgress +
+        status.OnProgress +
         status.Completed +
         status.Overdue;
       let progress = 0;

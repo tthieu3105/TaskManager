@@ -9,6 +9,7 @@ import { Feather, SimpleLineIcons } from "@expo/vector-icons";
 import { Colors } from "react-native/Libraries/NewAppScreen";
 import HomeSection from "../components/HomeSection";
 import TaskCard from "../components/TaskCardProgress";
+import TaskCardOP from "../components/TaskCardProgress";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRef } from "react";
 import AntDesign from "../node_modules/@expo/vector-icons/AntDesign";
@@ -37,12 +38,11 @@ const Progress = ({ step, steps, height }) => {
   }, []);
   React.useEffect(() => {
     //-width + width * step/steps
-    if(steps!=0) {
+    if (steps != 0) {
       reactive.setValue(-width + (width * step) / steps);
     } else {
       reactive.setValue(width);
     }
-    
   }, [step, width]);
   return (
     <>
@@ -124,6 +124,7 @@ export default function ProjectScreen({ navigation, route }) {
   var _offsetValue = 0;
   var _scrollValue = 0;
   useEffect(() => {
+    getProjectInfo();
     scrollY.addListener(({ value }) => {
       const diff = value - _scrollValue;
       _scrollValue = value;
@@ -177,6 +178,10 @@ export default function ProjectScreen({ navigation, route }) {
   const [numberOfTask, setNumberOfTask] = useState(0);
   const [numberOfCompleted, setNumberOfCompleted] = useState(0);
   const [project, setProject] = useState({});
+  const [isOnProgress, setIsOnProgress] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [isOverdue, setIsOverdue] = useState(false);
+  const [isNotStarted, setIsNotStarted] = useState(false);
 
   const getProjectInfo = async () => {
     const q1 = query(
@@ -185,7 +190,7 @@ export default function ProjectScreen({ navigation, route }) {
     );
 
     const querySnapshot1 = await getDocs(q1);
-    const tasks = []
+    const tasks = [];
     let numOfCompleted = 0;
     if (querySnapshot1.size > 0) {
       for (const pro_task of querySnapshot1.docs) {
@@ -195,6 +200,7 @@ export default function ProjectScreen({ navigation, route }) {
         if (taskSnap.exists()) {
           let userID = 0;
           let userAvatar = "";
+          let name = "";
           if (taskSnap.data().AssignTo) {
             const q2 = query(
               collection(db, "Task_User"),
@@ -211,6 +217,7 @@ export default function ProjectScreen({ navigation, route }) {
               if (userSnap.exists()) {
                 userID = userSnap.data().UserID;
                 userAvatar = userSnap.data().Avatar;
+                name = userSnap.data().Name;
               }
             }
           } else {
@@ -222,8 +229,9 @@ export default function ProjectScreen({ navigation, route }) {
             const userSnap = await getDoc(userRef);
             userID = userSnap.data().UserID;
             userAvatar = userSnap.data().Avatar;
+            name = userSnap.data().Name;
           }
-          if(taskSnap.data().Status == "Completed") {
+          if (taskSnap.data().Status == "Completed") {
             numOfCompleted++;
           }
 
@@ -235,7 +243,9 @@ export default function ProjectScreen({ navigation, route }) {
             StartTime: taskSnap.data().StartTime.toDate().toLocaleTimeString(),
             DueTime: taskSnap.data().DueTime.toDate().toLocaleTimeString(),
             UserID: userID,
+            Name: name,
             UserAvatar: userAvatar,
+            hidden: false,
           });
         }
       }
@@ -243,10 +253,10 @@ export default function ProjectScreen({ navigation, route }) {
       setNumberOfTask(querySnapshot1.size);
       setNumberOfCompleted(numOfCompleted);
     }
-
+    
     const proRef = doc(db, "Project", ProjectID.toString());
     const proSnap = await getDoc(proRef);
-    
+
     if (proSnap.exists()) {
       const pro = {
         ProjectID: ProjectID,
@@ -257,12 +267,49 @@ export default function ProjectScreen({ navigation, route }) {
       };
       setProject(pro);
     }
+    
   };
 
   useEffect(() => {
-    getProjectInfo();
-  }, []);
+    if (taskList.length > 0) {
+      if (taskList.filter((task) => task.Status == "Not Started").length > 0) {
+        setIsNotStarted(true);
+      }
+      if (taskList.filter((task) => task.Status == "On Progress").length > 0) {
+        setIsOnProgress(true);
+      }
+      if (taskList.filter((task) => task.Status == "Completed").length > 0) {
+        setIsCompleted(true);
+      }
+      if (taskList.filter((task) => task.Status == "Overdue").length > 0) {
+        setIsOverdue(true);
+      }
+    }
+  }, [taskList]);
 
+  // Find box
+  const [keyword, setKeyword] = useState("");
+  const handleClearSearchBox = () => {
+    setKeyword("");
+    taskList.map((t) => {
+      t.hidden = false;
+    });
+  };
+
+  const FindKeyword = () => {
+    const key = keyword.toLowerCase();
+    const updatedList = taskList.map((t) => {
+      const title = t.Title.toLowerCase();
+      const description = t.Description.toLowerCase();
+      if (!(title.includes(key) || description.includes(key))) {
+        return { ...t, hidden: true };
+      }
+      return { ...t, hidden: false };
+    });
+    setTaskList(updatedList);
+  };
+
+  // delete project
   const DeleteProject = () => {
     console.log("DeleteProject");
   };
@@ -321,14 +368,14 @@ export default function ProjectScreen({ navigation, route }) {
             }}
           >
             <Text style={styles.title}>{project.ProjectName}</Text>
-            <TouchableOpacity onPress={onShowPopup}>
+            {/* <TouchableOpacity onPress={onShowPopup}>
               <MaterialCommunityIcons
                 name="dots-horizontal"
                 size={30}
                 color="black"
                 style={{ marginHorizontal: 20, marginTop: 20 }}
               />
-            </TouchableOpacity>
+            </TouchableOpacity> */}
             <BottomPopup
               titleEdit="Edit Project"
               titleDelete="Delete this Project"
@@ -341,80 +388,219 @@ export default function ProjectScreen({ navigation, route }) {
             />
           </View>
 
-          <Text style={styles.detailText}>
-            Started in {project.StartTime}
-          </Text>
+          <View style={styles.startIn}>
+            <Text style={styles.detailText}>
+              Started in {project.StartTime}
+            </Text>
+            <TouchableOpacity onPress={onShowPopup}>
+              <MaterialCommunityIcons
+                name="dots-horizontal"
+                size={30}
+                color="black"
+                // style={{ marginHorizontal: 20, marginTop: 20 }}
+              />
+            </TouchableOpacity>
+          </View>
+
           {/* Progress Bar */}
-          <Progress
-            step={numberOfCompleted}
-            steps={numberOfTask}
-            height={20}
-          />
+          <Progress step={numberOfCompleted} steps={numberOfTask} height={20} />
+
           {/* SearchBox */}
           <View style={styles.SearchBox}>
             <TextInput
               style={styles.textInSearchBox}
               placeholder="Find your task"
               placeholderTextColor={Colors.placeholder}
+              onChangeText={(text) => setKeyword(text)}
+              value={keyword}
             ></TextInput>
-            <TouchableOpacity>
+
+            <TouchableOpacity onPress={handleClearSearchBox}>
+              <AntDesign
+                name="closecircle"
+                size={20}
+                style={styles.iconClearSearchBox}
+              />
+            </TouchableOpacity>
+            
+            <TouchableOpacity onPress={FindKeyword}>
               <Feather name="search" size={24} color="#363942" />
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* My Task */}
-        <HomeSection title={sectionInHome.sectionName}></HomeSection>
+        {/* {taskList.map((task) => {
+          let avatar = task.UserAvatar;
+          if (avatar == "") {
+            const name = task.Name;
+            const initials = name
+              .split(" ")
+              .map((name) => name.charAt(0))
+              .join("");
+            avatar = `https://ui-avatars.com/api/?name=${name}&background=random&size=24`;
+          }
+          return (
+            <TaskCard
+              title={task.Title}
+              subtitle={task.Description}
+              time={task.StartTime + " " + task.DueTime}
+              taskStatus={task.Status}
+              avatar={avatar}
+              taskID={task.TaskID.toString()}
+            ></TaskCard>
+          );
+        })} */}
+
+        {/* On progress */}
+        {isOnProgress == true ? (
+          <HomeSection
+            title="On Progress Task"
+            screenName="OnProgressWS"
+            navigation={navigation}
+          ></HomeSection>
+        ) : (
+          <View></View>
+        )}
+
+        {taskList
+          .filter((task) => task.Status == "On Progress" && task.hidden == false)
+          .map((task) => {
+            let avatar = task.UserAvatar;
+            if (avatar == "") {
+              const name = task.Name;
+              const initials = name
+                .split(" ")
+                .map((name) => name.charAt(0))
+                .join("");
+              avatar = `https://ui-avatars.com/api/?name=${name}&background=random&size=24`;
+            }
+            return (
+              <TaskCard
+                title={task.Title}
+                subtitle={task.Description}
+                time={task.StartTime}
+                taskStatus={task.Status}
+                avatar={avatar}
+                taskID={task.TaskID.toString()}
+              ></TaskCard>
+            );
+          })}
+
+        {/* Not started */}
+        {isNotStarted === true ? (
+          <HomeSection
+            title="Not Started"
+            screenName="NotStartedWS"
+            navigation={navigation}
+          ></HomeSection>
+        ) : (
+          <View></View>
+        )}
+
+        {taskList
+          .filter((task) => task.Status == "Not Started" && task.hidden == false)
+          .map((task) => {
+            let avatar = task.UserAvatar;
+            if (avatar == "") {
+              const name = task.Name;
+              const initials = name
+                .split(" ")
+                .map((name) => name.charAt(0))
+                .join("");
+              avatar = `https://ui-avatars.com/api/?name=${name}&background=random&size=24`;
+            }
+            return (
+              <TaskCard
+                title={task.Title}
+                subtitle={task.Description}
+                time={task.StartTime}
+                taskStatus={task.Status}
+                avatar={avatar}
+                taskID={task.TaskID.toString()}
+              ></TaskCard>
+            );
+          })}
+
+        {/* Completed */}
+        {isCompleted === true ? (
+          <HomeSection
+            title="Completed Task"
+            screenName="CompletedWS"
+            navigation={navigation}
+          ></HomeSection>
+        ) : (
+          <View></View>
+        )}
+
+        {taskList
+          .filter((task) => task.Status == "Completed" && task.hidden == false)
+          .map((task) => {
+            let avatar = task.UserAvatar;
+            if (avatar == "") {
+              const name = task.Name;
+              const initials = name
+                .split(" ")
+                .map((name) => name.charAt(0))
+                .join("");
+              avatar = `https://ui-avatars.com/api/?name=${name}&background=random&size=24`;
+            }
+            return (
+              <TaskCard
+                title={task.Title}
+                subtitle={task.Description}
+                time={task.StartTime}
+                taskStatus={task.Status}
+                avatar={avatar}
+                taskID={task.TaskID.toString()}
+              ></TaskCard>
+            );
+          })}
+
+        {/* Overdue */}
+        {isOverdue === true ? (
+          <HomeSection
+            title="Overdue Task"
+            screenName="OverdueWS"
+            navigation={navigation}
+          ></HomeSection>
+        ) : (
+          <View></View>
+        )}
+
+        {taskList
+          .filter((task) => task.Status == "Overdue" && task.hidden == false)
+          .map((task) => {
+            let avatar = task.UserAvatar;
+            if (avatar == "") {
+              const name = task.Name;
+              const initials = name
+                .split(" ")
+                .map((name) => name.charAt(0))
+                .join("");
+              avatar = `https://ui-avatars.com/api/?name=${name}&background=random&size=24`;
+            }
+            return (
+              <TaskCard
+                title={task.Title}
+                subtitle={task.Description}
+                time={task.StartTime}
+                taskStatus={task.Status}
+                avatar={avatar}
+                taskID={task.TaskID.toString()}
+              ></TaskCard>
+            );
+          })}
+
         {/* TaskCard */}
-        <TaskCard
+        {/* <TaskCard
           title={projectCard.title1}
           subtitle={projectCard.subtitle1}
           time={projectCard.time1}
           status={projectCard.status1}
           iconName={projectCard.icon}
-        ></TaskCard>
-        {/* End of TaskCard */}
-        {/* TaskCard */}
-        <TaskCard
-          title={projectCard.title1}
-          subtitle={projectCard.subtitle1}
-          time={projectCard.time1}
-          status={projectCard.status1}
-          iconName={projectCard.icon}
-        ></TaskCard>
+        ></TaskCard> */}
         {/* End of TaskCard */}
         {/* End of My Task */}
-
-        {/* All Tasks */}
-        <HomeSection title={sectionInHome.sectionName2}></HomeSection>
-        {/* TaskCard */}
-        <TaskCard
-          title={projectCard.title1}
-          subtitle={projectCard.subtitle1}
-          time={projectCard.time1}
-          status={projectCard.status1}
-          iconName={projectCard.icon}
-        ></TaskCard>
-        {/* End of TaskCard */}
-        {/* TaskCard */}
-        <TaskCard
-          title={projectCard.title1}
-          subtitle={projectCard.subtitle1}
-          time={projectCard.time1}
-          status={projectCard.status1}
-          iconName={projectCard.icon}
-        ></TaskCard>
-        {/* End of TaskCard */}
-        {/* TaskCard */}
-        <TaskCard
-          title={projectCard.title1}
-          subtitle={projectCard.subtitle1}
-          time={projectCard.time1}
-          status={projectCard.status1}
-          iconName={projectCard.icon}
-        ></TaskCard>
-        {/* End of TaskCard */}
-        {/* End of All Tasks */}
       </Animated.ScrollView>
     </KeyboardAvoidingView>
   );
@@ -432,12 +618,23 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginTop: 20,
   },
+  startIn: {
+    flexDirection: "row",
+  },
+
   detailText: {
     color: "#363942",
     fontSize: 12,
     margin: 5,
     marginHorizontal: 20,
+    width: "78%",
   },
+
+  row1: {
+    flexDirection: "row",
+    display: "flex",
+  },
+
   SearchBox: {
     backgroundColor: "#F5F5F5",
     borderRadius: 10,
@@ -446,10 +643,18 @@ const styles = StyleSheet.create({
     padding: 10,
     flexDirection: "row",
   },
+
   textInSearchBox: {
     fontSize: 16,
-    width: "90%",
+    width: "83%",
   },
+
+  iconClearSearchBox: {
+    marginLeft: 10,
+    marginRight: 5,
+    color: "#c0c0c0",
+  },
+
   header: {
     position: "absolute",
     width: "100%",

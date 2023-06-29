@@ -8,7 +8,7 @@ import { TextInput } from "react-native";
 import { Feather, FontAwesome, SimpleLineIcons } from "@expo/vector-icons";
 import { Colors } from "react-native/Libraries/NewAppScreen";
 import HomeSection from "../components/HomeSection";
-import TaskCard from "../components/TaskCardCompleted";
+import TaskCard from "../components/TaskCardOverdue";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRef } from "react";
 
@@ -82,7 +82,7 @@ const projectCard = {
   status1: "On Progress",
   icon: "user-circle",
 };
-export default function CompletedWSScreen({navigation}) {
+export default function NotStartedWSSreen() {
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
   const offsetAnim = useRef(new Animated.Value(0)).current;
@@ -122,7 +122,6 @@ export default function CompletedWSScreen({navigation}) {
     extrapolate: "clamp",
   });
   // End of header animation
-
   const [index, setIndex] = React.useState(0);
   React.useEffect(() => {
     const interval = setInterval(() => {
@@ -149,7 +148,7 @@ export default function CompletedWSScreen({navigation}) {
         ]}
       >
         <View style={styles.rowSection}>
-          <TouchableOpacity style={styles.headerBehave} onPress={() => navigation.goBack()}>
+          <TouchableOpacity style={styles.headerBehave}>
             <SimpleLineIcons name="arrow-left" size={24} color="black" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.headerBehave}>
@@ -209,7 +208,7 @@ export default function CompletedWSScreen({navigation}) {
 
         {/* My Task */}
         <View style={styles.contentName}>
-          <Text style={{ fontSize: 20, fontWeight: 600 }}>Completed</Text>
+          <Text style={{ fontSize: 20, fontWeight: 600 }}>Overdue</Text>
           <Text
             style={{
               fontSize: 20,

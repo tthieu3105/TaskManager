@@ -2,6 +2,7 @@ import { View, StyleSheet, Text, TouchableOpacity } from "react-native";
 import React, { Component } from "react";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { Feather } from "@expo/vector-icons";
+import UserAvatar from "@muhzi/react-native-user-avatar";
 import { db } from "./FirestoreConfig";
 import {
   collection,
@@ -55,7 +56,7 @@ export default class TaskCardOP extends Component {
     }
   };
   handleTaskStatusChange = async () => {
-    const { taskID, firebase } = this.props;
+    const { taskID } = this.props;
     const { status } = this.state;
 
     let newStatus = "";
@@ -79,7 +80,7 @@ export default class TaskCardOP extends Component {
     }
     newColor = this.handleChangeColor(newStatus);
     try {
-      const taskRef = doc(collection(firebase, "Task"), taskID);
+      const taskRef = doc(collection(db, "Task"), taskID);
       // Update the status and color in Firestore
       await updateDoc(taskRef, { Status: newStatus });
 
@@ -103,10 +104,14 @@ export default class TaskCardOP extends Component {
               <Text style={styles.taskCardTitle}>{this.props.title}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.priorityStar}>
-              <FontAwesome5
+              {/* <FontAwesome5
                 name={this.props.iconName}
                 size={24}
                 color="black"
+              /> */}
+              <UserAvatar
+                size={24}
+                src={this.props.avatar}
               />
             </TouchableOpacity>
           </View>

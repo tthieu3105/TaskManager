@@ -38,14 +38,11 @@ export class BottomPopup extends React.Component {
   }
   handlePressEdit = () => {
     const { screenName, navigation } = this.props;
+    const { projectID } = this.props;
     navigation.navigate(screenName, {ProjectID: projectID});
-  };
-  handlePressEdit = () => {
-    navigation.navigate(screenName);
   };
   renderEdit = () => {
     const { titleEdit } = this.props;
-    const { projectID } = this.props;
     return (
       <TouchableOpacity
         onPress={this.handlePressEdit}
