@@ -26,6 +26,7 @@ import {
   getDocs,
   query,
   where,
+  deleteDoc,
 } from "firebase/firestore";
 import NoteCard from "../components/NoteCard";
 
@@ -60,7 +61,7 @@ const NoteInforScreen = ({ navigation, route }) => {
     fetchNote();
   }, [id]);
 
-  //Format lại định dạng ngày tháng
+  //Format lại định dạng ngày tháng của note
   const formatDate = (date) => {
     const day = ("0" + date.getDate()).slice(-2);
     const month = ("0" + (date.getMonth() + 1)).slice(-2);
@@ -69,6 +70,17 @@ const NoteInforScreen = ({ navigation, route }) => {
     const minutes = ("0" + date.getMinutes()).slice(-2);
 
     return `${day}/${month}/${year} ${hours}:${minutes}`;
+  };
+
+  const deleteNote = async () => {
+    try {
+      const noteRef = doc(db, "Note", node);
+      await deleteDoc(noteRef);
+      console.log('Xóa document thành công!');
+    } catch (error) {
+      console.error('Lỗi khi xóa document:', error);
+    }
+    navigation.replace("NoteScreen");
   };
 
   // Header Animation
@@ -136,7 +148,7 @@ const NoteInforScreen = ({ navigation, route }) => {
 
           {/* edit button */}
           <View>
-            <TouchableOpacity onPress={() => navigation.navigate("EditNote")}>
+            <TouchableOpacity onPress={() => navigation.navigate("EditNote", { id })}>
               <Text style={styles.editButton}>Edit</Text>
             </TouchableOpacity>
           </View>
@@ -178,7 +190,9 @@ const NoteInforScreen = ({ navigation, route }) => {
           </View>
 
           {/* Delete note button */}
-          <TouchableOpacity style={styles.button}>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={deleteNote}>
             <Text style={styles.textInButton}>Delete this note</Text>
           </TouchableOpacity>
         </View>

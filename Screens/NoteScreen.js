@@ -69,7 +69,7 @@ export default function NoteScreen({ navigation }) {
   });
   // End of header animation
 
-  //Hiển thị danh sách note đã có trên csdl
+  //Hiển thị danh sách note đã có trên FireStore
   const notesCollection = collection(db, "Note");
   const [noteList, setnoteList] = useState([]);
   useEffect(() => {

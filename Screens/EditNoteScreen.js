@@ -19,9 +19,80 @@ import EvilIcon from "../node_modules/@expo/vector-icons/EvilIcons";
 import AntDesign from "../node_modules/@expo/vector-icons/AntDesign";
 import UserAvatar from "@muhzi/react-native-user-avatar";
 import { SimpleLineIcons } from "@expo/vector-icons";
+import { db } from "../components/FirestoreConfig";
+import {
+  collection,
+  setDoc,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  where,
+  updateDoc,
+} from "firebase/firestore";
 const CONTAINER_HEIGHT = 80;
 
-export default function EditNoteScreen({ navigation }) {
+export default function EditNoteScreen({ navigation, route }) {
+  const { id } = route.params;
+  const node = id.toString();
+  const [note, setNote] = useState('');
+  const [currentDate, setCurrentDate] = useState("");
+  const [title, setTitle] = useState(null);
+  const [description, setDescription] = useState(null);
+  
+  //Lấy note đã touch ở NoteScreen
+  useEffect(() => {
+    const fetchNote = async () => {
+      try {
+        const noteDoc = await getDoc(doc(db, "Note", node));
+        if (noteDoc.exists()) {
+          const noteData = noteDoc.data();
+          setNote(noteData);
+          setTitle(noteData.Title);
+          setDescription(noteData.Description);
+          const timestamp = noteData.CreateAt;
+          const seconds = timestamp.seconds;
+          const date = new Date(seconds * 1000); // Chuyển đổi thành đối tượng Date
+          const formattedDate = formatDate(date);
+          setCurrentDate(formattedDate); // Định dạng ngày tháng
+        } else {
+          console.log("Note id does not exist");
+        }
+      } catch (error) {
+        console.log("Error getting document:", error);
+      }
+    };
+    fetchNote();
+  }, [id]);
+  //Format lại định dạng ngày tháng của note
+  const formatDate = (date) => {
+    const day = ("0" + date.getDate()).slice(-2);
+    const month = ("0" + (date.getMonth() + 1)).slice(-2);
+    const year = date.getFullYear();
+    const hours = ("0" + date.getHours()).slice(-2);
+    const minutes = ("0" + date.getMinutes()).slice(-2);
+
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
+  };
+
+  //Hàm sửa Note
+  const updateNote = async () => {
+    try {
+      const editedNote = {
+        Title: title,
+        Description: description,
+      };
+      console.log(editedNote);
+      const noteRef = doc(db, "Note", node);
+      // await setDoc(noteRef, editedNote);
+      await updateDoc(noteRef, editedNote);
+      console.log('Cập nhật thành công!');
+    } catch (error) {
+      console.error('Lỗi khi cập nhật:', error);
+    }
+    navigation.replace("NoteScreen");
+  };
+
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
   const offsetAnim = useRef(new Animated.Value(0)).current;
@@ -61,24 +132,6 @@ export default function EditNoteScreen({ navigation }) {
     extrapolate: "clamp",
   });
   // End of header animation
-  const [currentDate, setCurrentDate] = useState("");
-
-  // Hiển thị ngày tháng năm hiện tại lên textView:
-  useEffect(() => {
-    // Lấy ngày tháng năm hiện tại và định dạng thành chuỗi
-    const date = new Date();
-    const options = {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    };
-    const formattedDate = date.toLocaleDateString("en-US", options);
-
-    // Cập nhật state currentDate
-    setCurrentDate(formattedDate);
-  }, []);
-
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -100,13 +153,13 @@ export default function EditNoteScreen({ navigation }) {
               style={styles.headerBehave}
               onPress={() => navigation.goBack()}
             >
-              <SimpleLineIcons name="arrow-left" size="20" color="black" />
+              <SimpleLineIcons name="arrow-left" size={20} color="black" />
             </TouchableOpacity>
 
             {/* Done  */}
             <TouchableOpacity
               style={styles.headerBehave}
-              onPress={() => navigation.goBack()}
+              onPress={updateNote}
             >
               <Text style={styles.textHeader}>Done</Text>
             </TouchableOpacity>
@@ -126,8 +179,9 @@ export default function EditNoteScreen({ navigation }) {
               <TouchableOpacity style={styles.insertBox}>
                 <TextInput
                   style={styles.textInInsertBox}
-                  placeholder="Your title here"
-                  placeholderTextColor={Colors.placeholder}
+                  defaultValue={note.Title}
+                  onChangeText={(text) => setTitle(text)}
+                  placeholderTextColor={Colors.defaultValue}
                 />
               </TouchableOpacity>
 
@@ -146,8 +200,9 @@ export default function EditNoteScreen({ navigation }) {
                 <TextInput
                   style={styles.textInNoteBox}
                   multiline={true}
-                  placeholder="Your description here"
-                  placeholderTextColor={Colors.placeholder}
+                  defaultValue={note.Description}
+                  onChangeText={(text) => setDescription(text)}
+                  placeholderTextColor={Colors.defaultValue}
                 />
               </TouchableOpacity>
             </View>
@@ -287,7 +342,7 @@ const styles = StyleSheet.create({
     marginTop: 5,
     marginLeft: 15,
     marginRight: "auto",
-    height: 340,
+    height: "auto",
     width: "90%",
   },
 
