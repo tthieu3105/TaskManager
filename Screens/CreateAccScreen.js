@@ -7,6 +7,7 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Animated,
+  Platform,
 } from "react-native";
 
 import React, { Component, useEffect, useRef } from "react";
@@ -26,10 +27,11 @@ import {
   and,
   getDoc,
   setDoc,
+  doc
 } from "firebase/firestore";
 import { UserContext, UserProvider } from "../contextObject";
 import PopupModal from "./../components/PopUpNotify";
-import { check } from "yargs";
+
 
 const CONTAINER_HEIGHT = 80;
 
@@ -89,10 +91,7 @@ const CreateAccScreen = ({ navigation }) => {
       return false;
     }else{
       checkConfirm(password, password2);
-
-      if(checkConfirm === true){
-        return true;
-      }
+      return true;
     }
   };
 
@@ -102,14 +101,14 @@ const CreateAccScreen = ({ navigation }) => {
       openModal("error", "Your passwords don't matched!", "Try again!!!");
       return false;
     } else {
-      openModal("success", "Your passwords are matched!");
+      openModal("success", "Your passwords are matched!", "You're ready to login");
       return true;
     }
   };
 
   // Create new account
-  const createNewAcc = async () => {
-    if (checkEnterInfo === true) {
+  const createNewAcc = async (fullName, email, userNameLogin, password, phoneNum, career) => {
+    if (checkEnterInfo() === true) {
       try {
         // Find the biggest UserID
         const userIDSnapShot = await getDocs(collection(db, "User"));
@@ -127,6 +126,9 @@ const CreateAccScreen = ({ navigation }) => {
 
         // Create new user information on Firebase
         await setDoc(docRef, {
+          UserID: newUserID,
+          Avatar:"",
+          Location: "",
           Name: fullName,
           Email: email,
           UserName: userNameLogin,
@@ -137,6 +139,7 @@ const CreateAccScreen = ({ navigation }) => {
       } catch (error) {
         console.log("Error: ", error);
       }
+      navigation.navigate("Login")
     }
   };
 
@@ -346,9 +349,9 @@ const CreateAccScreen = ({ navigation }) => {
               {/* Button: next */}
               <TouchableOpacity
                 style={styles.button}
-                onPress={() => createNewAcc()}
+                onPress={() => createNewAcc(fullName,email,userNameLogin,password2,phoneNum,career)}
               >
-                <Text style={styles.textInButton}>Next</Text>
+                <Text style={styles.textInButton}>Create account</Text>
               </TouchableOpacity>
             </View>
           </View>

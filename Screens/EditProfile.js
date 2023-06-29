@@ -9,6 +9,8 @@ import {
   Animated,
 } from "react-native";
 
+import * as ImagePicker from "expo-image-picker";
+import ImagePickerComp from "../components/ImagePicker";
 import React, { Component, useEffect, useRef } from "react";
 import { useContext, useState } from "react";
 import { Feather } from "@expo/vector-icons";
@@ -29,8 +31,6 @@ import {
 } from "firebase/firestore";
 import { UserContext, UserProvider } from "../contextObject";
 import { Colors } from "react-native/Libraries/NewAppScreen";
-import { ToastAndroid } from "react-native";
-import { update } from "firebase/database";
 import PopupModal from "./../components/PopUpNotify";
 
 const CONTAINER_HEIGHT = 80;
@@ -86,6 +86,35 @@ const EditProfile = ({ navigation, route }) => {
   const [UMail, setUMail] = useState(route.params.userEmail);
   const newUname = Uname;
 
+  //Image Picker
+  const [image, setImage] = useState(null);
+  const [imageURI, setImageURI] = useState(route.params.userAvatar);
+  const [newImageURI,setNewImageURI]= useState("");
+
+  const pickImage = async () => {
+    // No permissions request is necessary for launching the image library
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    console.log("Picture uri: ", result.uri);
+    setImageURI(result.uri);
+
+    if (!result.cancelled) {
+      setImage(result.assets[0].uri);
+      console.log("New picture's URI: ",result.assets[0].uri)
+    };
+
+    if(result.cancelled){
+      setNewImageURI(result.uri);
+      console.log("Avatar is not changed! Old uri: ", imageURI)
+    }
+  };
+
+  // Popup thông báo
   const [modalVisible, setModalVisible] = useState(false);
   const [popupType, setPopupType] = useState("");
   const [popupTitle, setPopupTitle] = useState("");
@@ -107,6 +136,7 @@ const EditProfile = ({ navigation, route }) => {
     const docRef = doc(db, "User", userId.toString());
 
     if (
+      imageURI.trim() == route.params.userAvatar &&
       Uname.trim() == route.params.userName &&
       Career.trim() == route.params.userJob &&
       UMail.trim() == route.params.userEmail &&
@@ -117,6 +147,10 @@ const EditProfile = ({ navigation, route }) => {
       console.log("Nothing to update");
       // navigation.navigate("AccountFeature");
     } else {
+      await updateDoc(docRef, { userAvatar: image });
+      console.log("UserAvatar name updated!");
+      navigation.setParams({ Avatar: image });
+
       await updateDoc(docRef, { Name: Uname });
       console.log("User name updated!");
       navigation.setParams({ userName: Uname });
@@ -140,20 +174,6 @@ const EditProfile = ({ navigation, route }) => {
       openModal("success", "Update Successful!");
       // navigation.navigate("HomeScreen");
     }
-
-    // Bỏ khoảng trắng ở cuối tên .trim()
-    // if (Uname.trim() != route.params.userName) {
-    //   await updateDoc(docRef, { Name: Uname } );
-    //   console.log("User Name Updated");
-    //   navigation.setParams({ userName: Uname });
-    //   openModal("success", "Update Successful!");
-    //   navigation.navigate("HomeScreen");
-    // }
-    // else {
-    //   openModal("error", "Nothing to updated!");
-    //   console.log("Nothing to update");
-    //   navigation.navigate("AccountFeature");
-    // }
   };
 
   return (
@@ -205,13 +225,13 @@ const EditProfile = ({ navigation, route }) => {
             <View>
               {/* Avatar */}
               <View style={styles.image}>
-                <UserAvatar
-                  size={80}
-                  src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=2900&q=80"
-                />
+                <UserAvatar size={80} src={imageURI} />
 
                 {/* Button: Change avatar */}
-                <TouchableOpacity style={styles.buttonChangeAvatar}>
+                <TouchableOpacity
+                  style={styles.buttonChangeAvatar}
+                  onPress={() => pickImage()}
+                >
                   <View style={styles.row}>
                     <Text style={styles.textInButton2}>Change</Text>
                     <Feather name="camera" size={22} style={styles.whiteIcon} />
@@ -412,6 +432,7 @@ const styles = StyleSheet.create({
     marginLeft: "auto",
     marginRight: "auto",
     marginTop: 95,
+    
   },
 
   title: {

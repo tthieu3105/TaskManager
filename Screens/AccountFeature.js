@@ -66,6 +66,7 @@ const AccountFeature = ({ navigation, route }) => {
 
   const { userId } = useContext(UserContext);
 
+  const [imageURI, setImageURI] = useState("");
   const [Uname, setUname] = useState("");
   const [Career, setCareer] = useState("");
   const [ULocation, setULocation] = useState("");
@@ -80,6 +81,7 @@ const AccountFeature = ({ navigation, route }) => {
 
     if (querySnapshot.size > 0) {
       for (const user of querySnapshot.docs) {
+        setImageURI(user.data().Avatar);
         setUname(user.data().Name);
         setCareer(user.data().Job);
         setULocation(user.data().Location);
@@ -93,10 +95,6 @@ const AccountFeature = ({ navigation, route }) => {
     }
   };
 
-  // //Hàm logout
-  // const [userLoginName, setUserName] = useState("");
-  // // Lấy Password
-  // const [password, setPassword] = useState("");
   const LogoutFunction = async (userLoginName, password) => {
     // setUserName("");
     // setPassword("");
@@ -176,7 +174,7 @@ const AccountFeature = ({ navigation, route }) => {
                 <View style={styles.image}>
                   <UserAvatar
                     size={80}
-                    src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=2900&q=80"
+                    src={imageURI}
                   />
                 </View>
                 {/* Project done */}
@@ -197,6 +195,7 @@ const AccountFeature = ({ navigation, route }) => {
                   style={styles.buttonEditProfile}
                   onPress={() =>
                     navigation.navigate("EditProfile", {
+                      userAvatar: imageURI,
                       userName: Uname,
                       userEmail: UMail,
                       userJob: Career,
