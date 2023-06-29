@@ -31,6 +31,7 @@ import {
   getDocs,
   query,
   where,
+  deleteDoc,
 } from "firebase/firestore";
 const CONTAINER_HEIGHT = 80;
 const inputText = {
@@ -202,7 +203,47 @@ export default function TaskInfoScreen({ navigation, route }) {
 
     fetchTask();
   }, [taskID]);
+  //XÓA DỮ LIỆU
+  const handleDeleteTask = async () => {
+    try {
+      // Create a DocumentReference for the task document using the taskId
+      const taskDocRef = doc(db, "Task", taskID);
+      const task_ID = parseInt(taskID);
 
+      //Xóa bảng Project_Task
+      //Tiến hành tìm itemID của bảng Project_Task
+      let projectTaskRef = collection(db, "Project_Task");
+      const q_projectTask = query(
+        projectTaskRef,
+        where("TaskID", "==", task_ID)
+      );
+
+      const projectTaskSnapshot = await getDocs(q_projectTask);
+
+      const projectTaskId = projectTaskSnapshot.docs[0].data().itemID;
+      projectTaskRef = doc(db, "Project_Task", projectTaskId.toString());
+      // Xóa bảng Task_User
+      //Tiến hành tìm itemID của bảng Task_User
+      let taskUserRef = collection(db, "Task_User");
+      const q_taskUser = query(taskUserRef, where("TaskID", "==", task_ID));
+
+      const taskUserSnapshot = await getDocs(q_taskUser);
+
+      const taskUserId = taskUserSnapshot.docs[0].data().itemID;
+      taskUserRef = doc(db, "Task_User", taskUserId.toString());
+      // Delete the document from Firestore
+      await deleteDoc(taskDocRef);
+      await deleteDoc(taskUserRef);
+      await deleteDoc(projectTaskRef);
+
+      // Task deleted successfully
+      console.log("Task deleted");
+    } catch (error) {
+      // Error deleting task
+      console.error("Error deleting task: ", error);
+    }
+    navigation.goBack();
+  };
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
   const offsetAnim = useRef(new Animated.Value(0)).current;
@@ -505,7 +546,7 @@ export default function TaskInfoScreen({ navigation, route }) {
       </Animated.ScrollView>
       <View style={styles.createTask}>
         {/*Btn Create Task */}
-        <TouchableOpacity>
+        <TouchableOpacity onPress={handleDeleteTask}>
           <View style={styles.btnDeleteTask}>
             <Text style={styles.textInBtnDeleteTask}>Delete this task</Text>
           </View>

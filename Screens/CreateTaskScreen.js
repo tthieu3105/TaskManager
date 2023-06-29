@@ -75,6 +75,8 @@ export default function CreateTaskScreen({ navigation }) {
   const [IDAssignee, setIDAssignee] = useState("");
   const [assigneeNameData, setAssigneeNameData] = useState([]); // Add state for assignee name
   const [assignVisible, setAssignVisible] = useState(false);
+  const [assignDisable, setAssignDisable] = useState(true);
+
   const [selectedAssignee, setSelectedAssignee] = React.useState("");
 
   const [selectedStartDate, setSelectedStartDate] = useState("");
@@ -124,6 +126,7 @@ export default function CreateTaskScreen({ navigation }) {
   }, []);
   const handleProjectChange = async (selectedProject) => {
     const SelectedProject = parseInt(selectedProject);
+    setSelectedProject(SelectedProject);
     try {
       const q_projectUser = query(
         collection(db, "Project_User"),
@@ -146,7 +149,9 @@ export default function CreateTaskScreen({ navigation }) {
         });
 
         setAssigneeNameData(assigneeNames);
+        setAssignDisable(false);
       } else {
+        setAssignDisable(true);
         setAssigneeNameData([]);
       }
     } catch (error) {
@@ -165,8 +170,9 @@ export default function CreateTaskScreen({ navigation }) {
     console.log("selectedRemind", selectedRemind);
     try {
       const startDateTime = new Date(
-        `${selectedStartDate} ${timeVisible ? startTime : "09:00 AM"}`
+        `${selectedStartDate} ${startTime || "09:00 AM"}`
       );
+
       let endDateTime = null;
       let Remind = null;
 
@@ -176,9 +182,11 @@ export default function CreateTaskScreen({ navigation }) {
 
       // Update endDateTime if it is null or undefined
       if (dueDateVisible) {
-        endDateTime = new Date(
-          `${selectedEndDate} ${timeVisible ? endTime : "09:00 AM"}`
-        );
+        if (timeVisible) {
+          endDateTime = new Date(`${selectedEndDate} ${endTime || "09:00 AM"}`);
+        } else {
+          endDateTime = new Date(`${selectedEndDate} 09:00 AM`);
+        }
         if (remindVisible) {
           if (selectedRemind === "0") {
             Remind = new Date(endDateTime);
@@ -211,9 +219,9 @@ export default function CreateTaskScreen({ navigation }) {
       );
       console.log("maxTaskID", maxTaskID);
       const newTaskID = maxTaskID + 1;
-      const docRef = doc(collection(db, "Task"), newTaskID.toString());
-
-      console.log("Task created with ID: ", docRef.id);
+      //THÊM TASK MỚI
+      const taskRef = doc(collection(db, "Task"), newTaskID.toString());
+      console.log("Task created with ID: ", taskRef.id);
       //Create at
       const timestamp = new Date();
       //Status
@@ -221,7 +229,7 @@ export default function CreateTaskScreen({ navigation }) {
       //ImportantTask
       const isDefault = false;
       // Thực hiện các hành động khác sau khi thêm task thành công
-      await setDoc(docRef, {
+      await setDoc(taskRef, {
         // Document data
         AssignTo: assignVisible,
         CreatedAt: timestamp,
@@ -239,6 +247,89 @@ export default function CreateTaskScreen({ navigation }) {
         Title: newTitle,
         // ...
       });
+      if (selectedProject) {
+        //THÊM PROJECT_TASK MỚI
+        const projectTaskSnapshot = await getDocs(
+          collection(db, "Project_Task")
+        );
+        const existingProjectTask = projectTaskSnapshot.docs.map((doc) =>
+          doc.data()
+        );
+        // Tìm projectTaskID lớn nhất trong danh sách
+        const maxProjectTaskID = Math.max(
+          ...existingProjectTask.map((projectTask) =>
+            parseInt(projectTask.itemID)
+          )
+        );
+        console.log("maxProjectTaskID", maxProjectTaskID);
+        const newProjectTaskID = maxProjectTaskID + 1;
+
+        const projectTaskRef = doc(
+          collection(db, "Project_Task"),
+          newProjectTaskID.toString()
+        );
+        console.log("ProjectTask created with ID: ", projectTaskRef.id);
+
+        await setDoc(projectTaskRef, {
+          // Document data
+          ProjectID: selectedProject,
+          TaskID: newTaskID,
+          itemID: newProjectTaskID,
+          // ...
+        });
+        if (assignVisible) {
+          //THÊM TASK_USER MỚI
+          const taskUserSnapshot = await getDocs(collection(db, "Task_User"));
+          const existingTaskUser = taskUserSnapshot.docs.map((doc) =>
+            doc.data()
+          );
+          // Tìm projectTaskID lớn nhất trong danh sách
+          const maxTaskUserID = Math.max(
+            ...existingTaskUser.map((taskUser) => parseInt(taskUser.itemID))
+          );
+          console.log("maxTaskUserID", maxTaskUserID);
+          const newTaskUserkID = maxTaskUserID + 1;
+
+          const taskUserRef = doc(
+            collection(db, "Task_User"),
+            newTaskUserkID.toString()
+          );
+          console.log("TaskUser created with ID: ", taskUserRef.id);
+          const assigneeID = parseInt(selectedAssignee);
+          await setDoc(taskUserRef, {
+            // Document data
+            AssigneeID: assigneeID,
+            TaskID: newTaskID,
+            itemID: newTaskUserkID,
+            // ...
+          });
+        } else {
+          const taskUserSnapshot = await getDocs(collection(db, "Task_User"));
+          const existingTaskUser = taskUserSnapshot.docs.map((doc) =>
+            doc.data()
+          );
+          // Tìm projectTaskID lớn nhất trong danh sách
+          const maxTaskUserID = Math.max(
+            ...existingTaskUser.map((taskUser) => parseInt(taskUser.itemID))
+          );
+          console.log("maxTaskUserID", maxTaskUserID);
+          const newTaskUserkID = maxTaskUserID + 1;
+
+          const taskUserRef = doc(
+            collection(db, "Task_User"),
+            newTaskUserkID.toString()
+          );
+          console.log("TaskUser created with ID: ", taskUserRef.id);
+          const assigneeID = parseInt(selectedAssignee);
+          await setDoc(taskUserRef, {
+            // Document data
+            AssigneeID: userId,
+            TaskID: newTaskID,
+            itemID: newTaskUserkID,
+            // ...
+          });
+        }
+      }
     } catch (error) {
       console.error("Error creating task: ", error);
       // Xử lý lỗi nếu có
@@ -791,7 +882,8 @@ export default function CreateTaskScreen({ navigation }) {
                     <Switch
                       trackColor={{ false: "#767577", true: "#81b0ff" }}
                       onValueChange={toggleSwitchAssign}
-                      value={isEnableAssign}
+                      value={assignVisible}
+                      disabled={assignDisable}
                     />
                   </View>
                 </View>

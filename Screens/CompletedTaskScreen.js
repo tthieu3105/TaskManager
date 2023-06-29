@@ -8,15 +8,38 @@ import {
   TextInput,
   Animated,
   KeyboardAvoidingView,
+  FlatList,
+  ActivityIndicator,
 } from "react-native";
-import React, { Component, useEffect, useRef } from "react";
+import React, {
+  Component,
+  useEffect,
+  useRef,
+  useContext,
+  useState,
+} from "react";
 import Header from "../components/HeaderWithTextAndAvatar";
-import { Feather, FontAwesome, SimpleLineIcons } from "@expo/vector-icons";
+import {
+  Feather,
+  FontAwesome,
+  SimpleLineIcons,
+  Ionicons,
+} from "@expo/vector-icons";
 import { Colors } from "react-native/Libraries/NewAppScreen";
-import NoteCard from "../components/NoteCard";
 import UserAvatar from "@muhzi/react-native-user-avatar";
-import TaskCardCP from "../components/TaskCardCompleted";
+import { UserContext, UserProvider } from "../contextObject";
+import { db } from "../components/FirestoreConfig";
+import { collection, getDocs, query, where, or, and } from "firebase/firestore";
+import TabContainer from "../components/TabContainer";
+import HomeSection from "../components/HomeSection";
+import TaskCard from "../components/TaskCardProgress";
+
 const CONTAINER_HEIGHT = 80;
+const sectionInHome = {
+  sectionName: "My Tasks",
+  sectionName2: "Completed",
+  sectionName3: "Overdue",
+};
 const taskCard = {
   title1: "Landing Page Agency",
   subtitle1: "Webb Design",
@@ -26,7 +49,47 @@ const taskCard = {
   status3: "Overdue",
   icon: "star",
 };
-export default function NoteScreen({ navigation }) {
+export default function CompletedTaskScreen({ navigation }) {
+  //Load data
+  const { userId } = useContext(UserContext);
+  const [isLoading, setIsLoading] = useState(true); // Add a state for loading indicator
+  const [tasks, setTasks] = useState([]);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const q = query(
+          collection(db, "Task"),
+          where("CreatorID", "==", userId)
+        );
+        // const querySnapshot = await getDocs(collection(db, "Task"));
+        const querySnapshot = await getDocs(q);
+        const tasksData = querySnapshot.docs.map((doc) => {
+          const { Description, StartTime, DueTime, Status, Title } = doc.data();
+          const startDateTime = StartTime.toDate();
+          const startTime = startDateTime.toLocaleTimeString();
+
+          const endDateTime = DueTime.toDate();
+          const endTime = endDateTime.toLocaleTimeString();
+          return {
+            id: doc.id,
+            Description,
+            StartTime,
+            DueTime,
+            Status,
+            Title,
+            startTime,
+          };
+        });
+
+        setTasks(tasksData);
+        setIsLoading(false);
+      } catch (error) {
+        console.log("Error fetching tasks:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
   const offsetAnim = useRef(new Animated.Value(0)).current;
@@ -66,111 +129,103 @@ export default function NoteScreen({ navigation }) {
     extrapolate: "clamp",
   });
   // End of header animation
-
+  if (isLoading) {
+    return <ActivityIndicator size="large" color="#0000ff" />;
+  }
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.container}
-      enabled
-      keyboardVerticalOffset={Platform.select({ ios: 0, android: 500 })}
-    >
-      {/* Hiển thị trạng thái điện thoại */}
-      <StatusBar barStyle={"dark-content"} />
-
-      {/* Header */}
-      <Animated.View
-        style={[
-          styles.header,
-          { transform: [{ translateY: headerTranslate }] },
-        ]}
+    <TabContainer>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.container}
+        enabled
+        keyboardVerticalOffset={Platform.select({ ios: 0, android: 500 })}
       >
-        <View style={styles.rowSection}>
-          <TouchableOpacity
-            style={styles.headerBehave}
-            onPress={() => navigation.goBack()}
-          >
-            <SimpleLineIcons name="arrow-left" size="24" color="black" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.headerBehave}
-            onPress={() => navigation.navigate("AccountFeature")}
-          >
-            <UserAvatar
-              initialName="SK"
-              fontSize={15}
-              size={40}
-              rounded={true}
-              backgroundColors={["#4B7BE5"]}
-            />
-          </TouchableOpacity>
-        </View>
-      </Animated.View>
-      {/* End of Header */}
-      <Animated.ScrollView
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-          { useNativeDriver: true }
-        )}
-      >
-        <View
-          style={{
-            marginTop: 80,
-          }}
+        {/* Hiển thị trạng thái điện thoại */}
+        <StatusBar barStyle={"dark-content"} />
+        {/* Header */}
+        <Animated.View
+          style={[
+            styles.header,
+            { transform: [{ translateY: headerTranslate }] },
+          ]}
         >
-          {/* Hello user */}
-          <Text style={styles.title}>Hello Josh</Text>
-          <Text style={styles.detailText}>May 27, 2022</Text>
-
-          {/* SearchBox */}
-          <View style={styles.SearchBox}>
-            <TextInput
-              multiline="true"
-              style={styles.textInSearchBox}
-              placeholder="Find your note"
-              placeholderTextColor={Colors.placeholder}
-            ></TextInput>
-            <TouchableOpacity>
-              <Feather name="search" size={24} color="#363942" />
-            </TouchableOpacity>
-          </View>
-          {/* End of SearchBox */}
-          <View style={styles.contentName}>
-            <Text style={{ fontSize: 20, fontWeight: 600 }}>Completed</Text>
-            <Text
-              style={{
-                fontSize: 20,
-                fontWeight: 600,
-                color: "gray",
-                marginHorizontal: 6,
-              }}
+          <View style={styles.rowSection}>
+            <TouchableOpacity
+              style={styles.headerBehave}
+              onPress={() => navigation.goBack()}
             >
-              3
-            </Text>
-            <TouchableOpacity>
-              <FontAwesome name="sort" size={20} color="black" />
+              <SimpleLineIcons name="arrow-left" size={20} color="black" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.headerBehave}
+              onPress={() => navigation.navigate("AccountFeature")}
+            >
+              <UserAvatar
+                size={40}
+                active
+                src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=2900&q=80"
+              />
             </TouchableOpacity>
           </View>
-          <TaskCardCP
-            title={taskCard.title1}
-            subtitle={taskCard.subtitle1}
-            time={taskCard.time1}
-            status={taskCard.status2}
-          ></TaskCardCP>
-          <TaskCardCP
-            title={taskCard.title1}
-            subtitle={taskCard.subtitle1}
-            time={taskCard.time1}
-            status={taskCard.status2}
-          ></TaskCardCP>
-          <TaskCardCP
-            title={taskCard.title1}
-            subtitle={taskCard.subtitle1}
-            time={taskCard.time1}
-            status={taskCard.status2}
-          ></TaskCardCP>
-        </View>
-      </Animated.ScrollView>
-    </KeyboardAvoidingView>
+        </Animated.View>
+        {/* End of Header */}
+        <FlatList
+          ListHeaderComponent={
+            <Animated.ScrollView
+              onScroll={Animated.event(
+                [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                { useNativeDriver: true }
+              )}
+            >
+              <View
+                style={{
+                  marginTop: 80,
+                }}
+              >
+                {/* Hello user */}
+                <Text style={styles.title}>Hello Josh</Text>
+                <Text style={styles.detailText}>May 27, 2022</Text>
+
+                {/* SearchBox */}
+                <View style={styles.SearchBox}>
+                  <TextInput
+                    style={styles.textInSearchBox}
+                    placeholder="Find your task"
+                    placeholderTextColor={Colors.placeholder}
+                  ></TextInput>
+                  <TouchableOpacity>
+                    <Feather name="search" size={24} color="#363942" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* My Task */}
+              <HomeSection
+                title={sectionInHome.sectionName}
+                navigation={navigation}
+                screenName="MyTask"
+              ></HomeSection>
+            </Animated.ScrollView>
+          }
+          data={tasks.filter((item) => item.Status === "Completed")}
+          renderItem={({ item }) => (
+            <TaskCard
+              title={item.Title}
+              subtitle={item.Description}
+              time={item.startTime}
+              taskStatus={item.Status}
+              iconName={taskCard.icon}
+              navigation={navigation}
+              screenName="TaskInfo"
+              firebase={db}
+              taskID={item.id}
+            />
+          )}
+          listKey="onProgressList"
+          keyExtractor={(item) => item.id.toString()}
+        />
+      </KeyboardAvoidingView>
+    </TabContainer>
   );
 }
 

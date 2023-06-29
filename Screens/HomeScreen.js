@@ -219,7 +219,9 @@ export default function HomeScreen({ navigation }) {
                 ></HomeSection>
                 <FlatList
                   nestedScrollEnabled={true}
-                  data={tasks.filter((item) => item.Status === "Completed")}
+                  data={tasks
+                    .filter((item) => item.Status === "Completed")
+                    .slice(0, 3)}
                   renderItem={({ item }) => (
                     <TaskCard
                       title={item.Title}
@@ -234,6 +236,7 @@ export default function HomeScreen({ navigation }) {
                     />
                   )}
                   listKey="completedList"
+                  keyExtractor={(item) => item.id.toString()}
                 />
               </View>
 
@@ -245,7 +248,9 @@ export default function HomeScreen({ navigation }) {
                 ></HomeSection>
                 <FlatList
                   nestedScrollEnabled={true}
-                  data={tasks.filter((item) => item.Status === "Overdue")}
+                  data={tasks
+                    .filter((item) => item.Status === "Overdue")
+                    .slice(0, 3)}
                   renderItem={({ item }) => (
                     <TaskCard
                       title={item.Title}
@@ -260,11 +265,14 @@ export default function HomeScreen({ navigation }) {
                     />
                   )}
                   listKey="overdueList"
+                  keyExtractor={(item) => item.id.toString()}
                 />
               </View>
             </View>
           }
-          data={tasks.filter((item) => item.Status === "On Progress")}
+          data={tasks
+            .filter((item) => item.Status === "On Progress")
+            .slice(0, 3)} // Giới hạn số lượng mục
           renderItem={({ item }) => (
             <TaskCard
               title={item.Title}
@@ -279,117 +287,8 @@ export default function HomeScreen({ navigation }) {
             />
           )}
           listKey="onProgressList"
+          keyExtractor={(item) => item.id.toString()}
         />
-
-        {/* <Animated.ScrollView
-          onScroll={Animated.event(
-            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-            { useNativeDriver: true }
-          )}
-        >
-          <View
-            style={{
-              marginTop: 80,
-            }}
-          >
-            {/* Hello user */}
-        {/* <Text style={styles.title}>Hello Josh</Text>
-            <Text style={styles.detailText}>May 27, 2022</Text> */}
-        {/* SearchBox */}
-        {/* <View style={styles.SearchBox}>
-              <TextInput
-                style={styles.textInSearchBox}
-                placeholder="Find your task"
-                placeholderTextColor={Colors.placeholder}
-              ></TextInput>
-              <TouchableOpacity>
-                <Feather name="search" size={24} color="#363942" />
-              </TouchableOpacity>
-            </View>
-          </View> */}
-        {/* My Task */}
-        {/* <HomeSection
-            title={sectionInHome.sectionName}
-            navigation={navigation}
-            screenName="MyTask"
-          ></HomeSection> */}
-        {/* Flatlist of onProgress task */}
-        {/* <Animated.View>
-            <ScrollView>
-              <FlatList
-                nestedScrollEnabled={true}
-                data={tasks.filter((item) => item.Status === "On Progress")}
-                renderItem={({ item }) => (
-                  <TaskCardOP
-                    title={item.Title}
-                    subtitle={item.Description}
-                    time={item.StartTime}
-                    status={item.Status}
-                    iconName={taskCard.icon}
-                    navigation={navigation}
-                    screenName="TaskInfo"
-                  />
-                )}
-              />
-            </ScrollView>
-          </Animated.View> */}
-        {/* End of Flatlist OnProgress */}
-        {/* Completed Section */}
-        {/* <HomeSection
-            title={sectionInHome.sectionName2}
-            navigation={navigation}
-            screenName="Completed"
-          ></HomeSection> */}
-        {/* Flatlist of Completed task */}
-        {/* <Animated.View>
-            <ScrollView>
-              <FlatList
-                nestedScrollEnabled={true}
-                data={tasks.filter((item) => item.Status === "Done")}
-                renderItem={({ item }) => (
-                  <TaskCardOP
-                    title={item.Title}
-                    subtitle={item.Description}
-                    time={item.StartTime}
-                    status={item.Status}
-                    iconName={taskCard.icon}
-                    navigation={navigation}
-                    screenName="TaskInfo"
-                  />
-                )}
-              />
-            </ScrollView>
-          </Animated.View> */}
-        {/* End of Flatlist OnProgress */}
-        {/* End of Completed Section */}
-        {/* Overdue Section */}
-        {/* <HomeSection
-            title={sectionInHome.sectionName3}
-            navigation={navigation}
-            screenName="Overdue"
-          ></HomeSection> */}
-        {/* Flatlist of onProgress task */}
-        {/* <Animated.View>
-            <ScrollView>
-              <FlatList
-                nestedScrollEnabled={true}
-                data={tasks.filter((item) => item.Status === "Overdue")}
-                renderItem={({ item }) => (
-                  <TaskCardOP
-                    title={item.Title}
-                    subtitle={item.Description}
-                    time={item.StartTime}
-                    status={item.Status}
-                    iconName={taskCard.icon}
-                    navigation={navigation}
-                    screenName="TaskInfo"
-                  />
-                )}
-              />
-            </ScrollView>
-          </Animated.View> */}
-        {/* End of Flatlist OnProgress */}
-        {/* </Animated.ScrollView> */}
       </KeyboardAvoidingView>
     </TabContainer>
   );

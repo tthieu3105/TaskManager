@@ -38,6 +38,7 @@ import {
   where,
   updateDoc,
   serverTimestamp,
+  deleteDoc,
 } from "firebase/firestore";
 import { UserContext, UserProvider } from "../contextObject";
 
@@ -76,6 +77,7 @@ export default function EditTaskScreen({ navigation, route }) {
   const [assigneeNameData, setAssigneeNameData] = useState([]); // Add state for assignee name
   const [assignVisible, setAssignVisible] = useState(false);
   const [selectedAssignee, setSelectedAssignee] = React.useState("");
+  const [assignDisable, setAssignDisable] = useState(true);
 
   const [selectedStartDate, setSelectedStartDate] = useState("");
   const [selectedEndDate, setSelectedEndDate] = useState("");
@@ -123,6 +125,7 @@ export default function EditTaskScreen({ navigation, route }) {
           setTimeVisible(includeTime);
           setRemindVisible(remind);
           setAssignVisible(assignTo);
+          setAssignDisable(!assignVisible);
           //Tách thuộc tính DueDate và DueTime
           if (includeEndDate) {
             const endDay = taskData.DueTime.toDate();
@@ -205,7 +208,7 @@ export default function EditTaskScreen({ navigation, route }) {
               const taskUserSnapshot = await getDocs(queryTaskUser);
               if (!taskUserSnapshot.empty) {
                 const assigneeID = taskUserSnapshot.docs[0].data().AssigneeID;
-                console.log("Type of assigneeID:", typeof assigneeID); //number
+                console.log(" assigneeID:", assigneeID); //number
                 // Fetch assignee name from Project table
 
                 const userSnapshot = await getDoc(
@@ -275,6 +278,42 @@ export default function EditTaskScreen({ navigation, route }) {
 
     fetchTask();
   }, [taskID]);
+  //Lấy danh sách assignee dựa vào tên project
+  const handleProjectChange = async (selectedProject) => {
+    const SelectedProject = parseInt(selectedProject);
+    setSelectedProject(SelectedProject);
+    try {
+      const q_projectUser = query(
+        collection(db, "Project_User"),
+        where("ProjectID", "==", SelectedProject)
+      );
+      const projectUserSnapshot = await getDocs(q_projectUser);
+      const assigneeIDs = projectUserSnapshot.docs.map(
+        (doc) => doc.data().AssigneeID
+      );
+      if (assigneeIDs.length > 0) {
+        const q_user = query(
+          collection(db, "User"),
+          where("UserID", "in", assigneeIDs)
+        );
+        const userSnapshot = await getDocs(q_user);
+
+        const assigneeNames = userSnapshot.docs.map((doc) => {
+          const assignee = doc.data();
+          return { key: doc.id, value: assignee.Name };
+        });
+
+        setAssigneeNameData(assigneeNames);
+        setAssignDisable(false);
+      } else {
+        setAssigneeNameData([]);
+        setAssignDisable(true);
+        setAssignVisible(false);
+      }
+    } catch (error) {
+      console.error("Error fetching assignee name: ", error);
+    }
+  };
   //Cập nhật dữ liệu
   //Title
   const handleTitleChange = (value) => {
@@ -320,21 +359,58 @@ export default function EditTaskScreen({ navigation, route }) {
       });
       //Cập nhật bảng Project_Task
       const idProject = parseInt(selectedProject);
-      console.log("selectedProject: ", typeof selectedProject);
-      console.log("selectedProject: ", selectedProject);
-      await updateDoc(doc(db, "Project_Task", taskID), {
+      console.log("taskID", taskID);
+      console.log("taskID", typeof taskID); //string
+      const task_ID = parseInt(taskID);
+      // Cập nhật bảng Project_Task
+      const projectTaskRef = collection(db, "Project_Task");
+      const q_projectTask = query(
+        projectTaskRef,
+        where("TaskID", "==", task_ID)
+      );
+
+      const projectTaskSnapshot = await getDocs(q_projectTask);
+
+      const projectTaskId = projectTaskSnapshot.docs[0].data().itemID;
+
+      // Perform the update for each record in the Project_Task collection
+      await updateDoc(doc(db, "Project_Task", projectTaskId.toString()), {
         ProjectID: idProject,
         // ...
       });
-      //Cập nhật bảng Project_User
-      const idAssignee = parseInt(selectedAssignee);
-      console.log("Type of selectedAssignee: ", typeof selectedProject);
-      console.log("selectedAssignee: ", selectedProject);
-      await updateDoc(doc(db, "Task_User", idProject.toString()), {
-        AssigneeID: idAssignee,
-        // ...
-      });
-      console.log("selectedRemind", selectedRemind);
+
+      if (assignVisible) {
+        //Cập nhật bảng Task_User
+        const idAssignee = parseInt(selectedAssignee);
+
+        // Cập nhật bảng Task_User
+        let taskUserRef = collection(db, "Task_User");
+        const q_taskUser = query(taskUserRef, where("TaskID", "==", task_ID));
+
+        const taskUserSnapshot = await getDocs(q_taskUser);
+
+        const taskUserId = taskUserSnapshot.docs[0].data().itemID;
+        console.log("taskUserId", taskUserId);
+        console.log("taskUserId", typeof taskUserId);
+
+        await updateDoc(doc(db, "Task_User", taskUserId.toString()), {
+          AssigneeID: idAssignee,
+        });
+      } else {
+        // Cập nhật bảng Task_User
+        let taskUserRef = collection(db, "Task_User");
+        const q_taskUser = query(taskUserRef, where("TaskID", "==", task_ID));
+
+        const taskUserSnapshot = await getDocs(q_taskUser);
+
+        const taskUserId = taskUserSnapshot.docs[0].data().itemID;
+        console.log("taskUserId", taskUserId);
+        console.log("taskUserId", typeof taskUserId);
+
+        await updateDoc(doc(db, "Task_User", taskUserId.toString()), {
+          AssigneeID: userId,
+        });
+      }
 
       console.log("Cập nhật thành công");
       // Thực hiện các hành động khác sau khi cập nhật thành công
@@ -343,6 +419,7 @@ export default function EditTaskScreen({ navigation, route }) {
       // Xử lý lỗi nếu có
     }
     navigation.goBack();
+    // navigation.replace("T")
   };
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -588,7 +665,7 @@ export default function EditTaskScreen({ navigation, route }) {
               <Text style={styles.title}>Project</Text>
               <View style={{ marginHorizontal: 20, marginTop: 10 }}>
                 <SelectList
-                  setSelected={setSelectedProject}
+                  setSelected={handleProjectChange}
                   data={projectNameData}
                   save="key"
                   boxStyles={{
@@ -863,6 +940,7 @@ export default function EditTaskScreen({ navigation, route }) {
                       trackColor={{ false: "#767577", true: "#81b0ff" }}
                       onValueChange={toggleSwitchAssign}
                       value={assignVisible}
+                      disable={assignDisable}
                     />
                   </View>
                 </View>
