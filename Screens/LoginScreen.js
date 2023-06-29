@@ -21,17 +21,33 @@ import { ToastAndroid } from "react-native";
 import { db } from "../components/FirestoreConfig";
 import { collection, getDocs, query, where, or, and } from "firebase/firestore";
 import { UserContext, UserProvider } from "../contextObject";
+import PopupModal from "./../components/PopUpNotify";
 
 const CONTAINER_HEIGHT = 80;
 
 const LoginScreen = ({ navigation }) => {
-  const [userName, setUserName] = useState("");
+  const [modalVisible, setModalVisible] = useState(false);
+  const [popupType, setPopupType] = useState("");
+  const [popupTitle, setPopupTitle] = useState("");
+  const [popupMessage, setPopupMessage] = useState("");
+  const openModal = (type, title, message) => {
+    setPopupType(type);
+    setPopupTitle(title);
+    setPopupMessage(message);
+    setModalVisible(true);
+  };
+  const closeModal = () => {
+    setModalVisible(false);
+    // navigation.navigate("HomeScreen");
+  };
 
+  // Lấy user name
+  const [userName, setUserName] = useState("");
   // Lấy Password
   const [password, setPassword] = useState("");
+
   const [hidePassword, setHidePassword] = useState(true);
   const [showPasswordIcon, setShowPasswordIcon] = useState("eye-outline");
-
   // Button hiển thị password
   const toggleHidePassword = () => {
     setHidePassword(!hidePassword);
@@ -40,15 +56,15 @@ const LoginScreen = ({ navigation }) => {
 
   const { setUserId } = useContext(UserContext);
   const LoginFunction = async (userName, password) => {
-    if (userName === "") {
-      ToastAndroid.show(
-        "UserName or Email cannot be empty",
-        ToastAndroid.SHORT
-      );
+    if (userName === "" && password === "") {
+      openModal("error", "User name & password can't be empty!");
+      console.log("ERROR: No user name & password");
       return false;
     }
+
     if (password === "") {
-      ToastAndroid.show("Password cannot be empty", ToastAndroid.SHORT);
+      openModal("error", "Password can't be empty!");
+      console.log("ERROR: No password");
       return false;
     }
 
@@ -74,69 +90,9 @@ const LoginScreen = ({ navigation }) => {
       console.log("Login Successfully!");
       navigation.navigate("HomeNavigator", { userID: userID });
     } else {
-      console.log("Invalid UserName or Password!");
+      openModal("error", "Wrong login info!", "Please try again!");
+      console.log("ERROR: Wrong password or user name");
     }
-
-    // Lấy reference đến node 'User' trong Firebase Realtime Database
-    // const usersRef = ref(db, "User");
-
-    // const userList = [];
-
-    // Lấy toàn bộ dữ liệu User và lưu vào list user
-    // get(usersRef).then((snapshot) => {
-    //   if (snapshot.exists()) {
-    //     const data = snapshot.val();
-    //     Object.keys(data).forEach((key) => {
-    //       const user = data[key];
-    //       userList.push({ username: user.UserName, email: user.Email, password: user.Password });
-    //     });
-    //     console.log("Users found:", userList);
-    //     const foundUser = userList.find(
-    //       (user) => (user.username === userName || user.email === userName)  && user.password === password
-    //     );
-    //     if (foundUser) {
-    //       ToastAndroid.show("Login Successfully!", ToastAndroid.SHORT);
-
-    //       navigation.navigate("HomeNavigator");
-
-    //     } else {
-    //       ToastAndroid.show("Invalid UserName or Password!", ToastAndroid.SHORT);
-    //     }
-    //   } else {
-    //     console.log("No users found");
-    //   }
-    // });
-
-    // const usersRef = db.collection("User");
-    // const snapshot = await usersRef.get();
-    // snapshot.forEach((doc) => {
-    //   console.log(doc.id, "=>", doc.data());
-    // });
-
-    // if (userName === "") {
-    //   ToastAndroid.show(
-    //     "UserName or Email cannot be empty",
-    //     ToastAndroid.SHORT
-    //   );
-    //   return false;
-    // }
-    // if (password === "") {
-    //   ToastAndroid.show("Password cannot be empty", ToastAndroid.SHORT);
-    //   return false;
-    // }
-
-    // const foundUser = doc.find(
-    //   (user) =>
-    //     (user.username === userName || user.email === userName) &&
-    //     user.password === password
-    // );
-    // if (foundUser) {
-    //   ToastAndroid.show("Login Successfully!", ToastAndroid.SHORT);
-
-    //   navigation.navigate("HomeNavigator");
-    // } else {
-    //   ToastAndroid.show("Invalid UserName or Password!", ToastAndroid.SHORT);
-    // }
   };
 
   // Header Animation
@@ -263,6 +219,13 @@ const LoginScreen = ({ navigation }) => {
               <Text style={styles.textInButton}>Create account</Text>
             </TouchableOpacity>
           </View>
+          <PopupModal
+            visible={modalVisible}
+            type={popupType}
+            title={popupTitle}
+            message={popupMessage}
+            onClose={closeModal}
+          />
         </View>
       </Animated.ScrollView>
     </KeyboardAvoidingView>
