@@ -17,13 +17,24 @@ import { MaterialIcons } from "@expo/vector-icons";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { Ionicons } from "@expo/vector-icons";
 import { SimpleLineIcons } from "@expo/vector-icons";
+import { db } from "../components/FirestoreConfig";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  where,
+} from "firebase/firestore";
 
 const CONTAINER_HEIGHT = 80;
 
-const EditProjectScreen = ({ navigation }) => {
+const EditProjectScreen = ({ navigation, route }) => {
   // Date
-  const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
-  const [selectedDate, setSelectedDate] = useState("");
+  const { ProjectID } = route.params ? route.params : {};
+  const [isStartDatePickerVisible, setStartDatePickerVisibility] =
+    useState(false);
+  const [selectedStartDate, setSelectedStartDate] = useState("");
   useEffect(() => {
     // Lấy ngày tháng năm hiện tại và định dạng thành chuỗi
     const date = new Date();
@@ -36,15 +47,15 @@ const EditProjectScreen = ({ navigation }) => {
     const formattedDate = date.toLocaleDateString("en-US", options);
 
     // Cập nhật state currentDate
-    setSelectedDate(formattedDate);
+    setSelectedStartDate(formattedDate);
   }, []);
 
-  const showDatePicker = () => {
-    setDatePickerVisibility(true);
+  const showStartDatePicker = () => {
+    setStartDatePickerVisibility(true);
   };
 
-  const hideDatePicker = () => {
-    setDatePickerVisibility(false);
+  const hideStartDatePicker = () => {
+    setStartDatePickerVisibility(false);
   };
 
   const handleDateConfirm = (date) => {
@@ -66,8 +77,8 @@ const EditProjectScreen = ({ navigation }) => {
       day: "numeric",
     };
     const x = dt.toLocaleDateString("en-US", options);
-    setSelectedDate(x);
-    hideDatePicker();
+    setSelectedStartDate(x);
+    hideStartDatePicker();
   };
   // End date
   const [isEndDatePickerVisible, setEndDatePickerVisibility] = useState(false);
@@ -143,6 +154,36 @@ const EditProjectScreen = ({ navigation }) => {
   });
   // End of header animation
 
+  const [projectName, setProjectName] = useState("");
+  const [defaultStartDate, setDefaulStartDate] = useState("");
+  const [defaultEndDate, setDefaulEndDate] = useState("");
+  const getProjectInfo = async () => {
+    const proRef = doc(db, "Project", ProjectID.toString());
+    const proSnap = await getDoc(proRef);
+    console.log("pro: ", proSnap.data());
+
+    if (proSnap.exists()) {
+      setProjectName(proSnap.data().ProjectName);
+
+      const startDate = proSnap.data().StartTime.toDate().toLocaleDateString();
+      setSelectedStartDate(startDate);
+
+      const parts1 = startDate.split("/");
+      const newDateStr1 = parts1[2] + "-" + parts1[0] + "-" + parts1[1];
+      setDefaulStartDate(newDateStr1)
+
+      const endDate = proSnap.data().EndTime.toDate().toLocaleDateString();
+      setSelectedEndDate(endDate);
+      const parts2 = startDate.split("/");
+      const newDateStr2 = parts2[2] + "-" + parts2[0] + "-" + parts2[1];
+      setDefaulEndDate(newDateStr2)
+    }
+  };
+
+  useEffect(() => {
+    getProjectInfo();
+  }, []);
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -191,6 +232,8 @@ const EditProjectScreen = ({ navigation }) => {
                 style={styles.textInInsertBox}
                 placeholder="Your title here"
                 placeholderTextColor={Colors.placeholder}
+                onChangeText={(text) => setProjectName(text)}
+                value={projectName}
               />
             </TouchableOpacity>
 
@@ -202,8 +245,8 @@ const EditProjectScreen = ({ navigation }) => {
               <Text style={styles.smallTitle}>Start date</Text>
               {/* inputText */}
               <View style={styles.inputText}>
-                <Text style={styles.textInInputText}>{selectedDate}</Text>
-                <TouchableOpacity onPress={showDatePicker}>
+                <Text style={styles.textInInputText}>{selectedStartDate}</Text>
+                <TouchableOpacity onPress={showStartDatePicker}>
                   {/* Icon */}
                   <MaterialIcons
                     name="calendar-today"
@@ -214,11 +257,12 @@ const EditProjectScreen = ({ navigation }) => {
                 </TouchableOpacity>
               </View>
               <DateTimePickerModal
-                display="spinner"
-                isVisible={isDatePickerVisible}
+                display="calendar"
+                defaultValue={new Date(defaultStartDate)}
+                isVisible={isStartDatePickerVisible}
                 mode="date"
                 onConfirm={handleDateConfirm}
-                onCancel={hideDatePicker}
+                onCancel={hideStartDatePicker}
               />
             </View>
             {/* End of TextInput */}
@@ -230,8 +274,8 @@ const EditProjectScreen = ({ navigation }) => {
               <Text style={styles.smallTitle}>End date</Text>
               {/* inputText */}
               <View style={styles.inputText}>
-                <Text style={styles.textInInputText}>{selectedDate}</Text>
-                <TouchableOpacity onPress={showDatePicker}>
+                <Text style={styles.textInInputText}>{selectedEndDate}</Text>
+                <TouchableOpacity onPress={showEndDatePicker}>
                   {/* Icon */}
                   <MaterialIcons
                     name="calendar-today"
@@ -242,11 +286,12 @@ const EditProjectScreen = ({ navigation }) => {
                 </TouchableOpacity>
               </View>
               <DateTimePickerModal
-                display="spinner"
-                isVisible={isDatePickerVisible}
+                display="calendar"
+                defaultValue={new Date(defaultEndDate)}
+                isVisible={isEndDatePickerVisible}
                 mode="date"
-                onConfirm={handleDateConfirm}
-                onCancel={hideDatePicker}
+                onConfirm={handleEndDateConfirm}
+                onCancel={hideEndDatePicker}
               />
             </View>
             {/* End of TextInput */}
