@@ -268,6 +268,10 @@ const AddProjectScreen = ({ navigation }) => {
       console.log("User not found");
     }
   };
+  
+  const RemoveAssign = () => {
+    
+  }
 
   const selectEmailMember = (value) => {
     setMember(value);
@@ -406,7 +410,7 @@ const AddProjectScreen = ({ navigation }) => {
                     src={user.Avatar}
                   />
                   <Text style={styles.textAssignee}>{user.Email}</Text>
-                  <TouchableOpacity key={user.UserID}>
+                  <TouchableOpacity key={user.UserID} onPress={RemoveAssign()}>
                     <AntDesign name="minuscircleo" size={23} color="#363942" />
                   </TouchableOpacity>
                 </View>
