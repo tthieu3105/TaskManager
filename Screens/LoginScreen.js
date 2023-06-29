@@ -58,7 +58,7 @@ const LoginScreen = ({ navigation }) => {
   const LoginFunction = async (userName, password) => {
     if (userName === "" && password === "") {
       openModal("error", "User name & password can't be empty!");
-      console.log("ERROR: No user name");
+      console.log("ERROR: No user name & password");
       return false;
     }
 
