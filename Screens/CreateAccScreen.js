@@ -9,36 +9,27 @@ import {
   Animated,
 } from "react-native";
 
-import Constants from "expo-constants";
 import React, { Component, useEffect, useRef } from "react";
 import { Colors } from "react-native/Libraries/NewAppScreen";
 import { ScrollView } from "react-native-gesture-handler";
 import AntDesign from "../node_modules/@expo/vector-icons/AntDesign";
 import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { ToastAndroid } from "react-native";
-import {
-  ref,
-  onValue,
-  get,
-  child,
-  orderByChild,
-  equalTo,
-} from "firebase/database";
-// import { auth } from "../components/FirebaseConfig";
-import {
-  getAuth,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-} from "firebase/auth";
 
 import { db } from "../components/FirestoreConfig";
-import { collection, getDocs, query, where, or, and } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  or,
+  and,
+  getDoc,
+  setDoc,
+} from "firebase/firestore";
 import { UserContext, UserProvider } from "../contextObject";
 import PopupModal from "./../components/PopUpNotify";
-
-
-const auth = getAuth();
+import { check } from "yargs";
 
 const CONTAINER_HEIGHT = 80;
 
@@ -70,8 +61,9 @@ const CreateAccScreen = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [userNameLogin, setUserNameLogin] = useState("");
   // Thông tin người dùng
-  const [firstName, setFirstName] = useState("");
-  // const [lastName, setLastName] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [phoneNum, setPhoneNum] = useState("");
+  const [career, setCareer] = useState("");
   // Button hiển thị password
   const toggleHidePassword = () => {
     setHidePassword(!hidePassword);
@@ -82,25 +74,69 @@ const CreateAccScreen = ({ navigation }) => {
     setShowPasswordIcon2(hidePassword2 ? "eye-off-outline" : "eye-outline");
   };
 
-  const auth = getAuth();
+  //Check blank
+  const checkEnterInfo = () => {
+    if (
+      fullName === "" ||
+      phoneNum === "" ||
+      career === "" ||
+      email === "" ||
+      userNameLogin === "" ||
+      password === "" ||
+      password2 === ""
+    ) {
+      openModal("error", "Please enter all information!!!")
+      return false;
+    }else{
+      checkConfirm(password, password2);
 
-  //Create account
-  // const handleSignUp = () => {
-  //   auth
-  //     .createUserWithEmailAndPassword(email, password)
-  //     .then((userCredentials) => {
-  //       const user = userCredentials.user;
-  //       console.log("Loi", user.email);
-  //     })
-  //     .catch((error) => alert(error.message));
-  // };
+      if(checkConfirm === true){
+        return true;
+      }
+    }
+  };
 
   //confirm password
-  const checkConfirm = (email, password, password2) => {
-    if (password != password2) {
+  const checkConfirm = (a1,a2) => {
+    if (a1 != a2) {
       openModal("error", "Your passwords don't matched!", "Try again!!!");
+      return false;
     } else {
-      // handleSignUp(email, password);
+      openModal("success", "Your passwords are matched!");
+      return true;
+    }
+  };
+
+  // Create new account
+  const createNewAcc = async () => {
+    if (checkEnterInfo === true) {
+      try {
+        // Find the biggest UserID
+        const userIDSnapShot = await getDocs(collection(db, "User"));
+        const existingUsers = userIDSnapShot.docs.map((doc) => doc.data());
+        const maxUserID = Math.max(
+          ...existingUsers.map((user) => parseInt(user.UserID))
+        );
+        console.log("maxUserID", maxUserID);
+
+        // New document in Firestore with new userID
+        const newUserID = maxUserID + 1;
+        const docRef = doc(collection(db, "User"), newUserID.toString());
+
+        console.log("User created, userID: ", docRef.id);
+
+        // Create new user information on Firebase
+        await setDoc(docRef, {
+          Name: fullName,
+          Email: email,
+          UserName: userNameLogin,
+          Password: password,
+          Phone: phoneNum,
+          Job: career,
+        });
+      } catch (error) {
+        console.log("Error: ", error);
+      }
     }
   };
 
@@ -201,25 +237,37 @@ const CreateAccScreen = ({ navigation }) => {
             <View style={styles.insertBox}>
               <TextInput
                 style={styles.textInInsertBox}
-                placeholder="Your full name"
+                placeholder="Full name"
                 multiline
                 placeholderTextColor={Colors.placeholder}
-                value={firstName}
-                onChangeText={(text) => setFirstName(text)}
+                value={fullName}
+                onChangeText={(text) => setFullName(text)}
               ></TextInput>
             </View>
 
-            {/* Nhập last name */}
-            {/* <View style={styles.insertBox}>
+            {/* Nhập số điện thoại */}
+            <View style={styles.insertBox}>
               <TextInput
                 style={styles.textInInsertBox}
-                placeholder="Last name"
+                placeholder="Phone number"
                 multiline
                 placeholderTextColor={Colors.placeholder}
-                value={lastName}
-                onChangeText={(text) => setLastName(text)}
+                value={phoneNum}
+                onChangeText={(text) => setPhoneNum(text)}
               ></TextInput>
-            </View> */}
+            </View>
+
+            {/* Nhập nghề nghiệp */}
+            <View style={styles.insertBox}>
+              <TextInput
+                style={styles.textInInsertBox}
+                placeholder="Career"
+                multiline
+                placeholderTextColor={Colors.placeholder}
+                value={career}
+                onChangeText={(text) => setCareer(text)}
+              ></TextInput>
+            </View>
 
             {/* Layout thông tin account và button Next */}
             <View>
@@ -243,7 +291,7 @@ const CreateAccScreen = ({ navigation }) => {
                   style={styles.textInInsertBox}
                   placeholder="Username"
                   multiline
-                  value = {userNameLogin}
+                  value={userNameLogin}
                   onChangeText={(text) => setUserNameLogin(text)}
                   placeholderTextColor={Colors.placeholder}
                 ></TextInput>
@@ -298,7 +346,7 @@ const CreateAccScreen = ({ navigation }) => {
               {/* Button: next */}
               <TouchableOpacity
                 style={styles.button}
-                onPress={() => checkConfirm(email, password, password2)}
+                onPress={() => createNewAcc()}
               >
                 <Text style={styles.textInButton}>Next</Text>
               </TouchableOpacity>
