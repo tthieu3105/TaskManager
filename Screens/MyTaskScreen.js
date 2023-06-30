@@ -82,6 +82,8 @@ export default function MyTaskScreen({ navigation }) {
         });
 
         setTasks(tasksData);
+        setMasterData(tasksData);
+
         setIsLoading(false);
       } catch (error) {
         console.log("Error fetching tasks:", error);
@@ -90,6 +92,26 @@ export default function MyTaskScreen({ navigation }) {
 
     fetchData();
   }, []);
+
+  //Search Box
+  const [search, setSearch] = useState("");
+  const [masterData, setMasterData] = useState([]);
+  const searchFilter = (text) => {
+    if (text) {
+      const newData = masterData.filter((item) => {
+        const itemData = item.Title
+          ? item.Title.toUpperCase()
+          : "".toUpperCase();
+        const textData = text.toUpperCase();
+        return itemData.indexOf(textData) > -1;
+      });
+      setTasks(newData);
+      setSearch(text);
+    } else {
+      setTasks(masterData);
+      setSearch(text);
+    }
+  };
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
   const offsetAnim = useRef(new Animated.Value(0)).current;
@@ -189,6 +211,8 @@ export default function MyTaskScreen({ navigation }) {
                 {/* SearchBox */}
                 <View style={styles.SearchBox}>
                   <TextInput
+                    value={search}
+                    onChangeText={(text) => searchFilter(text)}
                     style={styles.textInSearchBox}
                     placeholder="Find your task"
                     placeholderTextColor={Colors.placeholder}
@@ -200,11 +224,15 @@ export default function MyTaskScreen({ navigation }) {
               </View>
 
               {/* My Task */}
-              <HomeSection
-                title={sectionInHome.sectionName}
-                navigation={navigation}
-                screenName="MyTask"
-              ></HomeSection>
+
+              {/* Section task */}
+
+              <View style={styles.rowSection}>
+                {/* My task */}
+                <Text style={styles.titleSection}>My Tasks</Text>
+              </View>
+
+              {/* End of Section Task*/}
             </Animated.ScrollView>
           }
           data={tasks.filter((item) => item.Status === "On Progress")}
@@ -280,6 +308,12 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     zIndex: 1000,
     elevation: 1000,
+  },
+  titleSection: {
+    color: "#363942",
+    fontSize: 20,
+    fontWeight: "bold",
+    marginHorizontal: 20,
   },
   rowSection: {
     flexDirection: "row",

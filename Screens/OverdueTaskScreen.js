@@ -90,6 +90,26 @@ export default function OverdueTaskScreen({ navigation }) {
 
     fetchData();
   }, []);
+
+  //Search Box
+  const [search, setSearch] = useState("");
+  const [masterData, setMasterData] = useState([]);
+  const searchFilter = (text) => {
+    if (text) {
+      const newData = masterData.filter((item) => {
+        const itemData = item.Title
+          ? item.Title.toUpperCase()
+          : "".toUpperCase();
+        const textData = text.toUpperCase();
+        return itemData.indexOf(textData) > -1;
+      });
+      setTasks(newData);
+      setSearch(text);
+    } else {
+      setTasks(masterData);
+      setSearch(text);
+    }
+  };
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
   const offsetAnim = useRef(new Animated.Value(0)).current;
@@ -189,6 +209,8 @@ export default function OverdueTaskScreen({ navigation }) {
                 {/* SearchBox */}
                 <View style={styles.SearchBox}>
                   <TextInput
+                    value={search}
+                    onChangeText={(text) => searchFilter(text)}
                     style={styles.textInSearchBox}
                     placeholder="Find your task"
                     placeholderTextColor={Colors.placeholder}
@@ -199,12 +221,10 @@ export default function OverdueTaskScreen({ navigation }) {
                 </View>
               </View>
 
-              {/* My Task */}
-              <HomeSection
-                title={sectionInHome.sectionName}
-                navigation={navigation}
-                screenName="MyTask"
-              ></HomeSection>
+              <View style={styles.rowSection}>
+                {/* My task */}
+                <Text style={styles.titleSection}>Overdue</Text>
+              </View>
             </Animated.ScrollView>
           }
           data={tasks.filter((item) => item.Status === "Overdue")}
@@ -280,6 +300,12 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     zIndex: 1000,
     elevation: 1000,
+  },
+  titleSection: {
+    color: "#363942",
+    fontSize: 20,
+    fontWeight: "bold",
+    marginHorizontal: 20,
   },
   rowSection: {
     flexDirection: "row",

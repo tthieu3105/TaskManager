@@ -54,6 +54,7 @@ export default function HomeScreen({ navigation }) {
   const { userId } = useContext(UserContext);
   const [isLoading, setIsLoading] = useState(true); // Add a state for loading indicator
   const [tasks, setTasks] = useState([]);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -82,6 +83,7 @@ export default function HomeScreen({ navigation }) {
         });
 
         setTasks(tasksData);
+        setMasterData(tasksData);
         setIsLoading(false);
       } catch (error) {
         console.log("Error fetching tasks:", error);
@@ -91,6 +93,25 @@ export default function HomeScreen({ navigation }) {
     fetchData();
   }, []);
 
+  //Search Box
+  const [search, setSearch] = useState("");
+  const [masterData, setMasterData] = useState([]);
+  const searchFilter = (text) => {
+    if (text) {
+      const newData = masterData.filter((item) => {
+        const itemData = item.Title
+          ? item.Title.toUpperCase()
+          : "".toUpperCase();
+        const textData = text.toUpperCase();
+        return itemData.indexOf(textData) > -1;
+      });
+      setTasks(newData);
+      setSearch(text);
+    } else {
+      setTasks(masterData);
+      setSearch(text);
+    }
+  };
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
   const offsetAnim = useRef(new Animated.Value(0)).current;
@@ -191,6 +212,8 @@ export default function HomeScreen({ navigation }) {
                 {/* SearchBox */}
                 <View style={styles.SearchBox}>
                   <TextInput
+                    value={search}
+                    onChangeText={(text) => searchFilter(text)}
                     style={styles.textInSearchBox}
                     placeholder="Find your task"
                     placeholderTextColor={Colors.placeholder}
