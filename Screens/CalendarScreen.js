@@ -9,18 +9,27 @@ import {
 } from "react-native";
 
 import React, { Component, useRef } from "react";
+import { useContext } from "react"
+import { UserContext, UserProvider } from "../contextObject";
 import { useState, useEffect } from "react";
 import AntDesign from "../node_modules/@expo/vector-icons/AntDesign";
 import axios from "axios";
 import TabContainer from "../components/TabContainer";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../components/FirestoreConfig";
+
 
 const CONTAINER_HEIGHT = 80;
 
-const CalendarScreen = () => {
+const CalendarScreen = ({ navigation }) => {
+  const { userId } = useContext(UserContext); // lay user id
+
   // currentDate:  lưu trữ ngày hiện tại và được khởi tạo ban đầu bằng đối tượng Date mới
   const [currentDate, setCurrentDate] = useState(new Date());
   // selectedDate lưu trữ ngày được chọn (nếu có) và được khởi tạo ban đầu bằng giá trị null
-  const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(new Date(currentDate));
+
+
 
   const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -40,13 +49,15 @@ const CalendarScreen = () => {
       selectedDate && selectedDate.getDate() === date.getDate();
 
     const data = [{ key: "1", value: "he thong thong tin" }];
+
     return (
       // hiển thị thứ và ngày tương ứng
       <TouchableOpacity
         //   setSelectedDate để cập nhật giá trị
         onPress={() => {
           // Lấy danh sách công việc từ backend dựa trên ngày được chọn
-          fetchTasks(date).then((tasks) => setTasks(tasks));
+          // fetchTasks(date).then((tasks) => setTasks(tasks));
+          // fetchTasks(date);
           setSelectedDate(date);
         }}
         style={[
@@ -78,18 +89,89 @@ const CalendarScreen = () => {
   };
 
   //Task
-  const [task, setTasks] = useState([]);
 
-  const renderTask = ({ item }) => {
+  const taskCollection = collection(db, "Task");
+  const taskUserCollection = collection(db, "Task_User");
+  const [taskList, setTaskList] = useState([]);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const querySnapshot = await getDocs(taskCollection);
+        const tasks = [];
+        const querySnapshot2 = await getDocs(taskUserCollection);
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          const number1 = data.StartTime.toDate().getTime();
+          const number2 = data.DueTime.toDate().getTime();
+          const number3 = selectedDate.getTime();
+          console.log("select Day: ", number3);
+          if (data.AssignTo == true) {
+            var Assignee = null;
+            querySnapshot2.forEach((doc2) => {
+              const data2 = doc2.data();
+              if (data2.TaskID == data.TaskID) {
+                Assignee = data2.AssigneeID;
+              }
+            });
+            if (userId == Assignee && number1 <= number3 && number2 >= number3 && data.Status != "Completed") {
+              const start = formatDate(data.StartTime);
+              // const end = formatDate(data.DueTime);
+              tasks.push({ ...data, StartTime: start});
+            }
+          } else {
+            if (data.CreatorID == userId && number1 <= number3 && number2 >= number3 && data.Status != "Completed") {
+              const start = formatDate(data.StartTime);
+              // const end = formatDate(data.DueTime);
+              tasks.push({ ...data, StartTime: start});
+            }
+          }
+        });
+        setTaskList(tasks);
+      } catch (error) {
+        console.error("Lỗi lấy ds note: ", error);
+      }
+    };
+    fetchData();
+  }, []);
+  const formatDate = (item) => {
+    const timestamp = item;
+    const seconds = timestamp.seconds;
+    const date = new Date(seconds * 1000); // Chuyển đổi thành đối tượng Date
+    const day = ("0" + date.getDate()).slice(-2);
+    const month = ("0" + (date.getMonth() + 1)).slice(-2);
+    const hours = ("0" + date.getHours()).slice(-2);
+    const minutes = ("0" + date.getMinutes()).slice(-2);
+
+    return `${day}/${month} ${hours}:${minutes}`;
+  };
+
+  const renderTask = (task) => {
+    const taskID = task.TaskID.toString();
+
+    const show = () => {
+      const date = new Date(task.DueTime.seconds * 1000);
+      const hours = ("0" + date.getHours()).slice(-2);
+      const minutes = ("0" + date.getMinutes()).slice(-2);
+      const endDate = task.DueTime.toDate().getDate();
+      const day = selectedDate.getDate();
+      console.log(day);
+      // console.log("u du: ", endDate, day);
+      if (endDate == day)
+      return `${hours}:${minutes}`;
+      else return "All Day";
+    };
+    const end = formatDate(task.DueTime);
+    
     return (
-      <View style={styles.taskContainer}>
-        <View style={styles.taskFrame}>
-          <Text style={styles.taskName}>{item.name}</Text>
-          <Text style={styles.taskTime}>
-            {formatTime(item.startTime)} - {formatTime(item.endTime)}
-          </Text>
+      <TouchableOpacity onPress={() => navigation.navigate("TaskInfo", { taskID })}>
+        <View style={styles.container1}>
+          <Text style={styles.textInInsertBox}>{show()}</Text>
+          <View style={styles.taskBox}>
+            <Text style={styles.textInTaskBox}>{task.Title}</Text>
+            <Text style={styles.timeInTaskBox}>{task.StartTime} - {end}</Text>
+          </View>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -188,20 +270,12 @@ const CalendarScreen = () => {
 
             {/* Layout hiển thị các task trong ngày đc chọn trên calendar */}
             <View style={{ flex: 70, backgroundColor: "white" }}>
-              {/* <FlatList
-              data={task}
-              renderItem={renderTask}
-              keyExtractor={(item) => item.id}
-              showsVerticalScrollIndicator={true}
-            ></FlatList> */}
-
-              <View style={styles.container1}>
-                <Text style={styles.textInInsertBox}>8:00AM</Text>
-                <View style={styles.taskBox}>
-                  <Text style={styles.textInTaskBox}>Continue Project</Text>
-                  <Text style={styles.timeInTaskBox}>8:00AM - 10:00AM</Text>
-                </View>
-              </View>
+              <FlatList
+                data={taskList}
+                renderItem={({ item }) => renderTask(item)}
+                keyExtractor={(item) => item.TaskID}
+                showsVerticalScrollIndicator={true}
+              />
             </View>
           </View>
         </Animated.ScrollView>
@@ -247,7 +321,6 @@ const styles = StyleSheet.create({
     color: "#363942",
     fontSize: 27,
     fontWeight: "bold",
-
     // fontStyle
   },
 
@@ -256,11 +329,11 @@ const styles = StyleSheet.create({
     // marginVertical: 10,
     marginTop: 5,
     marginBottom: 10,
-    height: 55,
+    height: "auto",
     borderRadius: 10,
     shadowColor: "gray",
     marginLeft: 15,
-    marginRight: 15,
+    marginRight: 20,
   },
 
   textInInsertBox: {
@@ -307,7 +380,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     shadowOpacity: 0.5,
     shadowOffset: {
-      width: 2,
+      width: 5,
       height: 2,
     },
   },

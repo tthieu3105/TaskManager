@@ -8,15 +8,19 @@ import {
   Animated,
 } from "react-native";
 
-import React, { Component, useRef } from "react";
-import { useState, useEffect } from "react";
+import React, { Children, Component, useRef } from "react";
+import { UserContext, UserProvider } from "../contextObject";
+import { useContext, useState, useEffect } from "react";
 import { Colors } from "react-native/Libraries/NewAppScreen";
 import AntDesign from "../node_modules/@expo/vector-icons/AntDesign";
 import UserAvatar from "@muhzi/react-native-user-avatar";
+import { db } from "../components/FirestoreConfig";
+import { collection, addDoc, doc, getDoc, runTransaction, setDoc, Timestamp } from "firebase/firestore";
 
 const CONTAINER_HEIGHT = 80;
 
-const AddNoteScreen = () => {
+const AddNoteScreen = ({ navigation }) => {
+  const { userId } = useContext(UserContext);
   const [currentDate, setCurrentDate] = useState("");
   // Hiển thị ngày tháng năm hiện tại lên textView:
   useEffect(() => {
@@ -28,10 +32,51 @@ const AddNoteScreen = () => {
       month: "long",
       day: "numeric",
     };
-    const formattedDate = date.toLocaleDateString("en-US", options);
+    const formattedDate = date.toLocaleString("en-US", options);
     // Cập nhật state currentDate
     setCurrentDate(formattedDate);
   }, []);
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+
+    return `${hours}:${minutes} ${day}/${month}`;
+  };
+
+    const [noteTitle, setNoteTitle] = useState("");
+    const [noteDescription, setNoteDescription] = useState("");
+    const createNote = async () => {
+      try {
+        const docRef = doc(db, "Count", "Note");
+        const docSnap = await getDoc(docRef);
+        const data = docSnap.data();
+        const sum = data.sum;
+        const newNoteId = (sum + 1).toString();
+        const noteData = {
+          Title: noteTitle,
+          Description: noteDescription,
+          CreateAt: Timestamp.now(),
+          NodeID: sum + 1,
+          CreatorID: userId,
+        };
+        const count = {
+          sum: sum + 1,
+        }
+        const notesCollection = collection(db, "Note");
+        const noteRef = doc(notesCollection, newNoteId);
+        await setDoc(noteRef, noteData);
+        const countNode = doc(db,"Count", "Note");
+        await setDoc(countNode, count);
+      } catch (error) {
+        console.error("Lỗi khi tạo note: ", error);
+      }
+      navigation.replace("NoteScreen");
+    };
+
 
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -73,6 +118,7 @@ const AddNoteScreen = () => {
   });
   // End of header animation
 
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -88,7 +134,7 @@ const AddNoteScreen = () => {
       >
         <View style={styles.row}>
           {/* Button: back to previous screen */}
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
             <AntDesign
               name="left"
               size={30}
@@ -122,6 +168,7 @@ const AddNoteScreen = () => {
               <TextInput
                 style={styles.textInInsertBox}
                 placeholder="Your title here"
+                onChangeText={(title) => setNoteTitle(title)}
                 placeholderTextColor={Colors.placeholder}
               />
             </TouchableOpacity>
@@ -129,7 +176,7 @@ const AddNoteScreen = () => {
             {/* Date */}
             <Text style={styles.smallTitle}>Date</Text>
             <TouchableOpacity style={styles.insertBox}>
-              <Text style={styles.textInInsertBox}>{currentDate}</Text>
+              <Text style={styles.textInInsertBox}>{formatDate(currentDate)}</Text>
             </TouchableOpacity>
           </View>
 
@@ -142,13 +189,14 @@ const AddNoteScreen = () => {
                 style={styles.textInNoteBox}
                 multiline={true}
                 placeholder="Your description here"
+                onChangeText={(text) => setNoteDescription(text)}
                 placeholderTextColor={Colors.placeholder}
               />
             </TouchableOpacity>
           </View>
 
           {/* Create note button */}
-          <TouchableOpacity style={styles.button}>
+          <TouchableOpacity style={styles.button} onPress={createNote}>
             <Text style={styles.textInButton}>Create a new note</Text>
           </TouchableOpacity>
         </View>

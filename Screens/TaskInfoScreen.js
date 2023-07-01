@@ -212,7 +212,6 @@ export default function TaskInfoScreen({ navigation, route }) {
     const fetchTask = async () => {
       try {
         const taskDoc = await getDoc(doc(db, "Task", taskID));
-
         if (taskDoc.exists) {
           const taskData = taskDoc.data();
           setTask(taskData);

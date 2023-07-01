@@ -8,8 +8,11 @@ import {
   TextInput,
   Animated,
   KeyboardAvoidingView,
+  ActivityIndicator,
 } from "react-native";
 import React, { Component, useEffect, useRef } from "react";
+import { useContext, useState } from "react";
+import { UserContext, UserProvider } from "../contextObject";
 import Header from "../components/HeaderWithTextAndAvatar";
 import {
   Feather,
@@ -21,14 +24,38 @@ import { Colors } from "react-native/Libraries/NewAppScreen";
 import NoteCard from "../components/NoteCard";
 import UserAvatar from "@muhzi/react-native-user-avatar";
 import TabContainer from "../components/TabContainer";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../components/FirestoreConfig";
 const CONTAINER_HEIGHT = 80;
-const noteCard = {
-  tileName: "Landing Page Agency Creative",
-  contentCard:
-    "Lorem ipsum dolor sit amet consectetur. Velit ut arcu fames quis viverra ",
-  dateCard: "February 9",
-};
+
 export default function NoteScreen({ navigation }) {
+  const [isLoading, setIsLoading] = useState(true); // Add a state for loading indicator
+  const { userId } = useContext(UserContext); // lấy userid
+  const formatDateUS = () => {
+    const date = new Date();
+    const months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December'
+    ];
+
+    const day = date.getDate();
+    const month = months[date.getMonth()];
+    const year = date.getFullYear();
+
+    return `${month} ${day}, ${year}`;
+  };
+  const currentDate = formatDateUS(new Date());
+  console.log('current date: ', currentDate);
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
   const offsetAnim = useRef(new Animated.Value(0)).current;
@@ -69,6 +96,93 @@ export default function NoteScreen({ navigation }) {
   });
   // End of header animation
 
+  //Lấy danh sách note đã có trên FireStore
+  const notesCollection = collection(db, "Note");
+  const [noteList, setnoteList] = useState([]);
+  const [count, setCount] = useState(0);
+  var d = 0;
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const querySnapshot = await getDocs(notesCollection);
+        const notes = [];
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          if (data.CreatorID == userId) {
+            d++;
+            const timestamp = data.CreateAt;
+            const seconds = timestamp.seconds;
+            const date = new Date(seconds * 1000); // Chuyển đổi thành đối tượng Date
+            const formattedDate = formatDate(date); // Định dạng ngày tháng
+            notes.push({ ...data, CreateAt: formattedDate });
+          }
+        });
+        setnoteList(notes);
+        setCount(d);
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Lỗi lấy ds note: ", error);
+      }
+
+    };
+    fetchData();
+  }, []);
+  const formatDate = (date) => {
+    const day = ("0" + date.getDate()).slice(-2);
+    const month = ("0" + (date.getMonth() + 1)).slice(-2);
+    const year = date.getFullYear();
+    const hours = ("0" + date.getHours()).slice(-2);
+    const minutes = ("0" + date.getMinutes()).slice(-2);
+
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
+  };
+
+  // Tìm kiếm
+  const [searchText, setSearchText] = useState('');
+  const handleSearchTextChange = (text) => {
+    setSearchText(text);
+  };
+  const filteredNotes = noteList.filter((note) => {
+    const { Title, Description } = note;
+    const searchTextLowercase = searchText.toLowerCase();
+    return (
+      Title.toLowerCase().includes(searchTextLowercase) ||
+      Description.toLowerCase().includes(searchTextLowercase)
+    );
+  });//jjjj
+
+  console.log(count);
+  // Render danh sách note
+  const rendernoteList = () => {
+    return filteredNotes.map((note) => (
+      <NoteCard
+        title={note.Title}
+        content={note.Description}
+        date={note.CreateAt}
+        navigation={navigation}
+        screenName="NoteInfo"
+        id={note.NodeID}
+      />
+    ));
+  };
+  // 
+  // const rendernoteList = () => {
+  //   return noteList.map((note) => (
+  //     <NoteCard
+  //       title={note.Title}
+  //       content={note.Description}
+  //       date={note.CreateAt}
+  //       navigation={navigation}
+  //       screenName="NoteInfo"
+  //       id = {note.NodeID}
+
+  //     />
+  //   ));
+  // };
+
+  if (isLoading) {
+    return <ActivityIndicator size="large" color="#0000ff" />;
+  }
   return (
     <TabContainer>
       <KeyboardAvoidingView
@@ -120,7 +234,7 @@ export default function NoteScreen({ navigation }) {
           >
             {/* Hello user */}
             <Text style={styles.title}>Hello Josh</Text>
-            <Text style={styles.detailText}>May 27, 2022</Text>
+            <Text style={styles.detailText}>{currentDate}</Text>
 
             {/* SearchBox */}
             <View style={styles.SearchBox}>
@@ -128,6 +242,8 @@ export default function NoteScreen({ navigation }) {
                 style={styles.textInSearchBox}
                 placeholder="Find your note"
                 placeholderTextColor={Colors.placeholder}
+                value={searchText}
+                onChangeText={handleSearchTextChange}
               ></TextInput>
               <TouchableOpacity>
                 <Feather name="search" size={24} color="#363942" />
@@ -144,47 +260,13 @@ export default function NoteScreen({ navigation }) {
                   marginHorizontal: 6,
                 }}
               >
-                3
+                {count}
               </Text>
               <TouchableOpacity>
                 <FontAwesome name="sort" size={20} color="black" />
               </TouchableOpacity>
             </View>
-            <NoteCard
-              title={noteCard.tileName}
-              content={noteCard.contentCard}
-              date={noteCard.dateCard}
-              navigation={navigation}
-              screenName="NoteInfo"
-            ></NoteCard>
-            <NoteCard
-              title={noteCard.tileName}
-              content={noteCard.contentCard}
-              date={noteCard.dateCard}
-              navigation={navigation}
-              screenName="NoteInfo"
-            ></NoteCard>
-            <NoteCard
-              title={noteCard.tileName}
-              content={noteCard.contentCard}
-              date={noteCard.dateCard}
-              navigation={navigation}
-              screenName="NoteInfo"
-            ></NoteCard>
-            <NoteCard
-              title={noteCard.tileName}
-              content={noteCard.contentCard}
-              date={noteCard.dateCard}
-              navigation={navigation}
-              screenName="NoteInfo"
-            ></NoteCard>
-            <NoteCard
-              title={noteCard.tileName}
-              content={noteCard.contentCard}
-              date={noteCard.dateCard}
-              navigation={navigation}
-              screenName="NoteInfo"
-            ></NoteCard>
+            {rendernoteList()}
           </View>
         </Animated.ScrollView>
       </KeyboardAvoidingView>
