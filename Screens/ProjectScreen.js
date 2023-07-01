@@ -1,5 +1,5 @@
 import { Text, StyleSheet, View, KeyboardAvoidingView } from "react-native";
-import React, { Component, useEffect, useState } from "react";
+import React, { Component, useEffect, useState, useContext } from "react";
 import { StatusBar, Animated } from "react-native";
 import Header from "../components/HeaderWithTextAndAvatar";
 import { ScrollView } from "react-native";
@@ -25,6 +25,8 @@ import {
   where,
   deleteDoc,
 } from "firebase/firestore";
+import { UserContext, UserProvider } from "../contextObject";
+
 
 const Progress = ({ step, steps, height }) => {
   const [width, setWidth] = React.useState(0);
@@ -173,6 +175,41 @@ export default function ProjectScreen({ navigation, route }) {
   //     name: "Delete Project",
   //   },
   // ];
+
+  const { userId } = useContext(UserContext);
+  const [userName, setUserName] = useState("");
+  const [userAvatar, setUserAvatar] = useState("");
+
+  const getNameAvatar = async () => {
+    const docRef = doc(db, "User", userId.toString());
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      const fullName = docSnap.data().Name;
+      const nameArray = fullName.split(" ");
+      const lastName = nameArray[nameArray.length - 1];
+      setUserName(lastName);
+
+      let avatarUrl = docSnap.data().Avatar;
+      if (avatarUrl == "") {
+        const initials = fullName
+          .split(" ")
+          .map((name) => name.charAt(0))
+          .join("");
+        avatarUrl = `https://ui-avatars.com/api/?name=${fullName}&background=random&size=25`;
+      }
+
+      setUserAvatar(avatarUrl);
+    } else {
+      // docSnap.data() will be undefined in this case
+      console.log("No such document!");
+      setUserName("John");
+    }
+  };
+
+  useEffect(() => {
+    getNameAvatar();
+  }, []);
 
   const { ProjectID } = route.params ? route.params : {};
   const [taskList, setTaskList] = useState([]);
@@ -369,7 +406,7 @@ export default function ProjectScreen({ navigation, route }) {
             <UserAvatar
               size={40}
               active
-              src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=2900&q=80"
+              src={userAvatar}
             />
           </TouchableOpacity>
         </View>
