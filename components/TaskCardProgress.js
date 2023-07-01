@@ -71,7 +71,7 @@ export default class TaskCardOP extends Component {
 
         break;
       case "Overdue":
-        newStatus = "On Progress";
+        newStatus = "Overdue";
 
         break;
       default:
@@ -146,8 +146,10 @@ export default class TaskCardOP extends Component {
               style={[
                 styles.statusButton,
                 { backgroundColor: this.state.statusColor },
+                this.state.status === "Overdue" && styles.disabledStatusButton,
               ]}
               onPress={this.handleTaskStatusChange}
+              disabled={this.state.status === "Overdue"}
             >
               <Text style={styles.textInStatus}>{this.state.status}</Text>
             </TouchableOpacity>
@@ -233,5 +235,8 @@ const styles = StyleSheet.create({
     display: "flex",
     flexDirection: "row",
     justifyContent: "space-between",
+  },
+  disabledStatusButton: {
+    opacity: 0.5,
   },
 });

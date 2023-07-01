@@ -49,8 +49,10 @@ const taskCard = {
   status3: "Overdue",
   icon: "star",
 };
-export default function CompletedTaskScreen({ navigation }) {
+export default function CompletedTaskScreen({ navigation, route }) {
   //Load data
+  const { refreshScreen } = route.params;
+
   const { userId } = useContext(UserContext);
   const [isLoading, setIsLoading] = useState(true); // Add a state for loading indicator
   const [tasks, setTasks] = useState([]);
@@ -201,7 +203,12 @@ export default function CompletedTaskScreen({ navigation }) {
           <View style={styles.rowSection}>
             <TouchableOpacity
               style={styles.headerBehave}
-              onPress={() => navigation.goBack()}
+              onPress={() => {
+                navigation.goBack();
+                if (refreshScreen) {
+                  refreshScreen();
+                }
+              }}
             >
               <SimpleLineIcons name="arrow-left" size={20} color="black" />
             </TouchableOpacity>

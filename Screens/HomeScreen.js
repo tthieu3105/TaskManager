@@ -258,6 +258,7 @@ export default function HomeScreen({ navigation }) {
                 title={sectionInHome.sectionName}
                 navigation={navigation}
                 screenName="MyTask"
+                refreshScreen={refreshHomeScreen}
               ></HomeSection>
             </Animated.ScrollView>
           }
@@ -268,6 +269,7 @@ export default function HomeScreen({ navigation }) {
                   title={sectionInHome.sectionName2}
                   navigation={navigation}
                   screenName="Completed"
+                  refreshScreen={refreshHomeScreen}
                 ></HomeSection>
                 <FlatList
                   nestedScrollEnabled={true}
@@ -298,6 +300,7 @@ export default function HomeScreen({ navigation }) {
                   title={sectionInHome.sectionName3}
                   navigation={navigation}
                   screenName="Overdue"
+                  refreshScreen={refreshHomeScreen}
                 ></HomeSection>
                 <FlatList
                   nestedScrollEnabled={true}
