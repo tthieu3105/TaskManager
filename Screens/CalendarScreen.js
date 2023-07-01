@@ -27,7 +27,9 @@ const CalendarScreen = ({ navigation }) => {
   // currentDate:  lưu trữ ngày hiện tại và được khởi tạo ban đầu bằng đối tượng Date mới
   const [currentDate, setCurrentDate] = useState(new Date());
   // selectedDate lưu trữ ngày được chọn (nếu có) và được khởi tạo ban đầu bằng giá trị null
-  const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(new Date(currentDate));
+
+  
 
   const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -54,7 +56,8 @@ const CalendarScreen = ({ navigation }) => {
         //   setSelectedDate để cập nhật giá trị
         onPress={() => {
           // Lấy danh sách công việc từ backend dựa trên ngày được chọn
-          fetchTasks(date).then((tasks) => setTasks(tasks));
+          // fetchTasks(date).then((tasks) => setTasks(tasks));
+          // fetchTasks(date);
           setSelectedDate(date);
         }}
         style={[
@@ -96,12 +99,17 @@ const CalendarScreen = ({ navigation }) => {
         const tasks = [];
         querySnapshot.forEach((doc) => {
           const data = doc.data();
-          if (data.CreatorID = userId) {
-            tasks.push(data);
-
+          // const dateObject = data.StartTime.toDate(); // Chuyển đổi thành đối tượng Date
+          const number1 = data.StartTime.toDate().getTime();
+          const number2 = data.DueTime.toDate().getTime();
+          const number3 = selectedDate.getTime();
+          console.log("date: ", number3);
+          if (data.CreatorID = userId && number1 <= number3 && number2 >= number3 && data.Status != "Completed") {
+            const start = formatDate(data.StartTime);
+            const end = formatDate(data.DueTime);
+            tasks.push({ ...data, StartTime: start, DueTime: end });
           }
         });
-        // console.log(tasks);
         setTaskList(tasks);
       } catch (error) {
         console.error("Lỗi lấy ds note: ", error);
@@ -109,25 +117,28 @@ const CalendarScreen = ({ navigation }) => {
     };
     fetchData();
   }, []);
-  const formatDate = (date) => {
+  const formatDate = (item) => {
+    const timestamp = item;
+    const seconds = timestamp.seconds;
+    const date = new Date(seconds * 1000); // Chuyển đổi thành đối tượng Date
     const day = ("0" + date.getDate()).slice(-2);
     const month = ("0" + (date.getMonth() + 1)).slice(-2);
-    const year = date.getFullYear();
+    // const year = date.getFullYear();
     const hours = ("0" + date.getHours()).slice(-2);
     const minutes = ("0" + date.getMinutes()).slice(-2);
 
-    return `${day}/${month}/${year} ${hours}:${minutes}`;
+    return `${day}/${month} ${hours}:${minutes}`;
   };
 
   const renderTask = (task) => {
-    const id = task.TaskID;
+    const id = 1;
     return (
-      <TouchableOpacity onPress={() => navigation.navigate("TaskInfo", { id})}>
+      <TouchableOpacity onPress={() => navigation.navigate("TaskInfo", { id })}>
         <View style={styles.container1}>
           <Text style={styles.textInInsertBox}>8:00AM</Text>
           <View style={styles.taskBox}>
             <Text style={styles.textInTaskBox}>{task.Title}</Text>
-            <Text style={styles.timeInTaskBox}>8:00AM - 10:00AM</Text>
+            <Text style={styles.timeInTaskBox}>{task.StartTime} - {task.DueTime}</Text>
           </View>
         </View>
       </TouchableOpacity>
@@ -289,11 +300,11 @@ const styles = StyleSheet.create({
     // marginVertical: 10,
     marginTop: 5,
     marginBottom: 10,
-    height: 55,
+    height: "auto",
     borderRadius: 10,
     shadowColor: "gray",
     marginLeft: 15,
-    marginRight: 15,
+    marginRight: 20,
   },
 
   textInInsertBox: {
@@ -340,7 +351,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     shadowOpacity: 0.5,
     shadowOffset: {
-      width: 2,
+      width: 5,
       height: 2,
     },
   },

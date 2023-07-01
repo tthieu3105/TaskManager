@@ -93,7 +93,7 @@ const projectCard = {
   status1: "On Progress",
   icon: "user-circle",
 };
-export default function OverdueWSSreen({ navigation, route }) {
+export default function OnProgressWSSreen({ navigation, route }) {
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
   const offsetAnim = useRef(new Animated.Value(0)).current;
@@ -162,7 +162,7 @@ export default function OverdueWSSreen({ navigation, route }) {
         const taskSnap = await getDoc(taskRef);
 
         if (taskSnap.exists()) {
-          if (taskSnap.data().Status == "Overdue") {
+          if (taskSnap.data().Status == "On Progress") {
             let userID = 0;
             let userAvatar = "";
             let name = "";
@@ -401,7 +401,7 @@ export default function OverdueWSSreen({ navigation, route }) {
 
         {/* My Task */}
         <View style={styles.contentName}>
-          <Text style={{ fontSize: 20, fontWeight: 600 }}>Overdue</Text>
+          <Text style={{ fontSize: 20, fontWeight: 600 }}>On Progress</Text>
           <Text
             style={{
               fontSize: 20,

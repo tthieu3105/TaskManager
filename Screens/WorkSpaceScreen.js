@@ -11,7 +11,7 @@ import {
 
 import Constants from "expo-constants";
 import React, { Component, useRef } from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { Colors } from "react-native/Libraries/NewAppScreen";
 import { Entypo } from "@expo/vector-icons";
 import { Ionicons } from "@expo/vector-icons";
@@ -27,6 +27,7 @@ import {
   query,
   where,
 } from "firebase/firestore";
+import { UserContext, UserProvider } from "../contextObject";
 
 const CONTAINER_HEIGHT = 80;
 
@@ -63,10 +64,10 @@ const WorkSpaceScreen = ({ navigation }) => {
   );
 
   //Hello
+  const { userId } = useContext(UserContext);
   const [userName, setUserName] = useState("");
-  const userID = 1;
   const getName = async () => {
-    const docRef = doc(db, "User", userID.toString());
+    const docRef = doc(db, "User", userId.toString());
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
@@ -86,7 +87,10 @@ const WorkSpaceScreen = ({ navigation }) => {
   const [projectList, setProjectList] = useState([]);
 
   const getProject = async () => {
-    const q = query(collection(db, "Project"), where("CreatorID", "==", userID));
+    const q = query(
+      collection(db, "Project"),
+      where("CreatorID", "==", userId)
+    );
     const querySnapshot = await getDocs(q);
 
     const sl = querySnapshot.size;
@@ -135,19 +139,18 @@ const WorkSpaceScreen = ({ navigation }) => {
         }
       }
 
-      // Not Started / In Progress / Completed / Overdue
-      const status = { NotStarted: 0, InProgress: 0, Completed: 0, Overdue: 0 };
+      // Not Started / On Progress / Completed / Overdue
+      const status = { NotStarted: 0, OnProgress: 0, Completed: 0, Overdue: 0 };
       // querySnapshot1
       for (const task of querySnapshot1.docs) {
         const docRef = doc(db, "Task", task.data().TaskID.toString());
         const docSnap = await getDoc(docRef);
-        console.log("status: ", docSnap.data().Status);
         switch (docSnap.data().Status) {
           case "Not Started":
             status.NotStarted++;
             break;
-          case "In Progress":
-            status.InProgress++;
+          case "On Progress":
+            status.OnProgress++;
             break;
           case "Completed":
             status.Completed++;
@@ -159,7 +162,7 @@ const WorkSpaceScreen = ({ navigation }) => {
       }
       const sum =
         status.NotStarted +
-        status.InProgress +
+        status.OnProgress +
         status.Completed +
         status.Overdue;
       let progress = 0;
@@ -167,7 +170,6 @@ const WorkSpaceScreen = ({ navigation }) => {
         progress = status.Completed / sum;
         progress = progress.toFixed(4);
       }
-      console.log("progress: ", status);
 
       proList.push({
         ProjectID: proID,
@@ -175,6 +177,7 @@ const WorkSpaceScreen = ({ navigation }) => {
         numberOfTask: numberOfTask,
         userList: userList,
         progress: progress,
+        hidden: false,
       });
     }
     setProjectList(proList);
@@ -185,9 +188,88 @@ const WorkSpaceScreen = ({ navigation }) => {
     getProject();
   }, []);
 
-  // find box
+  // Find box
   const [keyword, setKeyword] = useState("");
+  const handleClearSearchBox = () => {
+    setKeyword("");
+    projectList.map((p) => {
+      p.hidden = false;
+    });
+  };
 
+  const FindKeyword = () => {
+    const key = keyword.toLowerCase();
+    const updatedList = projectList.map((p) => {
+      const proName = p.ProjectName.toLowerCase();
+      if (!proName.includes(key)) {
+        return { ...p, hidden: true };
+      }
+      return { ...p, hidden: false };
+    });
+    setProjectList(updatedList);
+  };
+
+  // Sort
+  const [sort, setSort] = useState(0);
+  const Sort = () => {
+    let initProList = "";
+    projectList
+      .filter((p) => p.hidden == false)
+      .map((p) => {
+        initProList = initProList + p.ProjectID.toString();
+      });
+    let sortProList = "";
+    switch (sort) {
+      case 0:
+        sortProList = "";
+        projectList.sort((a, b) => a.ProjectName.localeCompare(b.ProjectName));
+        projectList
+          .filter((p) => p.hidden == false)
+          .map((p) => {
+            sortProList = sortProList + p.ProjectID.toString();
+          });
+        if (initProList !== sortProList) {
+          setSort(1);
+          break;
+        }
+      case 1:
+        sortProList = "";
+        projectList.sort((a, b) => b.progress - a.progress);
+        projectList
+          .filter((p) => p.hidden == false)
+          .map((p) => {
+            sortProList = sortProList + p.ProjectID.toString();
+          });
+        if (initProList !== sortProList) {
+          setSort(2);
+          break;
+        }
+      case 2:
+        sortProList = "";
+        projectList.sort((a, b) => a.progress - b.progress);
+        projectList
+          .filter((p) => p.hidden == false)
+          .map((p) => {
+            sortProList = sortProList + p.ProjectID.toString();
+          });
+        if (initProList !== sortProList) {
+          setSort(3);
+          break;
+        }
+      case 3:
+        sortProList = "";
+        projectList.sort((a, b) => a.ProjectID - b.ProjectID);
+        projectList
+          .filter((p) => p.hidden == false)
+          .map((p) => {
+            sortProList = sortProList + p.ProjectID.toString();
+          });
+        if (initProList !== sortProList) {
+          setSort(0);
+          break;
+        }
+    }
+  };
 
   var _clampedScrollValue = 0;
   var _offsetValue = 0;
@@ -270,15 +352,24 @@ const WorkSpaceScreen = ({ navigation }) => {
               <View style={styles.searchBox}>
                 <View style={styles.row1} marginTop={9}>
                   <TextInput
-                    width={"85%"}
+                    width={"75%"}
                     style={styles.textInSearchBox}
                     placeholder="Find your project"
                     placeholderTextColor={Colors.placeholder}
-                    onChangeText={(text)=>setKeyword(text)}
+                    onChangeText={(text) => setKeyword(text)}
+                    value={keyword}
                   ></TextInput>
 
+                  <TouchableOpacity onPress={handleClearSearchBox}>
+                    <AntDesign
+                      name="closecircle"
+                      size={20}
+                      style={styles.iconClearSearchBox}
+                    />
+                  </TouchableOpacity>
+
                   {/* Xử lý button tìm kiếm */}
-                  <TouchableOpacity onPress={()=>{navigation.navigate("OverdueWS")}}>
+                  <TouchableOpacity onPress={FindKeyword}>
                     <AntDesign
                       name="search1"
                       size={25}
@@ -294,79 +385,106 @@ const WorkSpaceScreen = ({ navigation }) => {
 
               {/* Workspace title */}
               <View style={styles.row1}>
-                <Text style={styles.smallTitle}>Workspace</Text>
-                {/* Đếm số lượng workspace người dùng đang có và load lên text tại đây */}
-                <Text style={styles.numberOfProject}>{count}</Text>
+                <View style={styles.column1}>
+                  <Text style={styles.smallTitle}>Workspace</Text>
+                  {/* Đếm số lượng workspace người dùng đang có và load lên text tại đây */}
+                  <Text style={styles.numberOfProject}>{count}</Text>
 
-                {/* Xử lý button sắp xếp project tại đây */}
-                <TouchableOpacity>
-                  <Entypo name="select-arrows" size={22} color="black" />
-                </TouchableOpacity>
+                  {/* Xử lý button sắp xếp project tại đây */}
+                  <TouchableOpacity onPress={Sort}>
+                    <Entypo name="select-arrows" size={22} color="black" />
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.column2}>
+                  <TouchableOpacity onPress={() =>navigation.navigate("AddProject")}>
+                    <AntDesign
+                      name="pluscircleo"
+                      size={22}
+                      style={styles.iconPlus}
+                    ></AntDesign>
+                  </TouchableOpacity>
+                </View>
               </View>
 
               {/* Projects */}
-              {projectList.map((p) => {
-                let proName = p.ProjectName;
-                if (proName.length > 40) {
-                  proName = proName.slice(0, 39) + "...";
-                }
-                return (
-                  <View style={styles.projectFrame} key={p.ProjectID} >
-                    {/* Tên & số lượng công việc */}
-                    <View style={styles.smallFrame1}>
-                      <Text style={styles.smallTitle2}>{proName}</Text>
-                      <Text style={styles.numberOfProject2}>
-                        {p.numberOfTask} tasks
-                      </Text>
-                    </View>
+              {projectList
+                .filter((p) => p.hidden == false)
+                .map((p) => {
+                  let proName = p.ProjectName;
+                  if (proName.length > 40) {
+                    proName = proName.slice(0, 39) + "...";
+                  }
+                  return (
+                    <TouchableOpacity
+                      style={styles.projectFrame}
+                      key={p.ProjectID}
+                      onPress={() =>
+                        navigation.navigate("Projects", {
+                          ProjectID: p.ProjectID,
+                        })
+                      }
+                    >
+                      {/* Tên & số lượng công việc */}
+                      <View style={styles.smallFrame1}>
+                        <Text style={styles.smallTitle2}>{proName}</Text>
+                        <Text style={styles.numberOfProject2}>
+                          {p.numberOfTask} tasks
+                        </Text>
+                      </View>
 
-                    {/* Tiến độ hoàn thành & avatar thành viên */} 
-                    <View style={styles.smallFrame2}>
-                      {/* Xử lý lấy tiến độ hoàn thành và load lên text & view */}
-                      <View style={styles.smallFrame3}>
-                        <Text style={styles.progressText}>{`${
-                          p.progress * 100
-                        }%`}</Text>
-                        <View style={styles.progressBar}>
-                          <View style={[styles.progress, { width: `${p.progress * 100}%` }]} />
+                      {/* Tiến độ hoàn thành & avatar thành viên */}
+                      <View style={styles.smallFrame2}>
+                        {/* Xử lý lấy tiến độ hoàn thành và load lên text & view */}
+                        <View style={styles.smallFrame3}>
+                          <Text style={styles.progressText}>{`${
+                            p.progress * 100
+                          }%`}</Text>
+                          <View style={styles.progressBar}>
+                            <View
+                              style={[
+                                styles.progress,
+                                { width: `${p.progress * 100}%` },
+                              ]}
+                            />
+                          </View>
+                        </View>
+
+                        <View style={styles.smallFrame4}>
+                          {p.userList.map((user) => {
+                            if (user.Avatar == "") {
+                              const name = user.Name;
+                              const initials = name
+                                .split(" ")
+                                .map((name) => name.charAt(0))
+                                .join("");
+                              const avatarUrl = `https://ui-avatars.com/api/?name=${name}&background=random&size=25`;
+                              return (
+                                <UserAvatar
+                                  style={styles.avatar}
+                                  key={user.UserID}
+                                  size={25}
+                                  src={avatarUrl}
+                                  alt={user.Name}
+                                />
+                              );
+                            } else {
+                              return (
+                                <UserAvatar
+                                  style={styles.avatar}
+                                  key={user.UserID}
+                                  size={25}
+                                  src={user.Avatar}
+                                  alt={user.Name}
+                                />
+                              );
+                            }
+                          })}
                         </View>
                       </View>
-
-                      <View style={styles.smallFrame4}>
-                        {p.userList.map((user) => {
-                          if (user.Avatar == "") {
-                            const name = user.Name;
-                            const initials = name
-                              .split(" ")
-                              .map((name) => name.charAt(0))
-                              .join("");
-                            const avatarUrl = `https://ui-avatars.com/api/?name=${name}&background=random&size=25`;
-                            return (
-                              <UserAvatar
-                                style={styles.avatar}
-                                key={user.UserID}
-                                size={25}
-                                src={avatarUrl}
-                                alt={user.Name}
-                              />
-                            );
-                          } else {
-                            return (
-                              <UserAvatar
-                                style={styles.avatar}
-                                key={user.UserID}
-                                size={25}
-                                src={user.Avatar}
-                                alt={user.Name}
-                              />
-                            );
-                          }
-                        })}
-                      </View>
-                    </View>
-                  </View>
-                );
-              })}
+                    </TouchableOpacity>
+                  );
+                })}
 
               {/* Đếm số lượng task của project và hiển thị các workspace của người dùng lên màn hình
               <View style={styles.projectFrame}>
@@ -416,6 +534,18 @@ const styles = StyleSheet.create({
 
   row1: {
     flexDirection: "row",
+    display: "flex",
+    
+  },
+
+  column1: {
+    flexDirection: "row",
+    flex: 4,
+  },
+
+  column2: {
+    flex: 1,
+    justifyContent: "flex-end",
   },
 
   image: {
@@ -437,10 +567,22 @@ const styles = StyleSheet.create({
     // fontStyle
   },
 
+  iconClearSearchBox: {
+    marginLeft: 10,
+    color: "#c0c0c0",
+  },
+
   iconInSearchBox: {
     marginRight: 15,
-    marginLeft: "auto",
+    marginLeft: 10,
     color: "gray",
+  },
+
+  iconPlus: {
+    marginLeft: "auto",
+    marginRight: 15,
+    color: "black",
+    marginBottom: 10,
   },
 
   smallTitle: {

@@ -38,7 +38,8 @@ export class BottomPopup extends React.Component {
   }
   handlePressEdit = () => {
     const { screenName, navigation } = this.props;
-    navigation.navigate(screenName);
+    const { projectID } = this.props;
+    navigation.navigate(screenName, {ProjectID: projectID});
   };
   renderEdit = () => {
     const { titleEdit } = this.props;
@@ -65,8 +66,10 @@ export class BottomPopup extends React.Component {
   };
   renderDelete = () => {
     const { titleDelete } = this.props;
+    const { funcDeleteProject } = this.props;
     return (
       <TouchableOpacity
+      onPress={funcDeleteProject}
         style={{
           backgroundColor: "#E7272D",
           height: 50,

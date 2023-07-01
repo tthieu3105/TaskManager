@@ -28,14 +28,18 @@ import NoteScreen from "../Screens/NoteScreen.js";
 import CreateTaskScreen from "../Screens/CreateTaskScreen.js";
 import NotifyScreen from "../Screens/NotifyScreen.js";
 import TaskInfoScreen from "../Screens/TaskInfoScreen.js";
-// import EditTaskScreen from "../Screens/EditTaskScreen.js";
 import EditNoteScreen from "../Screens/EditNoteScreen.js";
 import EditTaskScreen from "../Screens/EditTaskScreen.js";
 
+import AddProjectScreen from "../Screens/AddProjectScreen.js";
+import EditProjectScreen from "../Screens/EditProjectScreen.js";
 import ProjectScreen from "../Screens/ProjectScreen.js";
 import AllTaskSreen from "../Screens/AllTaskScreen.js";
+import NotStartedWSSreen from "../Screens/NotStartedWSSreen.js";
+import OnProgressWSSreen from "../Screens/OnProgressWSSreen.js";
 import OverdueWSSreen from "../Screens/OverdueWSScreen.js";
 import CompletedWSScreen from "../Screens/CompletedWSScreen.js";
+
 import NewTaskNote from "../Screens/NewTaskNote.js";
 import MyTaskScreen from "../Screens/MyTaskScreen.js";
 import CompletedScreen from "../Screens/CompletedTaskScreen.js";
@@ -156,8 +160,12 @@ function WorkSpaceScreenStackNavigator() {
       />
       <WorkSpaceScreenStack.Screen name="EditProfile" component={EditProfile} />
       <WorkSpaceScreenStack.Screen name="Projects" component={ProjectScreen} />
+      <WorkSpaceScreenStack.Screen name="AddProject" component={AddProjectScreen} />
+      <WorkSpaceScreenStack.Screen name="EditProject" component={EditProjectScreen} />
       <WorkSpaceScreenStack.Screen name="AllTask" component={AllTaskSreen} />
       <WorkSpaceScreenStack.Screen name="Tasks" component={TaskInfoScreen} />
+      <WorkSpaceScreenStack.Screen name="NotStartedWS" component={NotStartedWSSreen} />
+      <WorkSpaceScreenStack.Screen name="OnProgressWS" component={OnProgressWSSreen} />
       <WorkSpaceScreenStack.Screen name="OverdueWS" component={OverdueWSSreen} />
       <WorkSpaceScreenStack.Screen name="CompletedWS" component={CompletedWSScreen} />
       {/* <WorkSpaceScreenStack.Screen name="TaskEdit" component={EditTaskScreen} /> */}
