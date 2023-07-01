@@ -11,7 +11,8 @@ import {
   ActivityIndicator,
 } from "react-native";
 import React, { Component, useEffect, useRef } from "react";
-import { useState } from "react";
+import { useContext, useState } from "react";
+import { UserContext, UserProvider } from "../contextObject";
 import Header from "../components/HeaderWithTextAndAvatar";
 import {
   Feather,
@@ -26,9 +27,35 @@ import TabContainer from "../components/TabContainer";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../components/FirestoreConfig";
 const CONTAINER_HEIGHT = 80;
+
 export default function NoteScreen({ navigation }) {
   const [isLoading, setIsLoading] = useState(true); // Add a state for loading indicator
+  const { userId } = useContext(UserContext); // lấy userid
+  const formatDateUS = () => {
+    const date = new Date();
+    const months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December'
+    ];
 
+    const day = date.getDate();
+    const month = months[date.getMonth()];
+    const year = date.getFullYear();
+
+    return `${month} ${day}, ${year}`;
+  };
+  const currentDate = formatDateUS(new Date());
+  console.log('current date: ', currentDate);
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
   const offsetAnim = useRef(new Animated.Value(0)).current;
@@ -69,9 +96,11 @@ export default function NoteScreen({ navigation }) {
   });
   // End of header animation
 
-  //Hiển thị danh sách note đã có trên FireStore
+  //Lấy danh sách note đã có trên FireStore
   const notesCollection = collection(db, "Note");
   const [noteList, setnoteList] = useState([]);
+  const [count, setCount] = useState(0);
+  var d = 0;
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -79,20 +108,22 @@ export default function NoteScreen({ navigation }) {
         const notes = [];
         querySnapshot.forEach((doc) => {
           const data = doc.data();
-          // console.log(data.NodeID);
-          // console.log('key: ', doc.id);
-          // console.log('key: ', doc.id);
-          const timestamp = data.CreateAt;
-          const seconds = timestamp.seconds;
-          const date = new Date(seconds * 1000); // Chuyển đổi thành đối tượng Date
-          const formattedDate = formatDate(date); // Định dạng ngày tháng
-          notes.push({ ...data, CreateAt: formattedDate });
+          if (data.CreatorID == userId) {
+            d++;
+            const timestamp = data.CreateAt;
+            const seconds = timestamp.seconds;
+            const date = new Date(seconds * 1000); // Chuyển đổi thành đối tượng Date
+            const formattedDate = formatDate(date); // Định dạng ngày tháng
+            notes.push({ ...data, CreateAt: formattedDate });
+          }
         });
         setnoteList(notes);
+        setCount(d);
         setIsLoading(false);
       } catch (error) {
         console.error("Lỗi lấy ds note: ", error);
       }
+
     };
     fetchData();
   }, []);
@@ -106,19 +137,48 @@ export default function NoteScreen({ navigation }) {
     return `${day}/${month}/${year} ${hours}:${minutes}`;
   };
 
+  // Tìm kiếm
+  const [searchText, setSearchText] = useState('');
+  const handleSearchTextChange = (text) => {
+    setSearchText(text);
+  };
+  const filteredNotes = noteList.filter((note) => {
+    const { Title, Description } = note;
+    const searchTextLowercase = searchText.toLowerCase();
+    return (
+      Title.toLowerCase().includes(searchTextLowercase) ||
+      Description.toLowerCase().includes(searchTextLowercase)
+    );
+  });//jjjj
+
+  console.log(count);
   // Render danh sách note
   const rendernoteList = () => {
-    return noteList.map((note) => (
+    return filteredNotes.map((note) => (
       <NoteCard
         title={note.Title}
         content={note.Description}
         date={note.CreateAt}
         navigation={navigation}
         screenName="NoteInfo"
-        id = {note.NodeID}
+        id={note.NodeID}
       />
     ));
   };
+  // 
+  // const rendernoteList = () => {
+  //   return noteList.map((note) => (
+  //     <NoteCard
+  //       title={note.Title}
+  //       content={note.Description}
+  //       date={note.CreateAt}
+  //       navigation={navigation}
+  //       screenName="NoteInfo"
+  //       id = {note.NodeID}
+
+  //     />
+  //   ));
+  // };
 
   if (isLoading) {
     return <ActivityIndicator size="large" color="#0000ff" />;
@@ -174,7 +234,7 @@ export default function NoteScreen({ navigation }) {
           >
             {/* Hello user */}
             <Text style={styles.title}>Hello Josh</Text>
-            <Text style={styles.detailText}>May 27, 2022</Text>
+            <Text style={styles.detailText}>{currentDate}</Text>
 
             {/* SearchBox */}
             <View style={styles.SearchBox}>
@@ -182,6 +242,8 @@ export default function NoteScreen({ navigation }) {
                 style={styles.textInSearchBox}
                 placeholder="Find your note"
                 placeholderTextColor={Colors.placeholder}
+                value={searchText}
+                onChangeText={handleSearchTextChange}
               ></TextInput>
               <TouchableOpacity>
                 <Feather name="search" size={24} color="#363942" />
@@ -198,7 +260,7 @@ export default function NoteScreen({ navigation }) {
                   marginHorizontal: 6,
                 }}
               >
-                33
+                {count}
               </Text>
               <TouchableOpacity>
                 <FontAwesome name="sort" size={20} color="black" />

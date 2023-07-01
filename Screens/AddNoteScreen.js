@@ -9,7 +9,8 @@ import {
 } from "react-native";
 
 import React, { Children, Component, useRef } from "react";
-import { useState, useEffect } from "react";
+import { UserContext, UserProvider } from "../contextObject";
+import { useContext, useState, useEffect } from "react";
 import { Colors } from "react-native/Libraries/NewAppScreen";
 import AntDesign from "../node_modules/@expo/vector-icons/AntDesign";
 import UserAvatar from "@muhzi/react-native-user-avatar";
@@ -19,6 +20,7 @@ import { collection, addDoc, doc, getDoc, runTransaction, setDoc, Timestamp } fr
 const CONTAINER_HEIGHT = 80;
 
 const AddNoteScreen = ({ navigation }) => {
+  const { userId } = useContext(UserContext);
   const [currentDate, setCurrentDate] = useState("");
   // Hiển thị ngày tháng năm hiện tại lên textView:
   useEffect(() => {
@@ -59,7 +61,7 @@ const AddNoteScreen = ({ navigation }) => {
           Description: noteDescription,
           CreateAt: Timestamp.now(),
           NodeID: sum + 1,
-          CreatorID: 1,
+          CreatorID: userId,
         };
         const count = {
           sum: sum + 1,
@@ -72,6 +74,7 @@ const AddNoteScreen = ({ navigation }) => {
       } catch (error) {
         console.error("Lỗi khi tạo note: ", error);
       }
+      navigation.replace("NoteScreen");
     };
 
 
@@ -131,7 +134,7 @@ const AddNoteScreen = ({ navigation }) => {
       >
         <View style={styles.row}>
           {/* Button: back to previous screen */}
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
             <AntDesign
               name="left"
               size={30}

@@ -47,6 +47,7 @@ const CalendarScreen = () => {
       selectedDate && selectedDate.getDate() === date.getDate();
 
     const data = [{ key: "1", value: "he thong thong tin" }];
+
     return (
       // hiển thị thứ và ngày tương ứng
       <TouchableOpacity
