@@ -7,7 +7,7 @@ import { TouchableOpacity } from "react-native";
 import { TextInput } from "react-native";
 import { Feather, SimpleLineIcons } from "@expo/vector-icons";
 import { Colors } from "react-native/Libraries/NewAppScreen";
-import HomeSection from "../components/HomeSection";
+import ProjectSection from "../components/ProjectSection";
 import TaskCard from "../components/TaskCardProgress";
 import TaskCardOP from "../components/TaskCardProgress";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -23,6 +23,7 @@ import {
   getDocs,
   query,
   where,
+  deleteDoc,
 } from "firebase/firestore";
 
 const Progress = ({ step, steps, height }) => {
@@ -310,8 +311,31 @@ export default function ProjectScreen({ navigation, route }) {
   };
 
   // delete project
-  const DeleteProject = () => {
-    console.log("DeleteProject");
+  const DeleteProject = async () => {
+    await deleteDoc(doc(db, "Project", ProjectID.toString()));
+    
+    const q1 = query(
+      collection(db, "Project_User"),
+      where("ProjectID", "==", ProjectID)
+    );
+
+    const querySnapshot1 = await getDocs(q1);
+    
+    for(const pro_user of querySnapshot1.docs) {
+      await deleteDoc(doc(db, "Project_User", pro_user.data().itemID.toString()));
+    }
+    
+    const q2 = query(
+      collection(db, "Project_Task"),
+      where("ProjectID", "==", ProjectID)
+    );
+    const querySnapshot2 = await getDocs(q2);
+
+    for(const pro_task of querySnapshot2.docs) {
+      await deleteDoc(doc(db, "Project_Task", pro_task.data().itemID.toString()));
+      await deleteDoc(doc(db, "Task", pro_task.data().TaskID.toString()));
+    }
+    navigation.replace("WorkspaceScreen");
   };
 
   return (
@@ -453,11 +477,12 @@ export default function ProjectScreen({ navigation, route }) {
 
         {/* On progress */}
         {isOnProgress == true ? (
-          <HomeSection
+          <ProjectSection
             title="On Progress Task"
             screenName="OnProgressWS"
             navigation={navigation}
-          ></HomeSection>
+            ProjectID={ProjectID}
+          ></ProjectSection>
         ) : (
           <View></View>
         )}
@@ -488,11 +513,12 @@ export default function ProjectScreen({ navigation, route }) {
 
         {/* Not started */}
         {isNotStarted === true ? (
-          <HomeSection
+          <ProjectSection
             title="Not Started"
             screenName="NotStartedWS"
             navigation={navigation}
-          ></HomeSection>
+            ProjectID={ProjectID}
+          ></ProjectSection>
         ) : (
           <View></View>
         )}
@@ -523,11 +549,12 @@ export default function ProjectScreen({ navigation, route }) {
 
         {/* Completed */}
         {isCompleted === true ? (
-          <HomeSection
+          <ProjectSection
             title="Completed Task"
             screenName="CompletedWS"
             navigation={navigation}
-          ></HomeSection>
+            ProjectID={ProjectID}
+          ></ProjectSection>
         ) : (
           <View></View>
         )}
@@ -558,11 +585,12 @@ export default function ProjectScreen({ navigation, route }) {
 
         {/* Overdue */}
         {isOverdue === true ? (
-          <HomeSection
+          <ProjectSection
             title="Overdue Task"
             screenName="OverdueWS"
             navigation={navigation}
-          ></HomeSection>
+            ProjectID={ProjectID}
+          ></ProjectSection>
         ) : (
           <View></View>
         )}

@@ -1,16 +1,27 @@
 import { Text, StyleSheet, View, KeyboardAvoidingView } from "react-native";
-import React, { Component, useEffect } from "react";
+import React, { Component, useEffect, useState } from "react";
 import { StatusBar, Animated } from "react-native";
 import Header from "../components/HeaderWithTextAndAvatar";
 import { ScrollView } from "react-native";
 import { TouchableOpacity } from "react-native";
 import { TextInput } from "react-native";
 import { Feather, FontAwesome, SimpleLineIcons } from "@expo/vector-icons";
+import AntDesign from "../node_modules/@expo/vector-icons/AntDesign";
 import { Colors } from "react-native/Libraries/NewAppScreen";
 import HomeSection from "../components/HomeSection";
-import TaskCard from "../components/TaskCardCompleted";
+import TaskCard from "../components/TaskCardProgress";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRef } from "react";
+import { db } from "../components/FirestoreConfig";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  where,
+  deleteDoc,
+} from "firebase/firestore";
 
 import UserAvatar from "@muhzi/react-native-user-avatar";
 const Progress = ({ step, steps, height }) => {
@@ -82,7 +93,7 @@ const projectCard = {
   status1: "On Progress",
   icon: "user-circle",
 };
-export default function CompletedWSScreen({navigation}) {
+export default function CompletedWSSreen({ navigation, route }) {
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
   const offsetAnim = useRef(new Animated.Value(0)).current;
@@ -122,7 +133,6 @@ export default function CompletedWSScreen({navigation}) {
     extrapolate: "clamp",
   });
   // End of header animation
-
   const [index, setIndex] = React.useState(0);
   React.useEffect(() => {
     const interval = setInterval(() => {
@@ -132,6 +142,175 @@ export default function CompletedWSScreen({navigation}) {
       clearInterval(interval);
     };
   }, [index]);
+
+  const { ProjectID } = route.params ? route.params : {};
+  const [project, setProject] = useState({});
+  const [taskList, setTaskList] = useState([]);
+  const [numberOfTask, setNumberOfTask] = useState(0);
+
+  const getProjectInfo = async () => {
+    const q1 = query(
+      collection(db, "Project_Task"),
+      where("ProjectID", "==", ProjectID)
+    );
+
+    const querySnapshot1 = await getDocs(q1);
+    const tasks = [];
+    if (querySnapshot1.size > 0) {
+      for (const pro_task of querySnapshot1.docs) {
+        const taskRef = doc(db, "Task", pro_task.data().TaskID.toString());
+        const taskSnap = await getDoc(taskRef);
+
+        if (taskSnap.exists()) {
+          if (taskSnap.data().Status == "Completed") {
+            let userID = 0;
+            let userAvatar = "";
+            let name = "";
+            if (taskSnap.data().AssignTo) {
+              const q2 = query(
+                collection(db, "Task_User"),
+                where("TaskID", "==", taskSnap.data().TaskID)
+              );
+              const querySnapshot2 = await getDocs(q2);
+              if (querySnapshot2.size > 0) {
+                const userRef = doc(
+                  db,
+                  "User",
+                  querySnapshot2.docs[0].data().AssigneeID.toString()
+                );
+                const userSnap = await getDoc(userRef);
+                if (userSnap.exists()) {
+                  userID = userSnap.data().UserID;
+                  userAvatar = userSnap.data().Avatar;
+                  name = userSnap.data().Name;
+                }
+              }
+            } else {
+              const userRef = doc(
+                db,
+                "User",
+                taskSnap.data().CreatorID.toString()
+              );
+              const userSnap = await getDoc(userRef);
+              userID = userSnap.data().UserID;
+              userAvatar = userSnap.data().Avatar;
+              name = userSnap.data().Name;
+            }
+
+            tasks.push({
+              TaskID: taskSnap.data().TaskID,
+              Title: taskSnap.data().Title,
+              Description: taskSnap.data().Description,
+              Status: taskSnap.data().Status,
+              StartTime: taskSnap
+                .data()
+                .StartTime.toDate()
+                .toLocaleTimeString(),
+              DueTime: taskSnap.data().DueTime.toDate().toLocaleTimeString(),
+              UserID: userID,
+              Name: name,
+              UserAvatar: userAvatar,
+              hidden: false,
+            });
+          }
+        }
+      }
+      setNumberOfTask(tasks.length);
+      setTaskList(tasks);
+    }
+
+    const proRef = doc(db, "Project", ProjectID.toString());
+    const proSnap = await getDoc(proRef);
+
+    if (proSnap.exists()) {
+      const pro = {
+        ProjectID: ProjectID,
+        ProjectName: proSnap.data().ProjectName,
+        CreatorID: proSnap.data().CreatorID,
+        StartTime: proSnap.data().StartTime.toDate().toLocaleDateString(),
+        EndTime: proSnap.data().EndTime.toDate().toLocaleDateString(),
+      };
+      setProject(pro);
+    }
+  };
+
+  useEffect(() => {
+    getProjectInfo();
+  }, []);
+
+  // Find keyword
+  const [keyword, setKeyword] = useState("");
+
+  const handleClearSearchBox = () => {
+    taskList.map((t) => {
+      t.hidden = false;
+    });
+    setKeyword("");
+  };
+
+  const FindKeyword = () => {
+    const key = keyword.toLowerCase();
+    const updatedList = taskList.map((t) => {
+      const title = t.Title.toLowerCase();
+      const description = t.Description.toLowerCase();
+      if (!(title.includes(key) || description.includes(key))) {
+        return { ...t, hidden: true };
+      }
+      return { ...t, hidden: false };
+    });
+    setTaskList(updatedList);
+  };
+
+  // Sort
+  const [sort, setSort] = useState(0);
+  const Sort = () => {
+    let initTask = "";
+    taskList
+      .filter((t) => t.hidden == false)
+      .map((t) => {
+        initTask = initTask + t.TaskID.toString();
+      });
+    let sortTaskList = "";
+    switch (sort) {
+      case 0:
+        sortTaskList = "";
+        taskList.sort((a, b) => a.Title.localeCompare(b.Title));
+        taskList
+          .filter((t) => t.hidden == false)
+          .map((t) => {
+            sortTaskList = sortTaskList + t.TaskID.toString();
+          });
+        if (initTask !== sortTaskList) {
+          setSort(1);
+          break;
+        }
+      case 1:
+        sortTaskList = "";
+        taskList.sort((a, b) => a.StartTime.localeCompare(b.StartTime));
+        taskList
+          .filter((t) => t.hidden == false)
+          .map((t) => {
+            sortTaskList = sortTaskList + t.TaskID.toString();
+          });
+        if (initTask !== sortTaskList) {
+          setSort(2);
+          break;
+        }
+      case 2:
+        sortTaskList = "";
+        taskList.sort((a, b) => a.TaskID - b.TaskID);
+        taskList
+          .filter((t) => t.hidden == false)
+          .map((t) => {
+            sortTaskList = sortTaskList + t.TaskID.toString();
+          });
+        if (initTask !== sortTaskList) {
+          setSort(0);
+          break;
+        }
+    }
+  };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -149,16 +328,20 @@ export default function CompletedWSScreen({navigation}) {
         ]}
       >
         <View style={styles.rowSection}>
-          <TouchableOpacity style={styles.headerBehave} onPress={() => navigation.goBack()}>
+          <TouchableOpacity
+            style={styles.headerBehave}
+            onPress={() => navigation.goBack()}
+          >
             <SimpleLineIcons name="arrow-left" size={24} color="black" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.headerBehave}>
+          <TouchableOpacity
+            style={styles.headerBehave}
+            onPress={() => navigation.navigate("AccountFeature")}
+          >
             <UserAvatar
-              initialName="SK"
-              fontSize={15}
               size={40}
-              rounded={true}
-              backgroundColors={["#4B7BE5"]}
+              active
+              src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=2900&q=80"
             />
           </TouchableOpacity>
         </View>
@@ -180,7 +363,7 @@ export default function CompletedWSScreen({navigation}) {
               alignItems: "center",
             }}
           >
-            <Text style={styles.title}>Web Design</Text>
+            <Text style={styles.title}>{project.ProjectName}</Text>
             <TouchableOpacity>
               <MaterialCommunityIcons
                 name="dots-horizontal"
@@ -191,17 +374,26 @@ export default function CompletedWSScreen({navigation}) {
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.detailText}>created in 20/03/2023</Text>
+          <Text style={styles.detailText}>Started in {project.StartTime}</Text>
           {/* Progress Bar */}
-          <Progress step={5} steps={10} height={20} />
+          {/* <Progress step={5} steps={10} height={20} /> */}
           {/* SearchBox */}
           <View style={styles.SearchBox}>
             <TextInput
               style={styles.textInSearchBox}
               placeholder="Find your task"
               placeholderTextColor={Colors.placeholder}
+              onChangeText={(text) => setKeyword(text)}
+              value={keyword}
             ></TextInput>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={handleClearSearchBox}>
+              <AntDesign
+                name="closecircle"
+                size={20}
+                style={styles.iconClearSearchBox}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={FindKeyword}>
               <Feather name="search" size={24} color="#363942" />
             </TouchableOpacity>
           </View>
@@ -218,49 +410,45 @@ export default function CompletedWSScreen({navigation}) {
               marginHorizontal: 6,
             }}
           >
-            3
+            {numberOfTask}
           </Text>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={Sort}>
             <FontAwesome name="sort" size={20} color="black" />
           </TouchableOpacity>
         </View>
+        {taskList
+          .filter((task) => task.hidden == false)
+          .map((task) => {
+            let avatar = task.UserAvatar;
+            if (avatar == "") {
+              const name = task.Name;
+              const initials = name
+                .split(" ")
+                .map((name) => name.charAt(0))
+                .join("");
+              avatar = `https://ui-avatars.com/api/?name=${name}&background=random&size=24`;
+            }
+            return (
+              <TaskCard
+                key={task.TaskID}
+                title={task.Title}
+                subtitle={task.Description}
+                time={task.StartTime}
+                taskStatus={task.Status}
+                avatar={avatar}
+                taskID={task.TaskID.toString()}
+              ></TaskCard>
+            );
+          })}
         {/* TaskCard */}
-        <TaskCard
+        {/* <TaskCard
           title={projectCard.title1}
           subtitle={projectCard.subtitle1}
           time={projectCard.time1}
           status={projectCard.status1}
           iconName={projectCard.icon}
-        ></TaskCard>
+        ></TaskCard> */}
         {/* End of TaskCard */}
-        {/* TaskCard */}
-        <TaskCard
-          title={projectCard.title1}
-          subtitle={projectCard.subtitle1}
-          time={projectCard.time1}
-          status={projectCard.status1}
-          iconName={projectCard.icon}
-        ></TaskCard>
-        {/* End of TaskCard */}
-        {/* TaskCard */}
-        <TaskCard
-          title={projectCard.title1}
-          subtitle={projectCard.subtitle1}
-          time={projectCard.time1}
-          status={projectCard.status1}
-          iconName={projectCard.icon}
-        ></TaskCard>
-        {/* End of TaskCard */}
-        {/* TaskCard */}
-        <TaskCard
-          title={projectCard.title1}
-          subtitle={projectCard.subtitle1}
-          time={projectCard.time1}
-          status={projectCard.status1}
-          iconName={projectCard.icon}
-        ></TaskCard>
-        {/* End of TaskCard */}
-        {/* End of My Task */}
       </Animated.ScrollView>
     </KeyboardAvoidingView>
   );
@@ -294,7 +482,7 @@ const styles = StyleSheet.create({
   },
   textInSearchBox: {
     fontSize: 16,
-    width: "90%",
+    width: "83%",
   },
   header: {
     position: "absolute",
@@ -320,5 +508,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginHorizontal: 20,
+  },
+  iconClearSearchBox: {
+    marginLeft: 10,
+    marginRight: 5,
+    color: "#c0c0c0",
   },
 });

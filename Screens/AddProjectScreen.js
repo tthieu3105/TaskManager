@@ -163,30 +163,59 @@ const AddProjectScreen = ({ navigation }) => {
   const [projectName, setProjectName] = useState("");
 
   const InsertProject = async () => {
-    const q = query(collection(db, "Project"));
-    let maxId = 0;
-    const querySnapshot = await getDocs(q);
-    for (const pro of querySnapshot.docs) {
-      if (pro.data().ProjectID > maxId) {
-        maxId = pro.data().ProjectID;
+    const qPro = query(collection(db, "Project"));
+    let maxProjectId = 0;
+    const querySnapshot1 = await getDocs(qPro);
+    for (const pro of querySnapshot1.docs) {
+      if (pro.data().ProjectID > maxProjectId) {
+        maxProjectId = pro.data().ProjectID;
       }
     }
-    maxId = maxId + 1;
+    maxProjectId = maxProjectId + 1;
+
     const docData = {
-      ProjectID: maxId,
+      ProjectID: maxProjectId,
       CreatorID: userId,
       ProjectName: projectName,
       StartTime: Timestamp.fromDate(new Date(selectedStartDate)),
       EndTime: Timestamp.fromDate(new Date(selectedEndDate)),
     };
-    console.log("data: ", docData);
 
     try {
-      await setDoc(doc(db, "Project", maxId.toString()), docData);
+      await setDoc(doc(db, "Project", maxProjectId.toString()), docData);
       console.log("Insert project!");
     } catch (e) {
       console.error("Error:", e);
     }
+
+    if (assigneeList.length > 0) {
+      let maxItemId = 0;
+      const qProUser = query(collection(db, "Project_User"));
+      const querySnapshot2 = await getDocs(qProUser);
+      for (const item of querySnapshot2.docs) {
+        if (item.data().itemID > maxItemId) {
+          maxItemId = item.data().itemID;
+        }
+      }
+      maxItemId = maxItemId + 1;
+      for (const user of assigneeList) {
+        console.log("item id: ", maxItemId);
+        const pro_user = {
+          ProjectID: maxProjectId,
+          AssigneeID: user.UserID,
+          itemID: maxItemId,
+        };
+
+        try {
+          await setDoc(doc(db, "Project_User", maxItemId.toString()), pro_user);
+          console.log("Insert item!");
+        } catch (e) {
+          console.error("Error:", e);
+        }
+        maxItemId = maxItemId + 1;
+      }
+    }
+    navigation.replace("WorkspaceScreen");
   };
 
   // add member
@@ -195,6 +224,8 @@ const AddProjectScreen = ({ navigation }) => {
   const [userList, setUserList] = useState([]);
   const [assigneeList, setAssigneeList] = useState([]);
 
+  console.log("ass: ", assigneeList);
+  
   const getUserList = async () => {
     const q = query(collection(db, "User"), where("UserID", "!=", userId));
     const querySnapshot = await getDocs(q);
@@ -224,10 +255,6 @@ const AddProjectScreen = ({ navigation }) => {
     getUserList();
   }, []);
 
-  console.log("user list: ", userList);
-  console.log("member list: ", memberList);
-  console.log("assigneeList: ", assigneeList);
-
   const onChangeTextAddMember = (text) => {
     setMember(text);
     let members = [];
@@ -250,11 +277,11 @@ const AddProjectScreen = ({ navigation }) => {
 
   const AddMember = () => {
     const index = userList.findIndex((user) => user.Email == member);
-    const assignees = assigneeList.slice();
-    const updateUserList = userList.slice();
-    updateUserList[index].hidden = true;
 
     if (index != -1) {
+      const assignees = assigneeList.slice();
+      const updateUserList = userList.slice();
+      updateUserList[index].hidden = true;
       const user = {
         UserID: userList[index].UserID,
         Email: userList[index].Email,
@@ -268,10 +295,20 @@ const AddProjectScreen = ({ navigation }) => {
       console.log("User not found");
     }
   };
-  
-  const RemoveAssign = () => {
-    
-  }
+
+  const RemoveAssign = (key) => {
+    const updateAssigneeList = assigneeList.filter(
+      (user) => user.UserID != key
+    );
+    const index = userList.findIndex((user) => user.UserID == key);
+    const updateUserList = userList.slice();
+
+    updateUserList[index].hidden = false;
+
+    setAssigneeList(updateAssigneeList);
+    setUserList(updateUserList);
+    onChangeTextAddMember(member);
+  };
 
   const selectEmailMember = (value) => {
     setMember(value);
@@ -404,13 +441,13 @@ const AddProjectScreen = ({ navigation }) => {
 
             {assigneeList.map((user) => {
               return (
-                <View style={styles.members}>
-                  <UserAvatar
-                    size={25}
-                    src={user.Avatar}
-                  />
+                <View key={user.UserID} style={styles.members}>
+                  <UserAvatar size={25} src={user.Avatar} />
                   <Text style={styles.textAssignee}>{user.Email}</Text>
-                  <TouchableOpacity key={user.UserID} onPress={RemoveAssign()}>
+                  <TouchableOpacity
+                    key={user.UserID}
+                    onPress={() => RemoveAssign(user.UserID)}
+                  >
                     <AntDesign name="minuscircleo" size={23} color="#363942" />
                   </TouchableOpacity>
                 </View>
@@ -438,7 +475,9 @@ const AddProjectScreen = ({ navigation }) => {
             </View>
             {memberList.map((item, index) => {
               const email = item.Email;
-              const endEmail = email.slice(member.length);
+              const i = email.indexOf(member);
+              const startEmail = email.substring(0, i);
+              const endEmail = email.substring(i + member.length);
               return (
                 <TouchableOpacity
                   key={index}
@@ -451,8 +490,9 @@ const AddProjectScreen = ({ navigation }) => {
                       color="#363942"
                     />
                     <UserAvatar size={24} src={item.Avatar} />
+                    <Text style={styles.textStartEmail}>{startEmail}</Text>
                     <Text style={styles.textEmailBold}>{member}</Text>
-                    <Text style={styles.textEmail}>{endEmail}</Text>
+                    <Text style={styles.textEndEmail}>{endEmail}</Text>
                   </View>
                 </TouchableOpacity>
               );
@@ -658,13 +698,17 @@ const styles = StyleSheet.create({
     },
     flexDirection: "row",
   },
-  textEmailBold: {
-    fontSize: 15,
+  textStartEmail: {
     marginLeft: 5,
-    fontWeight: "bold",
+    fontSize: 15,
     color: "#363942",
   },
-  textEmail: {
+  textEmailBold: {
+    fontSize: 15,
+    fontWeight: "bold",
+    color: "black",
+  },
+  textEndEmail: {
     fontSize: 15,
     color: "#363942",
   },
