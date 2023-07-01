@@ -23,7 +23,7 @@ import { UserContext, UserProvider } from "../contextObject";
 
 const CONTAINER_HEIGHT = 80;
 
-const AccountFeature = ({ navigation }) => {
+const AccountFeature = ({ navigation, route }) => {
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
   const offsetAnim = useRef(new Animated.Value(0)).current;
@@ -65,41 +65,41 @@ const AccountFeature = ({ navigation }) => {
   // End of header animation
 
   const { userId } = useContext(UserContext);
-  
-  const [Uname, setUname] = useState('');
-  const [Career, setCareer] = useState('');
-  const [ULocation, setULocation] = useState('');
-  const [UPhone, setUPhone] = useState('');
-  const [UMail, setUMail] = useState('');
 
-  const UserInfo = async (userID) => {
+  const [imageURI, setImageURI] = useState("");
+  const [Uname, setUname] = useState("");
+  const [Career, setCareer] = useState("");
+  const [ULocation, setULocation] = useState("");
+  const [UPhone, setUPhone] = useState("");
+  const [UMail, setUMail] = useState("");
+  const [UGender, setUGender] = useState("");
+
+  const UserInfo = async () => {
     const q = query(collection(db, "User"), where("UserID", "==", userId));
 
     const querySnapshot = await getDocs(q);
 
     if (querySnapshot.size > 0) {
       for (const user of querySnapshot.docs) {
+        setImageURI(user.data().Avatar);
         setUname(user.data().Name);
         setCareer(user.data().Job);
         setULocation(user.data().Location);
         setUPhone(user.data().Phone);
         setUMail(user.data().Email);
+        setUGender(user.data().Gender);
       }
-      console.log("User id: ", userId);
-      console.log(
-        "User data: ",
-        Uname,
-        " ",
-        Career,
-        " ",
-        ULocation,
-        " ",
-        UPhone
-      );
       navigation.navigate("AccountFeature");
     } else {
       console.log("Can't read user's data");
     }
+  };
+
+  const LogoutFunction = async (userLoginName, password) => {
+    // setUserName("");
+    // setPassword("");
+    navigation.navigate("Login");
+    console.log("Logout user");
   };
 
   // const {userID} = useContext(UserContext);
@@ -174,7 +174,7 @@ const AccountFeature = ({ navigation }) => {
                 <View style={styles.image}>
                   <UserAvatar
                     size={80}
-                    src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=2900&q=80"
+                    src={imageURI}
                   />
                 </View>
                 {/* Project done */}
@@ -193,7 +193,17 @@ const AccountFeature = ({ navigation }) => {
                 {/* Button: Edit profile */}
                 <TouchableOpacity
                   style={styles.buttonEditProfile}
-                  onPress={() => navigation.navigate("EditProfile")}
+                  onPress={() =>
+                    navigation.navigate("EditProfile", {
+                      userAvatar: imageURI,
+                      userName: Uname,
+                      userEmail: UMail,
+                      userJob: Career,
+                      userGender: UGender,
+                      userPhoneNum: UPhone,
+                      userLocation: ULocation,
+                    })
+                  }
                 >
                   <Text style={styles.textInButton1}>Edit profile</Text>
                 </TouchableOpacity>
@@ -220,9 +230,7 @@ const AccountFeature = ({ navigation }) => {
                   <View style={styles.textFrame}>
                     <Text style={styles.informationTitle}>Location</Text>
                     {/* Location here */}
-                    <Text style={styles.information}>
-                      {ULocation}
-                    </Text>
+                    <Text style={styles.information}>{ULocation}</Text>
                   </View>
                 </View>
               </View>
@@ -240,9 +248,7 @@ const AccountFeature = ({ navigation }) => {
                   <View style={styles.textFrame}>
                     <Text style={styles.informationTitle}>Email</Text>
                     {/* Email here */}
-                    <Text style={styles.information}>
-                      {UMail}
-                    </Text>
+                    <Text style={styles.information}>{UMail}</Text>
                   </View>
                 </View>
               </View>
@@ -306,7 +312,7 @@ const AccountFeature = ({ navigation }) => {
               {/* Logout button */}
               <TouchableOpacity
                 style={styles.buttonWarn}
-                onPress={() => navigation.navigate("Login")}
+                onPress={() => LogoutFunction()}
               >
                 <View style={styles.row}>
                   <SimpleLineIcons

@@ -9,14 +9,33 @@ import {
   Animated,
 } from "react-native";
 
+import * as ImagePicker from "expo-image-picker";
+import ImagePickerComp from "../components/ImagePicker";
 import React, { Component, useEffect, useRef } from "react";
+import { useContext, useState } from "react";
 import { Feather } from "@expo/vector-icons";
 import AntDesign from "../node_modules/@expo/vector-icons/AntDesign";
 import UserAvatar from "@muhzi/react-native-user-avatar";
+// import { Dropdown } from 'react-native-element-dropdown';
+
+import { db } from "../components/FirestoreConfig";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  where,
+  batch,
+  updateDoc,
+} from "firebase/firestore";
+import { UserContext, UserProvider } from "../contextObject";
+import { Colors } from "react-native/Libraries/NewAppScreen";
+import PopupModal from "./../components/PopUpNotify";
 
 const CONTAINER_HEIGHT = 80;
 
-const EditProfile = ({ navigation }) => {
+const EditProfile = ({ navigation, route }) => {
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
   const offsetAnim = useRef(new Animated.Value(0)).current;
@@ -57,7 +76,110 @@ const EditProfile = ({ navigation }) => {
   });
   // End of header animation
 
+  const { userId } = useContext(UserContext);
+
+  const [Uname, setUname] = useState(route.params.userName);
+  const [UGender, setUGender] = useState(route.params.userGender);
+  const [Career, setCareer] = useState(route.params.userJob);
+  const [ULocation, setULocation] = useState(route.params.userLocation);
+  const [UPhone, setUPhone] = useState(route.params.userPhoneNum);
+  const [UMail, setUMail] = useState(route.params.userEmail);
+  const newUname = Uname;
+
+  //Image Picker
+  const [image, setImage] = useState(null);
+  const [imageURI, setImageURI] = useState(route.params.userAvatar);
+  const [newImageURI,setNewImageURI]= useState("");
+
+  const pickImage = async () => {
+    // No permissions request is necessary for launching the image library
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    console.log("Picture uri: ", result.uri);
+    setImageURI(result.uri);
+
+    if (!result.cancelled) {
+      setImage(result.assets[0].uri);
+      console.log("New picture's URI: ",result.assets[0].uri)
+    };
+
+    if(result.cancelled){
+      setNewImageURI(result.uri);
+      console.log("Avatar is not changed! Old uri: ", imageURI)
+    }
+  };
+
+  // Popup thông báo
+  const [modalVisible, setModalVisible] = useState(false);
+  const [popupType, setPopupType] = useState("");
+  const [popupTitle, setPopupTitle] = useState("");
+  const [popupMessage, setPopupMessage] = useState("");
+  const openModal = (type, title, message) => {
+    setPopupType(type);
+    setPopupTitle(title);
+    setPopupMessage(message);
+    setModalVisible(true);
+  };
+  const closeModal = () => {
+    setModalVisible(false);
+    navigation.navigate("HomeScreen");
+  };
+
+  //Update thông tin user
+  const reWriteData = async () => {
+    console.log("doing in user: ", userId);
+    const docRef = doc(db, "User", userId.toString());
+
+    if (
+      imageURI.trim() == route.params.userAvatar &&
+      Uname.trim() == route.params.userName &&
+      Career.trim() == route.params.userJob &&
+      UMail.trim() == route.params.userEmail &&
+      UPhone.trim() == route.params.userPhoneNum &&
+      ULocation.trim() == route.params.userLocation
+    ) {
+      openModal("error", "Nothing to updated!");
+      console.log("Nothing to update");
+      // navigation.navigate("AccountFeature");
+    } else {
+      await updateDoc(docRef, { userAvatar: image });
+      console.log("UserAvatar name updated!");
+      navigation.setParams({ Avatar: image });
+
+      await updateDoc(docRef, { Name: Uname });
+      console.log("User name updated!");
+      navigation.setParams({ userName: Uname });
+
+      await updateDoc(docRef, { Job: Career });
+      console.log("User career updated");
+      navigation.setParams({ userJob: Career });
+
+      await updateDoc(docRef, { Email: UMail });
+      console.log("User email updated");
+      navigation.setParams({ userEmail: UMail });
+
+      await updateDoc(docRef, { Phone: UPhone });
+      console.log("User phone updated");
+      navigation.setParams({ userPhoneNum: UPhone });
+
+      await updateDoc(docRef, { Location: ULocation });
+      console.log("User Location updated");
+      navigation.setParams({ userLocation: ULocation });
+
+      openModal("success", "Update Successful!");
+      // navigation.navigate("HomeScreen");
+    }
+  };
+
   return (
+    // UserInfo(userId),
+    // console.log("User name:", Uname, " ", UMail),
+
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={{ backgroundColor: "white", flex: 100 }}
@@ -78,7 +200,7 @@ const EditProfile = ({ navigation }) => {
               name="left"
               size={30}
               style={styles.arrowIcon}
-              onPress={() => navigation.goBack()}
+              onPress={() => navigation.navigate("AccountFeature")}
             ></AntDesign>
           </TouchableOpacity>
           {/* Title */}
@@ -103,13 +225,13 @@ const EditProfile = ({ navigation }) => {
             <View>
               {/* Avatar */}
               <View style={styles.image}>
-                <UserAvatar
-                  size={80}
-                  src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=2900&q=80"
-                />
+                <UserAvatar size={80} src={imageURI} />
 
                 {/* Button: Change avatar */}
-                <TouchableOpacity style={styles.buttonChangeAvatar}>
+                <TouchableOpacity
+                  style={styles.buttonChangeAvatar}
+                  onPress={() => pickImage()}
+                >
                   <View style={styles.row}>
                     <Text style={styles.textInButton2}>Change</Text>
                     <Feather name="camera" size={22} style={styles.whiteIcon} />
@@ -131,14 +253,27 @@ const EditProfile = ({ navigation }) => {
           <View>
             <Text style={styles.smallTitle}>Basic information</Text>
             {/* Name */}
-            <View>
-              <Text style={styles.infoTitle}> Name</Text>
-              <View style={styles.insertBox}>
-                <TouchableOpacity style={styles.frameToInsert}>
-                  {/* Lấy dữ liệu tên user cho vào <text/> */}
-                  <Text style={styles.textInInsertBox}></Text>
-                </TouchableOpacity>
-              </View>
+
+            <Text style={styles.infoTitle}> Name</Text>
+            <View style={styles.insertBox}>
+              <TextInput
+                style={styles.textInInsertBox}
+                value={Uname}
+                onChangeText={(text) => setUname(text)}
+                placeholderTextColor={Colors.black}
+              ></TextInput>
+            </View>
+
+            {/* Job */}
+
+            <Text style={styles.infoTitle}>Career</Text>
+            <View style={styles.insertBox}>
+              <TextInput
+                style={styles.textInInsertBox}
+                value={Career}
+                onChangeText={(text) => setCareer(text)}
+                placeholderTextColor={Colors.black}
+              ></TextInput>
             </View>
 
             {/* Gender */}
@@ -159,42 +294,31 @@ const EditProfile = ({ navigation }) => {
                 </TouchableOpacity>
               </View>
             </View>
-
-            {/* Job */}
-            <View>
-              <Text style={styles.infoTitle}>Job</Text>
-              <View style={styles.insertBox}>
-                <TouchableOpacity style={styles.frameToInsert}>
-                  {/* Lấy dữ liệu tên user cho vào <text/> */}
-                  <Text style={styles.textInInsertBox}></Text>
-                </TouchableOpacity>
-              </View>
-            </View>
           </View>
 
           {/* Contact information */}
           <View>
             <Text style={styles.smallTitle}>Contact information</Text>
             {/* Email */}
-            <View>
-              <Text style={styles.infoTitle}>Email</Text>
-              <View style={styles.insertBox}>
-                <TouchableOpacity style={styles.frameToInsert}>
-                  {/* Lấy dữ liệu email user cho vào <text/> */}
-                  <Text style={styles.textInInsertBox}></Text>
-                </TouchableOpacity>
-              </View>
+            <Text style={styles.infoTitle}>Email</Text>
+            <View style={styles.insertBox}>
+              <TextInput
+                style={styles.textInInsertBox}
+                value={UMail}
+                onChangeText={(text) => setUMail(text)}
+                placeholderTextColor={Colors.black}
+              ></TextInput>
             </View>
 
             {/* Phone */}
-            <View>
-              <Text style={styles.infoTitle}>Phone number</Text>
-              <View style={styles.insertBox}>
-                <TouchableOpacity style={styles.frameToInsert}>
-                  {/* Lấy dữ liệu sđt user cho vào <text/> */}
-                  <Text style={styles.textInInsertBox}></Text>
-                </TouchableOpacity>
-              </View>
+            <Text style={styles.infoTitle}>Phone number</Text>
+            <View style={styles.insertBox}>
+              <TextInput
+                style={styles.textInInsertBox}
+                value={UPhone}
+                onChangeText={(text) => setUPhone(text)}
+                placeholderTextColor={Colors.black}
+              ></TextInput>
             </View>
           </View>
 
@@ -202,14 +326,14 @@ const EditProfile = ({ navigation }) => {
           <View>
             <Text style={styles.smallTitle}>Location & Language</Text>
             {/* Location */}
-            <View>
-              <Text style={styles.infoTitle}>Location</Text>
-              <View style={styles.insertBox}>
-                <TouchableOpacity style={styles.frameToInsert}>
-                  {/* Lấy dữ liệu Location user cho vào <text/> */}
-                  <Text style={styles.textInInsertBox}></Text>
-                </TouchableOpacity>
-              </View>
+            <Text style={styles.infoTitle}>Location</Text>
+            <View style={styles.insertBox}>
+              <TextInput
+                style={styles.textInInsertBox}
+                value={ULocation}
+                onChangeText={(text) => setULocation(text)}
+                placeholderTextColor={Colors.black}
+              ></TextInput>
             </View>
 
             {/* Language */}
@@ -240,10 +364,20 @@ const EditProfile = ({ navigation }) => {
             </TouchableOpacity>
 
             {/* Save */}
-            <TouchableOpacity style={styles.buttonSave}>
+            <TouchableOpacity
+              style={styles.buttonSave}
+              onPress={() => reWriteData()}
+            >
               <Text style={styles.textInButton}>Save</Text>
             </TouchableOpacity>
           </View>
+          <PopupModal
+            visible={modalVisible}
+            type={popupType}
+            title={popupTitle}
+            message={popupMessage}
+            onClose={closeModal}
+          />
         </View>
       </Animated.ScrollView>
     </KeyboardAvoidingView>
@@ -298,6 +432,7 @@ const styles = StyleSheet.create({
     marginLeft: "auto",
     marginRight: "auto",
     marginTop: 95,
+    
   },
 
   title: {
@@ -477,7 +612,36 @@ const styles = StyleSheet.create({
     marginBottom: "auto",
     marginTop: "auto",
     marginLeft: 15,
+    marginRight: 15,
+  },
+  userName: {
+    marginLeft: "auto",
     marginRight: "auto",
+    color: "#363942",
+    fontSize: 20,
+    fontWeight: "bold",
+    marginTop: 15,
+    shadowOpacity: 0.3,
+    shadowOffset: {
+      width: 2,
+      height: 2,
+    },
+    // fontStyle
+  },
+
+  userCareer: {
+    marginLeft: "auto",
+    marginRight: "auto",
+    color: "#363942",
+    fontSize: 14,
+    // fontWeight: "bold",
+    marginTop: 3,
+    shadowOpacity: 0.3,
+    shadowOffset: {
+      width: 2,
+      height: 2,
+    },
+    // fontStyle
   },
 });
 

@@ -7,28 +7,65 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Animated,
+  Platform,
 } from "react-native";
 
-import Constants from "expo-constants";
 import React, { Component, useEffect, useRef } from "react";
 import { Colors } from "react-native/Libraries/NewAppScreen";
 import { ScrollView } from "react-native-gesture-handler";
-import FontAwesome from "../node_modules/@expo/vector-icons/FontAwesome";
-import EvilIcon from "../node_modules/@expo/vector-icons/EvilIcons";
 import AntDesign from "../node_modules/@expo/vector-icons/AntDesign";
 import { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 
+import { db } from "../components/FirestoreConfig";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  or,
+  and,
+  getDoc,
+  setDoc,
+  doc
+} from "firebase/firestore";
+import { UserContext, UserProvider } from "../contextObject";
+import PopupModal from "./../components/PopUpNotify";
+
+
 const CONTAINER_HEIGHT = 80;
 
 const CreateAccScreen = ({ navigation }) => {
-  // Lấy Password
+  //Popup
+  const [modalVisible, setModalVisible] = useState(false);
+  const [popupType, setPopupType] = useState("");
+  const [popupTitle, setPopupTitle] = useState("");
+  const [popupMessage, setPopupMessage] = useState("");
+  const openModal = (type, title, message) => {
+    setPopupType(type);
+    setPopupTitle(title);
+    setPopupMessage(message);
+    setModalVisible(true);
+  };
+  const closeModal = () => {
+    setModalVisible(false);
+    // navigation.navigate("HomeScreen");
+  };
+
+  // Lấy Password & email
   const [password, setPassword] = useState("");
   const [password2, setPassword2] = useState("");
   const [hidePassword, setHidePassword] = useState(true);
   const [hidePassword2, setHidePassword2] = useState(true);
   const [showPasswordIcon, setShowPasswordIcon] = useState("eye-outline");
   const [showPasswordIcon2, setShowPasswordIcon2] = useState("eye-outline");
+
+  const [email, setEmail] = useState("");
+  const [userNameLogin, setUserNameLogin] = useState("");
+  // Thông tin người dùng
+  const [fullName, setFullName] = useState("");
+  const [phoneNum, setPhoneNum] = useState("");
+  const [career, setCareer] = useState("");
   // Button hiển thị password
   const toggleHidePassword = () => {
     setHidePassword(!hidePassword);
@@ -37,6 +74,73 @@ const CreateAccScreen = ({ navigation }) => {
   const toggleHidePassword2 = () => {
     setHidePassword2(!hidePassword2);
     setShowPasswordIcon2(hidePassword2 ? "eye-off-outline" : "eye-outline");
+  };
+
+  //Check blank
+  const checkEnterInfo = () => {
+    if (
+      fullName === "" ||
+      phoneNum === "" ||
+      career === "" ||
+      email === "" ||
+      userNameLogin === "" ||
+      password === "" ||
+      password2 === ""
+    ) {
+      openModal("error", "Please enter all information!!!")
+      return false;
+    }else{
+      checkConfirm(password, password2);
+      return true;
+    }
+  };
+
+  //confirm password
+  const checkConfirm = (a1,a2) => {
+    if (a1 != a2) {
+      openModal("error", "Your passwords don't matched!", "Try again!!!");
+      return false;
+    } else {
+      openModal("success", "Your passwords are matched!", "You're ready to login");
+      return true;
+    }
+  };
+
+  // Create new account
+  const createNewAcc = async (fullName, email, userNameLogin, password, phoneNum, career) => {
+    if (checkEnterInfo() === true) {
+      try {
+        // Find the biggest UserID
+        const userIDSnapShot = await getDocs(collection(db, "User"));
+        const existingUsers = userIDSnapShot.docs.map((doc) => doc.data());
+        const maxUserID = Math.max(
+          ...existingUsers.map((user) => parseInt(user.UserID))
+        );
+        console.log("maxUserID", maxUserID);
+
+        // New document in Firestore with new userID
+        const newUserID = maxUserID + 1;
+        const docRef = doc(collection(db, "User"), newUserID.toString());
+
+        console.log("User created, userID: ", docRef.id);
+
+        // Create new user information on Firebase
+        await setDoc(docRef, {
+          UserID: newUserID,
+          Avatar:"",
+          Location: "",
+          Name: fullName,
+          Email: email,
+          UserName: userNameLogin,
+          Password: password,
+          Phone: phoneNum,
+          Job: career,
+        });
+      } catch (error) {
+        console.log("Error: ", error);
+      }
+      navigation.navigate("Login")
+    }
   };
 
   // Header Animation
@@ -130,25 +234,41 @@ const CreateAccScreen = ({ navigation }) => {
 
           {/* Layout điền tên */}
           <View style={{ flex: 60, backgroundColor: "white" }}>
-            <Text style={styles.smallTitle}>Name</Text>
+            <Text style={styles.smallTitle}>Your information</Text>
 
-            {/* Nhập first name */}
+            {/* Nhập full name */}
             <View style={styles.insertBox}>
               <TextInput
                 style={styles.textInInsertBox}
-                placeholder="First name"
+                placeholder="Full name"
                 multiline
                 placeholderTextColor={Colors.placeholder}
+                value={fullName}
+                onChangeText={(text) => setFullName(text)}
               ></TextInput>
             </View>
 
-            {/* Nhập last name */}
+            {/* Nhập số điện thoại */}
             <View style={styles.insertBox}>
               <TextInput
                 style={styles.textInInsertBox}
-                placeholder="Last name"
+                placeholder="Phone number"
                 multiline
                 placeholderTextColor={Colors.placeholder}
+                value={phoneNum}
+                onChangeText={(text) => setPhoneNum(text)}
+              ></TextInput>
+            </View>
+
+            {/* Nhập nghề nghiệp */}
+            <View style={styles.insertBox}>
+              <TextInput
+                style={styles.textInInsertBox}
+                placeholder="Career"
+                multiline
+                placeholderTextColor={Colors.placeholder}
+                value={career}
+                onChangeText={(text) => setCareer(text)}
               ></TextInput>
             </View>
 
@@ -162,6 +282,8 @@ const CreateAccScreen = ({ navigation }) => {
                   style={styles.textInInsertBox}
                   placeholder="Email"
                   multiline
+                  value={email}
+                  onChangeText={(text) => setEmail(text)}
                   placeholderTextColor={Colors.placeholder}
                 ></TextInput>
               </View>
@@ -172,6 +294,8 @@ const CreateAccScreen = ({ navigation }) => {
                   style={styles.textInInsertBox}
                   placeholder="Username"
                   multiline
+                  value={userNameLogin}
+                  onChangeText={(text) => setUserNameLogin(text)}
                   placeholderTextColor={Colors.placeholder}
                 ></TextInput>
               </View>
@@ -213,7 +337,7 @@ const CreateAccScreen = ({ navigation }) => {
                     secureTextEntry={hidePassword2}
                     value={password2}
                     onChangeText={(text) => setPassword2(text)}
-                  />
+                  ></TextInput>
 
                   {/* Button hiển thị password */}
                   <TouchableOpacity onPress={toggleHidePassword2}>
@@ -225,12 +349,19 @@ const CreateAccScreen = ({ navigation }) => {
               {/* Button: next */}
               <TouchableOpacity
                 style={styles.button}
-                onPress={() => navigation.navigate("AddEmail")}
+                onPress={() => createNewAcc(fullName,email,userNameLogin,password2,phoneNum,career)}
               >
-                <Text style={styles.textInButton}>Next</Text>
+                <Text style={styles.textInButton}>Create account</Text>
               </TouchableOpacity>
             </View>
           </View>
+          <PopupModal
+            visible={modalVisible}
+            type={popupType}
+            title={popupTitle}
+            message={popupMessage}
+            onClose={closeModal}
+          />
         </View>
       </Animated.ScrollView>
     </KeyboardAvoidingView>
@@ -291,14 +422,6 @@ const styles = StyleSheet.create({
       height: 2,
     },
     // fontStyle
-  },
-
-  normalTextOnBackGround: {
-    marginLeft: "auto",
-    marginRight: 30,
-    color: "black",
-    fontSize: 13,
-    textDecorationLine: "underline",
   },
 
   textInButton: {
@@ -382,14 +505,6 @@ const styles = StyleSheet.create({
     marginTop: "auto",
     marginLeft: 15,
     marginRight: 15,
-  },
-
-  frameToInsert: {
-    marginTop: 0,
-    marginBottom: 0,
-    height: 45,
-    borderRadius: 10,
-    marginHorizontal: 0,
   },
 
   rowSection: {
