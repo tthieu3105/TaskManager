@@ -21,7 +21,7 @@ import { db } from "../components/FirestoreConfig";
 
 const CONTAINER_HEIGHT = 80;
 
-const CalendarScreen = () => {
+const CalendarScreen = ({ navigation }) => {
   const { userId } = useContext(UserContext); // lay user id
 
   // currentDate:  lưu trữ ngày hiện tại và được khởi tạo ban đầu bằng đối tượng Date mới
@@ -97,13 +97,11 @@ const CalendarScreen = () => {
         querySnapshot.forEach((doc) => {
           const data = doc.data();
           if (data.CreatorID = userId) {
-            // const timestamp = data.CreateAt;
-            // const seconds = timestamp.seconds;
-            // const date = new Date(seconds * 1000); // Chuyển đổi thành đối tượng Date
-            // const formattedDate = formatDate(date); // Định dạng ngày tháng
             tasks.push(data);
+
           }
         });
+        // console.log(tasks);
         setTaskList(tasks);
       } catch (error) {
         console.error("Lỗi lấy ds note: ", error);
@@ -111,7 +109,6 @@ const CalendarScreen = () => {
     };
     fetchData();
   }, []);
-  console.log(taskList);
   const formatDate = (date) => {
     const day = ("0" + date.getDate()).slice(-2);
     const month = ("0" + (date.getMonth() + 1)).slice(-2);
@@ -122,29 +119,21 @@ const CalendarScreen = () => {
     return `${day}/${month}/${year} ${hours}:${minutes}`;
   };
 
-  const renderTask = (item) => {
+  const renderTask = (task) => {
+    const id = task.TaskID;
     return (
-      <View style={styles.container1}>
-        <Text style={styles.textInInsertBox}>8:00AM</Text>
-        <View style={styles.taskBox}>
-          <Text style={styles.textInTaskBox}>{item.Title}</Text>
-          <Text style={styles.timeInTaskBox}>8:00AM - 10:00AM</Text>
+      <TouchableOpacity onPress={() => navigation.navigate("TaskInfo", { id})}>
+        <View style={styles.container1}>
+          <Text style={styles.textInInsertBox}>8:00AM</Text>
+          <View style={styles.taskBox}>
+            <Text style={styles.textInTaskBox}>{task.Title}</Text>
+            <Text style={styles.timeInTaskBox}>8:00AM - 10:00AM</Text>
+          </View>
         </View>
-      </View>
+      </TouchableOpacity>
+
     );
   };
-
-  // const renderTask = () => {
-  //   return taskList.map((task) => (
-  //     <View style={styles.container1}>
-  //     <Text style={styles.textInInsertBox}>8:00AM</Text>
-  //     <View style={styles.taskBox}>
-  //       <Text style={styles.textInTaskBox}>{task.Title}</Text>
-  //       <Text style={styles.timeInTaskBox}>8:00AM - 10:00AM</Text>
-  //     </View>
-  //   </View>
-  //   ));
-  // };
 
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -243,11 +232,10 @@ const CalendarScreen = () => {
             <View style={{ flex: 70, backgroundColor: "white" }}>
               <FlatList
                 data={taskList}
-                renderItem={renderTask}
+                renderItem={({ item }) => renderTask(item)}
                 keyExtractor={(item) => item.TaskID}
                 showsVerticalScrollIndicator={true}
               />
-             
             </View>
           </View>
         </Animated.ScrollView>
