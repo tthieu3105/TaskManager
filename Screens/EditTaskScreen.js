@@ -55,7 +55,7 @@ const inputText = {
 export default function EditTaskScreen({ navigation, route }) {
   const { userId } = useContext(UserContext);
   //Lấy taskID từ màn hình TaskInfo
-  const { taskID } = route.params;
+  const { taskID, refreshTaskInfoScreen } = route.params;
   const [task, setTask] = useState(null);
   const [projectName, setProjectName] = useState(""); // Add state for project name
   const [IDProject, setIDProject] = useState("");
@@ -418,6 +418,7 @@ export default function EditTaskScreen({ navigation, route }) {
       console.log("Lỗi khi cập nhật:", error);
       // Xử lý lỗi nếu có
     }
+    refreshTaskInfoScreen();
     navigation.goBack();
     // navigation.replace("T")
   };

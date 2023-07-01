@@ -14,8 +14,8 @@ import {
 } from "firebase/firestore";
 export default class TaskCardOP extends Component {
   handlePress = () => {
-    const { screenName, navigation, taskID } = this.props;
-    navigation.navigate(screenName, { taskID });
+    const { screenName, navigation, taskID, refreshScreen } = this.props;
+    navigation.navigate(screenName, { taskID, refreshScreen });
   };
   constructor(props) {
     super(props);
@@ -55,7 +55,7 @@ export default class TaskCardOP extends Component {
     }
   };
   handleTaskStatusChange = async () => {
-    const { taskID, firebase } = this.props;
+    const { taskID, firebase, refreshScreen } = this.props;
     const { status } = this.state;
 
     let newStatus = "";
@@ -85,6 +85,11 @@ export default class TaskCardOP extends Component {
 
       // Update the state with the new status and color
       this.setState({ taskStatus: newStatus, statusColor: newColor });
+
+      //Refresh lại trang
+      if (typeof refreshScreen === "function") {
+        refreshScreen();
+      }
     } catch (error) {
       console.log("Error updating task status:", error);
     }

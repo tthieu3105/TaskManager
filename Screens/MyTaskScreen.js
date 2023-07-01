@@ -54,6 +54,36 @@ export default function MyTaskScreen({ navigation }) {
   const { userId } = useContext(UserContext);
   const [isLoading, setIsLoading] = useState(true); // Add a state for loading indicator
   const [tasks, setTasks] = useState([]);
+  const refreshMyTaskScreen = async () => {
+    try {
+      const q = query(collection(db, "Task"), where("CreatorID", "==", userId));
+      // const querySnapshot = await getDocs(collection(db, "Task"));
+      const querySnapshot = await getDocs(q);
+      const tasksData = querySnapshot.docs.map((doc) => {
+        const { Description, StartTime, DueTime, Status, Title } = doc.data();
+        const startDateTime = StartTime.toDate();
+        const startTime = startDateTime.toLocaleTimeString();
+
+        const endDateTime = DueTime.toDate();
+        const endTime = endDateTime.toLocaleTimeString();
+        return {
+          id: doc.id,
+          Description,
+          StartTime,
+          DueTime,
+          Status,
+          Title,
+          startTime,
+        };
+      });
+
+      setTasks(tasksData);
+      setMasterData(tasksData);
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Error refreshing Screen B:", error);
+    }
+  };
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -247,6 +277,7 @@ export default function MyTaskScreen({ navigation }) {
               screenName="TaskInfo"
               firebase={db}
               taskID={item.id}
+              refreshScreen={refreshMyTaskScreen}
             />
           )}
           listKey="onProgressList"
