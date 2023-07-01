@@ -189,6 +189,7 @@ const AddProjectScreen = ({ navigation }) => {
     }
 
     if (assigneeList.length > 0) {
+      // itemID new Project_User
       let maxItemId = 0;
       const qProUser = query(collection(db, "Project_User"));
       const querySnapshot2 = await getDocs(qProUser);
@@ -198,6 +199,18 @@ const AddProjectScreen = ({ navigation }) => {
         }
       }
       maxItemId = maxItemId + 1;
+
+      // new NotificationID
+      let maxNotificationID = 0;
+      const qNoti = query(collection(db, "Notification"));
+      const querySnapshot3 = await getDocs(qNoti);
+      for (const noti of querySnapshot3.docs) {
+        if (noti.data().NotificationID > maxNotificationID) {
+          maxNotificationID = noti.data().NotificationID;
+        }
+      }
+      maxItemId = maxItemId + 1;
+
       for (const user of assigneeList) {
         console.log("item id: ", maxItemId);
         const pro_user = {
@@ -205,14 +218,25 @@ const AddProjectScreen = ({ navigation }) => {
           AssigneeID: user.UserID,
           itemID: maxItemId,
         };
+        const notification = {
+          NotificationID: maxNotificationID,
+          ProjectID: maxProjectId,
+          Status: false,
+          TaskID: 0,
+          Time: Timestamp.fromDate(new Date()),
+          Type: 1,
+          UserID: user.UserID,
+        }
 
         try {
           await setDoc(doc(db, "Project_User", maxItemId.toString()), pro_user);
+          await setDoc(doc(db, "Notification", maxNotificationID.toString()), notification);
           console.log("Insert item!");
         } catch (e) {
           console.error("Error:", e);
         }
         maxItemId = maxItemId + 1;
+        maxNotificationID = maxNotificationID + 1;
       }
     }
     navigation.replace("WorkspaceScreen");
