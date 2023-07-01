@@ -93,7 +93,7 @@ const EditProfile = ({ navigation, route }) => {
   // const [newImageURI, setNewImageURI] = useState("");
   //convert local pic url to uri:
   // const convertUri = `file://${RNFS.DocumentDirectoryPath}/image.jpg`;
-  
+
   // RNFS.copyFile(image, uri).then(() => {
   //   // Tải lên hình ảnh lên Firebase Storage
   //   const storageRef = firebase.storage().ref().child('avatars/image.jpg');
@@ -121,7 +121,6 @@ const EditProfile = ({ navigation, route }) => {
 
     if (!result.cancelled) {
       setImage(result.uri);
-      
     }
   };
 
@@ -284,25 +283,6 @@ const EditProfile = ({ navigation, route }) => {
                 placeholderTextColor={Colors.black}
               ></TextInput>
             </View>
-
-            {/* Gender */}
-            <View>
-              <Text style={styles.infoTitle}>Gender</Text>
-              <View style={styles.insertBox}>
-                <TouchableOpacity style={styles.frameToInsert}>
-                  {/* Lấy dữ liệu giới tính user cho vào <text/> */}
-                  <Text style={styles.textInInsertBox}></Text>
-                  {/* Button: back to previous screen */}
-                  <TouchableOpacity>
-                    <AntDesign
-                      name="down"
-                      size={30}
-                      style={styles.downIcon}
-                    ></AntDesign>
-                  </TouchableOpacity>
-                </TouchableOpacity>
-              </View>
-            </View>
           </View>
 
           {/* Contact information */}
@@ -333,7 +313,7 @@ const EditProfile = ({ navigation, route }) => {
 
           {/* Location & Language */}
           <View>
-            <Text style={styles.smallTitle}>Location & Language</Text>
+            <Text style={styles.smallTitle}>Location</Text>
             {/* Location */}
             <Text style={styles.infoTitle}>Location</Text>
             <View style={styles.insertBox}>
@@ -344,31 +324,15 @@ const EditProfile = ({ navigation, route }) => {
                 placeholderTextColor={Colors.black}
               ></TextInput>
             </View>
-
-            {/* Language */}
-            <View>
-              <Text style={styles.infoTitle}>Language</Text>
-              <View style={styles.insertBox}>
-                <TouchableOpacity style={styles.frameToInsert}>
-                  {/* Lấy dữ liệu giới tính user cho vào <text/> */}
-                  <Text style={styles.textInInsertBox}></Text>
-                  {/* Button: back to previous screen */}
-                  <TouchableOpacity>
-                    <AntDesign
-                      name="down"
-                      size={30}
-                      style={styles.downIcon}
-                    ></AntDesign>
-                  </TouchableOpacity>
-                </TouchableOpacity>
-              </View>
-            </View>
           </View>
 
           {/* Button save / discard */}
           <View style={styles.row}>
             {/* Discard */}
-            <TouchableOpacity style={styles.buttonDiscard}>
+            <TouchableOpacity
+              style={styles.buttonDiscard}
+              onPress={() => navigation.goBack()}
+            >
               <Text style={styles.textInButton1}>Discard</Text>
             </TouchableOpacity>
 
