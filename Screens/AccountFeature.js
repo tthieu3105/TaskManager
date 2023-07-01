@@ -10,7 +10,7 @@ import {
 } from "react-native";
 
 import React, { Component, useEffect, useRef } from "react";
-import {useContext, useState } from "react";
+import { useContext, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { SimpleLineIcons } from "@expo/vector-icons";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -18,19 +18,17 @@ import AntDesign from "../node_modules/@expo/vector-icons/AntDesign";
 import UserAvatar from "@muhzi/react-native-user-avatar";
 
 import { db } from "../components/FirestoreConfig";
-import {
-  collection,
-  getDocs,
-  query,
-  where,
-  or,
-  and,
-} from "firebase/firestore";
+
+import { collection, getDocs, query, where, or, and } from "firebase/firestore";
+
 import { UserContext, UserProvider } from "../contextObject";
+// import { AsyncStorage } from "react-native";
 
 const CONTAINER_HEIGHT = 80;
 
-const AccountFeature = ({ navigation }) => {
+
+const AccountFeature = ({ navigation, route }) => {
+
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
   const offsetAnim = useRef(new Animated.Value(0)).current;
@@ -71,191 +69,269 @@ const AccountFeature = ({ navigation }) => {
   });
   // End of header animation
 
-  return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={{ backgroundColor: "white", flex: 100 }}
-      enabled
-      keyboardVerticalOffset={Platform.select({ ios: 0, android: 500 })}
-    >
-      <Animated.View
-        style={[
-          styles.header,
-          { transform: [{ translateY: headerTranslate }] },
-        ]}
-      >
-        {/* Layout button back và title */}
-        <View style={styles.row}>
-          {/* Button: back to previous screen */}
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <AntDesign
-              name="left"
-              size={30}
-              style={styles.arrowIcon}
-            ></AntDesign>
-          </TouchableOpacity>
-          {/* Title */}
-          <Text style={styles.title}>Profile</Text>
-        </View>
-      </Animated.View>
+  const { userId } = useContext(UserContext);
 
-      <Animated.ScrollView
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-          { useNativeDriver: true }
-        )}
+  const [imageURI, setImageURI] = useState("");
+  const [Uname, setUname] = useState("");
+  const [Career, setCareer] = useState("");
+  const [ULocation, setULocation] = useState("");
+  const [UPhone, setUPhone] = useState("");
+  const [UMail, setUMail] = useState("");
+  const [UGender, setUGender] = useState("");
+
+  const UserInfo = async () => {
+    const q = query(collection(db, "User"), where("UserID", "==", userId));
+
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.size > 0) {
+      for (const user of querySnapshot.docs) {
+        setImageURI(user.data().Avatar);
+        setUname(user.data().Name);
+        setCareer(user.data().Job);
+        setULocation(user.data().Location);
+        setUPhone(user.data().Phone);
+        setUMail(user.data().Email);
+        setUGender(user.data().Gender);
+      }
+      navigation.navigate("AccountFeature");
+    } else {
+      console.log("Can't read user's data");
+    }
+  };
+
+  const LogoutFunction = async () => {
+    // Xóa thông tin đăng nhập của người dùng
+    // AsyncStorage.removeItem();
+
+    // Chuyển đến màn hình đăng nhập và làm trống các trường userName và password
+    navigation.navigate("Login");
+    
+  };
+
+  // const {userID} = useContext(UserContext);
+  // const UserInfo = async (userID) => {
+
+  //   const q = query(
+  //     collection(db, "User"), where("UserID","==",userID)
+  //   );
+
+  //   const querySnapshot = await getDocs(q);
+
+  //   if(querySnapshot.size>0){
+  //     for(const user of querySnapshot.docs){
+  //       Uname = user.data().Name;
+  //       Career = user.data().Job;
+  //       ULocation = user.data().Location;
+  //       UPhone = user.data().Phone;
+  //     }
+  //     console.log("User data: ", Uname, " ", Career, " ", ULocation, " ", UPhone);
+
+  //   }else{
+  //     console.log("Can't read user's data");
+  //   }
+  // };
+
+  return (
+    UserInfo(userId),
+    (
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ backgroundColor: "white", flex: 100 }}
+        enabled
+        keyboardVerticalOffset={Platform.select({ ios: 0, android: 500 })}
       >
-        <View>
-          {/* Layout avatar, name, number of project done/pending */}
-          <View
-            style={{
-              flex: 35,
-              backgroundColor: "white",
-            }}
-          >
-            {/* Avatar */}
-            <View style={styles.row}>
-              <View style={styles.image}>
-                <UserAvatar
-                  size={80}
-                  src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=2900&q=80"
-                />
+        <Animated.View
+          style={[
+            styles.header,
+            { transform: [{ translateY: headerTranslate }] },
+          ]}
+        >
+          {/* Layout button back và title */}
+          <View style={styles.row}>
+            {/* Button: back to previous screen */}
+            <TouchableOpacity onPress={() => navigation.goBack()}>
+              <AntDesign
+                name="left"
+                size={30}
+                style={styles.arrowIcon}
+              ></AntDesign>
+            </TouchableOpacity>
+            {/* Title */}
+            <Text style={styles.title}>Profile</Text>
+          </View>
+        </Animated.View>
+
+        <Animated.ScrollView
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+            { useNativeDriver: true }
+          )}
+        >
+          <View>
+            {/* Layout avatar, name, number of project done/pending */}
+            <View
+              style={{
+                flex: 35,
+                backgroundColor: "white",
+              }}
+            >
+              {/* Avatar */}
+              <View style={styles.row}>
+                <View style={styles.image}>
+                  <UserAvatar size={80} src={imageURI} />
+                </View>
+                {/* Project done */}
+                <Text></Text>
+                {/* Project pending */}
+                <Text></Text>
               </View>
-              {/* Project done */}
-              <Text></Text>
-              {/* Project pending */}
-              <Text></Text>
+
+              <View>
+                {/* Name */}
+                <Text style={styles.userName}>{Uname}</Text>
+
+                {/* Career */}
+                <Text style={styles.userCareer}>{Career}</Text>
+
+                {/* Button: Edit profile */}
+                <TouchableOpacity
+                  style={styles.buttonEditProfile}
+                  onPress={() =>
+                    navigation.navigate("EditProfile", {
+                      userAvatar: imageURI,
+                      userName: Uname,
+                      userEmail: UMail,
+                      userJob: Career,
+                      userGender: UGender,
+                      userPhoneNum: UPhone,
+                      userLocation: ULocation,
+                    })
+                  }
+                >
+                  <Text style={styles.textInButton1}>Edit profile</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
-            <View>
-              {/* Name */}
-              <Text style={styles.userName}>Joshep Andrew</Text>
+            {/* User infomation, Logout button */}
+            <View
+              style={{
+                flex: 65,
+                backgroundColor: "white",
+              }}
+            >
+              {/* Location Box */}
+              <View style={styles.infoBox}>
+                <View style={styles.row}>
+                  <View style={styles.smallBoxForIcon}>
+                    <Ionicons
+                      style={styles.locationIcon}
+                      name="location-outline"
+                      size={22}
+                    />
+                  </View>
+                  <View style={styles.textFrame}>
+                    <Text style={styles.informationTitle}>Location</Text>
+                    {/* Location here */}
+                    <Text style={styles.information}>{ULocation}</Text>
+                  </View>
+                </View>
+              </View>
 
-              {/* Career */}
-              <Text style={styles.userCareer}>UI/UX Designer</Text>
+              {/* Email Box */}
+              <View style={styles.infoBox}>
+                <View style={styles.row}>
+                  <View style={styles.smallBoxForIcon}>
+                    <MaterialCommunityIcons
+                      name="email-outline"
+                      size={22}
+                      style={styles.emailIcon}
+                    />
+                  </View>
+                  <View style={styles.textFrame}>
+                    <Text style={styles.informationTitle}>Email</Text>
+                    {/* Email here */}
+                    <Text style={styles.information}>{UMail}</Text>
+                  </View>
+                </View>
+              </View>
 
-              {/* Button: Edit profile */}
+              {/* Phone Box */}
+              <View style={styles.infoBox}>
+                <View style={styles.row}>
+                  <View style={styles.smallBoxForIcon}>
+                    <AntDesign
+                      name="phone"
+                      size={22}
+                      style={styles.phoneIcon}
+                    />
+                  </View>
+                  <View style={styles.textFrame}>
+                    <Text style={styles.informationTitle}>Phone</Text>
+                    {/* Phone here */}
+                    <Text style={styles.information}>{UPhone}</Text>
+                  </View>
+                </View>
+              </View>
+
+              {/* Setting Button */}
+              <TouchableOpacity style={styles.infoBox}>
+                <View style={styles.row}>
+                  <View style={styles.smallBoxForIcon}>
+                    <AntDesign
+                      name="setting"
+                      size={22}
+                      style={styles.blackIcon}
+                    />
+                  </View>
+                  <View style={styles.textFrame}>
+                    <Text style={styles.informationTitle}>Setting</Text>
+                    <Text style={styles.information}>
+                      Dark mode, notification, privacy,...
+                    </Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+
+              {/* Account setting button */}
+              <TouchableOpacity style={styles.infoBox}>
+                <View style={styles.row}>
+                  <View style={styles.smallBoxForIcon}>
+                    <MaterialCommunityIcons
+                      name="account-outline"
+                      size={22}
+                      style={styles.blackIcon}
+                    />
+                  </View>
+                  <View style={styles.textFrame}>
+                    <Text style={styles.informationTitle}>Account</Text>
+                    <Text style={styles.information}>
+                      Verify, change password
+                    </Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+
+              {/* Logout button */}
               <TouchableOpacity
-                style={styles.buttonEditProfile}
-                onPress={() => navigation.navigate("EditProfile")}
+                style={styles.buttonWarn}
+                onPress={() => LogoutFunction()}
               >
-                <Text style={styles.textInButton1}>Edit profile</Text>
+                <View style={styles.row}>
+                  <SimpleLineIcons
+                    name="logout"
+                    size={24}
+                    style={styles.whiteIcon}
+                  ></SimpleLineIcons>
+                  <Text style={styles.text}>Log out</Text>
+                </View>
               </TouchableOpacity>
             </View>
           </View>
-
-          {/* User infomation, Logout button */}
-          <View
-            style={{
-              flex: 65,
-              backgroundColor: "white",
-            }}
-          >
-            {/* Location Box */}
-            <View style={styles.infoBox}>
-              <View style={styles.row}>
-                <View style={styles.smallBoxForIcon}>
-                  <Ionicons
-                    style={styles.locationIcon}
-                    name="location-outline"
-                    size={22}
-                  />
-                </View>
-                <View style={styles.textFrame}>
-                  <Text style={styles.informationTitle}>Location</Text>
-                  {/* Location here */}
-                  <Text style={styles.information}>
-                    Street 14, Seokarno hatta
-                  </Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Email Box */}
-            <View style={styles.infoBox}>
-              <View style={styles.row}>
-                <View style={styles.smallBoxForIcon}>
-                  <MaterialCommunityIcons
-                    name="email-outline"
-                    size={22}
-                    style={styles.emailIcon}
-                  />
-                </View>
-                <View style={styles.textFrame}>
-                  <Text style={styles.informationTitle}>Email</Text>
-                  {/* Email here */}
-                  <Text style={styles.information}>anonymous321@gmail.com</Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Phone Box */}
-            <View style={styles.infoBox}>
-              <View style={styles.row}>
-                <View style={styles.smallBoxForIcon}>
-                  <AntDesign name="phone" size={22} style={styles.phoneIcon} />
-                </View>
-                <View style={styles.textFrame}>
-                  <Text style={styles.informationTitle}>Phone</Text>
-                  {/* Phone here */}
-                  <Text style={styles.information}>+84 946102837</Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Setting Button */}
-            <TouchableOpacity style={styles.infoBox}>
-              <View style={styles.row}>
-                <View style={styles.smallBoxForIcon}>
-                  <AntDesign
-                    name="setting"
-                    size={22}
-                    style={styles.blackIcon}
-                  />
-                </View>
-                <View style={styles.textFrame}>
-                  <Text style={styles.informationTitle}>Setting</Text>
-                  <Text style={styles.information}>
-                    Dark mode, notification, privacy,...
-                  </Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-
-            {/* Account setting button */}
-            <TouchableOpacity style={styles.infoBox}>
-              <View style={styles.row}>
-                <View style={styles.smallBoxForIcon}>
-                  <MaterialCommunityIcons
-                    name="account-outline"
-                    size={22}
-                    style={styles.blackIcon}
-                  />
-                </View>
-                <View style={styles.textFrame}>
-                  <Text style={styles.informationTitle}>Account</Text>
-                  <Text style={styles.information}>
-                    Verify, change password
-                  </Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-
-            {/* Logout button */}
-            <TouchableOpacity style={styles.buttonWarn} onPress={() => navigation.navigate("Login")}>
-              <View style={styles.row}>
-                <SimpleLineIcons
-                  name="logout"
-                  size={24}
-                  style={styles.whiteIcon}
-                ></SimpleLineIcons>
-                <Text style={styles.text}>Log out</Text>
-              </View>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Animated.ScrollView>
-    </KeyboardAvoidingView>
+        </Animated.ScrollView>
+      </KeyboardAvoidingView>
+    )
   );
 };
 
