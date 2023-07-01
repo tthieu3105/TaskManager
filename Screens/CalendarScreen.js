@@ -103,7 +103,7 @@ const CalendarScreen = ({ navigation }) => {
           const number1 = data.StartTime.toDate().getTime();
           const number2 = data.DueTime.toDate().getTime();
           const number3 = selectedDate.getTime();
-          console.log("date: ", number3);
+          // console.log("date: ", number3);
           if (data.CreatorID = userId && number1 <= number3 && number2 >= number3 && data.Status != "Completed") {
             const start = formatDate(data.StartTime);
             const end = formatDate(data.DueTime);
@@ -131,7 +131,7 @@ const CalendarScreen = ({ navigation }) => {
   };
 
   const renderTask = (task) => {
-    const id = 1;
+    const id = task.TaskID;
     return (
       <TouchableOpacity onPress={() => navigation.navigate("TaskInfo", { id })}>
         <View style={styles.container1}>
