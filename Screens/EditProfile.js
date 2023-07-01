@@ -30,6 +30,16 @@ import {
   batch,
   updateDoc,
 } from "firebase/firestore";
+
+import { storage } from "../components/StorageConfig";
+import {
+  getDownloadURL,
+  getStorage,
+  uploadBytes,
+  ref as storageRef,
+  deleteObject,
+} from "firebase/storage";
+
 import { UserContext, UserProvider } from "../contextObject";
 import { Colors } from "react-native/Libraries/NewAppScreen";
 import PopupModal from "./../components/PopUpNotify";
@@ -88,8 +98,7 @@ const EditProfile = ({ navigation, route }) => {
   const newUname = Uname;
 
   //Image Picker
-  const [image, setImage] = useState("");
-  const [imageURI, setImageURI] = useState(route.params.userAvatar);
+  const [image, setImage] = useState(route.params.userAvatar);
   // const [newImageURI, setNewImageURI] = useState("");
   //convert local pic url to uri:
   // const convertUri = `file://${RNFS.DocumentDirectoryPath}/image.jpg`;
@@ -107,9 +116,6 @@ const EditProfile = ({ navigation, route }) => {
   //   });
   // });
   // console.log("Picture uri: ", image);
-  useEffect(() => {
-    setImage(imageURI);
-  }, [setImageURI]);
 
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -121,7 +127,6 @@ const EditProfile = ({ navigation, route }) => {
 
     if (!result.cancelled) {
       setImage(result.uri);
-      
     }
   };
 
@@ -138,7 +143,7 @@ const EditProfile = ({ navigation, route }) => {
   };
   const closeModal = () => {
     setModalVisible(false);
-    navigation.navigate("HomeScreen");
+    navigation.navigate("HomeNavigator");
   };
 
   //Update thông tin user
@@ -146,8 +151,29 @@ const EditProfile = ({ navigation, route }) => {
     console.log("doing in user: ", userId);
     const docRef = doc(db, "User", userId.toString());
 
-    if (
-      image.trim() == route.params.userAvatar &&
+    let updateAvartar = false;
+    if(image != route.params.userAvatar) {
+      console.log("image: ", image);
+      const response = await fetch(image);
+      const blob = await response.blob();
+      const storageReference = storageRef(
+        storage,
+        `UserAvatar/UserID/${userId}`
+      );
+      try {
+        await uploadBytes(storageReference, blob);
+        const url = await getDownloadURL(storageReference);
+        console.log("update avatar: ", url);
+        await updateDoc(docRef, { Avatar: url });
+        updateAvartar = true;
+      } catch (error) {
+        console.log("Error uploading avatar:", error);
+      }
+    }
+
+    console.log("image: ", image);
+
+    if (updateAvartar == false && 
       Uname.trim() == route.params.userName &&
       Career.trim() == route.params.userJob &&
       UMail.trim() == route.params.userEmail &&
@@ -157,7 +183,6 @@ const EditProfile = ({ navigation, route }) => {
       openModal("error", "Nothing to updated!");
       console.log("Nothing to update");
     } else {
-      await updateDoc(docRef, { Avatar: image });
       console.log("UserAvatar name updated!");
       navigation.setParams({ userAvatar: image });
 
