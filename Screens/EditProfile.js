@@ -16,6 +16,7 @@ import { useContext, useState } from "react";
 import { Feather } from "@expo/vector-icons";
 import AntDesign from "../node_modules/@expo/vector-icons/AntDesign";
 import UserAvatar from "@muhzi/react-native-user-avatar";
+
 // import { Dropdown } from 'react-native-element-dropdown';
 
 import { db } from "../components/FirestoreConfig";
@@ -87,12 +88,30 @@ const EditProfile = ({ navigation, route }) => {
   const newUname = Uname;
 
   //Image Picker
-  const [image, setImage] = useState(null);
+  const [image, setImage] = useState("");
   const [imageURI, setImageURI] = useState(route.params.userAvatar);
-  const [newImageURI,setNewImageURI]= useState("");
+  // const [newImageURI, setNewImageURI] = useState("");
+  //convert local pic url to uri:
+  // const convertUri = `file://${RNFS.DocumentDirectoryPath}/image.jpg`;
+  
+  // RNFS.copyFile(image, uri).then(() => {
+  //   // Tải lên hình ảnh lên Firebase Storage
+  //   const storageRef = firebase.storage().ref().child('avatars/image.jpg');
+  //   storageRef.putFile(uri).then(() => {
+  //     // Lấy URL của hình ảnh từ Firebase Storage và lưu vào Firestore
+  //     storageRef.getDownloadURL().then((url) => {
+  //       firebase.firestore().collection('users').doc('user_id').update({
+  //         avatarUrl: url,
+  //       });
+  //     });
+  //   });
+  // });
+  // console.log("Picture uri: ", image);
+  useEffect(() => {
+    setImage(imageURI);
+  }, [setImageURI]);
 
   const pickImage = async () => {
-    // No permissions request is necessary for launching the image library
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsEditing: true,
@@ -100,17 +119,9 @@ const EditProfile = ({ navigation, route }) => {
       quality: 1,
     });
 
-    console.log("Picture uri: ", result.uri);
-    setImageURI(result.uri);
-
     if (!result.cancelled) {
-      setImage(result.assets[0].uri);
-      console.log("New picture's URI: ",result.assets[0].uri)
-    };
-
-    if(result.cancelled){
-      setNewImageURI(result.uri);
-      console.log("Avatar is not changed! Old uri: ", imageURI)
+      setImage(result.uri);
+      
     }
   };
 
@@ -136,7 +147,7 @@ const EditProfile = ({ navigation, route }) => {
     const docRef = doc(db, "User", userId.toString());
 
     if (
-      imageURI.trim() == route.params.userAvatar &&
+      image.trim() == route.params.userAvatar &&
       Uname.trim() == route.params.userName &&
       Career.trim() == route.params.userJob &&
       UMail.trim() == route.params.userEmail &&
@@ -145,11 +156,10 @@ const EditProfile = ({ navigation, route }) => {
     ) {
       openModal("error", "Nothing to updated!");
       console.log("Nothing to update");
-      // navigation.navigate("AccountFeature");
     } else {
-      await updateDoc(docRef, { userAvatar: image });
+      await updateDoc(docRef, { Avatar: image });
       console.log("UserAvatar name updated!");
-      navigation.setParams({ Avatar: image });
+      navigation.setParams({ userAvatar: image });
 
       await updateDoc(docRef, { Name: Uname });
       console.log("User name updated!");
@@ -172,7 +182,6 @@ const EditProfile = ({ navigation, route }) => {
       navigation.setParams({ userLocation: ULocation });
 
       openModal("success", "Update Successful!");
-      // navigation.navigate("HomeScreen");
     }
   };
 
@@ -225,7 +234,7 @@ const EditProfile = ({ navigation, route }) => {
             <View>
               {/* Avatar */}
               <View style={styles.image}>
-                <UserAvatar size={80} src={imageURI} />
+                <UserAvatar size={80} src={image} />
 
                 {/* Button: Change avatar */}
                 <TouchableOpacity
@@ -432,7 +441,6 @@ const styles = StyleSheet.create({
     marginLeft: "auto",
     marginRight: "auto",
     marginTop: 95,
-    
   },
 
   title: {
