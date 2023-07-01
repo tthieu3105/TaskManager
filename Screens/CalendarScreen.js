@@ -29,7 +29,7 @@ const CalendarScreen = ({ navigation }) => {
   // selectedDate lưu trữ ngày được chọn (nếu có) và được khởi tạo ban đầu bằng giá trị null
   const [selectedDate, setSelectedDate] = useState(new Date(currentDate));
 
-  
+
 
   const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -91,23 +91,39 @@ const CalendarScreen = ({ navigation }) => {
   //Task
 
   const taskCollection = collection(db, "Task");
+  const taskUserCollection = collection(db, "Task_User");
   const [taskList, setTaskList] = useState([]);
   useEffect(() => {
     const fetchData = async () => {
       try {
         const querySnapshot = await getDocs(taskCollection);
         const tasks = [];
+        const querySnapshot2 = await getDocs(taskUserCollection);
         querySnapshot.forEach((doc) => {
           const data = doc.data();
-          // const dateObject = data.StartTime.toDate(); // Chuyển đổi thành đối tượng Date
           const number1 = data.StartTime.toDate().getTime();
           const number2 = data.DueTime.toDate().getTime();
           const number3 = selectedDate.getTime();
-          // console.log("date: ", number3);
-          if (data.CreatorID = userId && number1 <= number3 && number2 >= number3 && data.Status != "Completed") {
-            const start = formatDate(data.StartTime);
-            const end = formatDate(data.DueTime);
-            tasks.push({ ...data, StartTime: start, DueTime: end });
+          console.log("select Day: ", number3);
+          if (data.AssignTo == true) {
+            var Assignee = null;
+            querySnapshot2.forEach((doc2) => {
+              const data2 = doc2.data();
+              if (data2.TaskID == data.TaskID) {
+                Assignee = data2.AssigneeID;
+              }
+            });
+            if (userId == Assignee && number1 <= number3 && number2 >= number3 && data.Status != "Completed") {
+              const start = formatDate(data.StartTime);
+              // const end = formatDate(data.DueTime);
+              tasks.push({ ...data, StartTime: start});
+            }
+          } else {
+            if (data.CreatorID == userId && number1 <= number3 && number2 >= number3 && data.Status != "Completed") {
+              const start = formatDate(data.StartTime);
+              // const end = formatDate(data.DueTime);
+              tasks.push({ ...data, StartTime: start});
+            }
           }
         });
         setTaskList(tasks);
@@ -123,7 +139,6 @@ const CalendarScreen = ({ navigation }) => {
     const date = new Date(seconds * 1000); // Chuyển đổi thành đối tượng Date
     const day = ("0" + date.getDate()).slice(-2);
     const month = ("0" + (date.getMonth() + 1)).slice(-2);
-    // const year = date.getFullYear();
     const hours = ("0" + date.getHours()).slice(-2);
     const minutes = ("0" + date.getMinutes()).slice(-2);
 
@@ -131,18 +146,32 @@ const CalendarScreen = ({ navigation }) => {
   };
 
   const renderTask = (task) => {
-    const id = task.TaskID;
+    const taskID = task.TaskID.toString();
+
+    const show = () => {
+      const date = new Date(task.DueTime.seconds * 1000);
+      const hours = ("0" + date.getHours()).slice(-2);
+      const minutes = ("0" + date.getMinutes()).slice(-2);
+      const endDate = task.DueTime.toDate().getDate();
+      const day = selectedDate.getDate();
+      console.log(day);
+      // console.log("u du: ", endDate, day);
+      if (endDate == day)
+      return `${hours}:${minutes}`;
+      else return "All Day";
+    };
+    const end = formatDate(task.DueTime);
+    
     return (
-      <TouchableOpacity onPress={() => navigation.navigate("TaskInfo", { id })}>
+      <TouchableOpacity onPress={() => navigation.navigate("TaskInfo", { taskID })}>
         <View style={styles.container1}>
-          <Text style={styles.textInInsertBox}>8:00AM</Text>
+          <Text style={styles.textInInsertBox}>{show()}</Text>
           <View style={styles.taskBox}>
             <Text style={styles.textInTaskBox}>{task.Title}</Text>
-            <Text style={styles.timeInTaskBox}>{task.StartTime} - {task.DueTime}</Text>
+            <Text style={styles.timeInTaskBox}>{task.StartTime} - {end}</Text>
           </View>
         </View>
       </TouchableOpacity>
-
     );
   };
 
