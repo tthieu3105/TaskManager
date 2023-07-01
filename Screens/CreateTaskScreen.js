@@ -48,6 +48,7 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { UserContext, UserProvider } from "../contextObject";
+import PopupModal from "./../components/PopUpNotify";
 
 const CONTAINER_HEIGHT = 80;
 const inputText = {
@@ -330,10 +331,27 @@ export default function CreateTaskScreen({ navigation }) {
           });
         }
       }
+      openModal("success", "Task created");
     } catch (error) {
       console.error("Error creating task: ", error);
+      openModal("error", "Error creating task");
       // Xử lý lỗi nếu có
     }
+  };
+  // Popup thông báo
+  const [modalVisible, setModalVisible] = useState(false);
+  const [popupType, setPopupType] = useState("");
+  const [popupTitle, setPopupTitle] = useState("");
+  const [popupMessage, setPopupMessage] = useState("");
+  const openModal = (type, title, message) => {
+    setPopupType(type);
+    setPopupTitle(title);
+    setPopupMessage(message);
+    setModalVisible(true);
+  };
+  const closeModal = () => {
+    setModalVisible(false);
+
     navigation.goBack();
   };
   // Header Animation
@@ -935,6 +953,13 @@ export default function CreateTaskScreen({ navigation }) {
             <Text style={styles.textInButton}>Create a new task</Text>
           </TouchableOpacity>
         </View>
+        <PopupModal
+          visible={modalVisible}
+          type={popupType}
+          title={popupTitle}
+          message={popupMessage}
+          onClose={closeModal}
+        />
       </View>
     </KeyboardAvoidingView>
   );

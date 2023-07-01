@@ -34,6 +34,7 @@ import {
   deleteDoc,
 } from "firebase/firestore";
 import { useFocusEffect } from "@react-navigation/native";
+import PopupModal from "./../components/PopUpNotify";
 
 const CONTAINER_HEIGHT = 80;
 const inputText = {
@@ -49,7 +50,13 @@ const inputText = {
 };
 
 export default function TaskInfoScreen({ navigation, route }) {
-  const { taskID, refreshScreen } = route.params;
+  const {
+    taskID,
+    refreshScreen,
+    refreshMyTaskScreen,
+    refreshOverdueScreen,
+    refreshCompletedScreen,
+  } = route.params;
   const [task, setTask] = useState(null);
   const [project, setProject] = useState(null);
 
@@ -348,31 +355,50 @@ export default function TaskInfoScreen({ navigation, route }) {
       );
 
       const projectTaskSnapshot = await getDocs(q_projectTask);
+      if (!projectTaskSnapshot.empty) {
+        const projectTaskId = projectTaskSnapshot.docs[0].data().itemID;
+        projectTaskRef = doc(db, "Project_Task", projectTaskId.toString());
+        // Xóa bảng Task_User
+        //Tiến hành tìm itemID của bảng Task_User
+        let taskUserRef = collection(db, "Task_User");
+        const q_taskUser = query(taskUserRef, where("TaskID", "==", task_ID));
 
-      const projectTaskId = projectTaskSnapshot.docs[0].data().itemID;
-      projectTaskRef = doc(db, "Project_Task", projectTaskId.toString());
-      // Xóa bảng Task_User
-      //Tiến hành tìm itemID của bảng Task_User
-      let taskUserRef = collection(db, "Task_User");
-      const q_taskUser = query(taskUserRef, where("TaskID", "==", task_ID));
+        const taskUserSnapshot = await getDocs(q_taskUser);
 
-      const taskUserSnapshot = await getDocs(q_taskUser);
+        const taskUserId = taskUserSnapshot.docs[0].data().itemID;
+        taskUserRef = doc(db, "Task_User", taskUserId.toString());
+        // Delete the document from Firestore
 
-      const taskUserId = taskUserSnapshot.docs[0].data().itemID;
-      taskUserRef = doc(db, "Task_User", taskUserId.toString());
-      // Delete the document from Firestore
+        await deleteDoc(taskUserRef);
+        await deleteDoc(projectTaskRef);
+
+        // Task deleted successfully
+      }
       await deleteDoc(taskDocRef);
-      await deleteDoc(taskUserRef);
-      await deleteDoc(projectTaskRef);
-
-      // Task deleted successfully
+      openModal("success", "Task deleted");
       console.log("Task deleted");
     } catch (error) {
       // Error deleting task
+      openModal("error", "Error deleting task");
       console.error("Error deleting task: ", error);
     }
+  };
+  // Popup thông báo
+  const [modalVisible, setModalVisible] = useState(false);
+  const [popupType, setPopupType] = useState("");
+  const [popupTitle, setPopupTitle] = useState("");
+  const [popupMessage, setPopupMessage] = useState("");
+  const openModal = (type, title, message) => {
+    setPopupType(type);
+    setPopupTitle(title);
+    setPopupMessage(message);
+    setModalVisible(true);
+  };
+  const closeModal = () => {
+    setModalVisible(false);
     refreshScreen();
-    navigation.goBack();
+    refreshMyTaskScreen();
+    refreshOverdueScreen(), refreshCompletedScreen(), navigation.goBack();
   };
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -689,6 +715,13 @@ export default function TaskInfoScreen({ navigation, route }) {
           </View>
         </TouchableOpacity>
       </View>
+      <PopupModal
+        visible={modalVisible}
+        type={popupType}
+        title={popupTitle}
+        message={popupMessage}
+        onClose={closeModal}
+      />
     </KeyboardAvoidingView>
   );
 }

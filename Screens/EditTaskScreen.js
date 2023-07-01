@@ -39,8 +39,10 @@ import {
   updateDoc,
   serverTimestamp,
   deleteDoc,
+  setDoc,
 } from "firebase/firestore";
 import { UserContext, UserProvider } from "../contextObject";
+import PopupModal from "./../components/PopUpNotify";
 
 const CONTAINER_HEIGHT = 80;
 const inputText = {
@@ -92,6 +94,23 @@ export default function EditTaskScreen({ navigation, route }) {
     { key: "3", value: "7 days before" },
     // ...Thêm các giá trị khác vào đây
   ];
+  // Popup thông báo
+  const [modalVisible, setModalVisible] = useState(false);
+  const [popupType, setPopupType] = useState("");
+  const [popupTitle, setPopupTitle] = useState("");
+  const [popupMessage, setPopupMessage] = useState("");
+  const openModal = (type, title, message) => {
+    setPopupType(type);
+    setPopupTitle(title);
+    setPopupMessage(message);
+    setModalVisible(true);
+  };
+  const closeModal = () => {
+    setModalVisible(false);
+    refreshTaskInfoScreen();
+
+    navigation.goBack();
+  };
   useEffect(() => {
     const fetchTask = async () => {
       try {
@@ -112,6 +131,7 @@ export default function EditTaskScreen({ navigation, route }) {
           const startTime = startDay.toLocaleTimeString();
           setSelectedStartDate(startDate); // Set the startDate state here
           setStartTime(startTime);
+
           // Set giá trị includeEndDate, includeTime, Remind
           const includeEndDate = taskData.IncludeEndDate;
           const includeTime = taskData.IncludeTime;
@@ -371,55 +391,140 @@ export default function EditTaskScreen({ navigation, route }) {
 
       const projectTaskSnapshot = await getDocs(q_projectTask);
 
-      const projectTaskId = projectTaskSnapshot.docs[0].data().itemID;
+      if (!projectTaskSnapshot.empty) {
+        const projectTaskId = projectTaskSnapshot.docs[0].data().itemID;
 
-      // Perform the update for each record in the Project_Task collection
-      await updateDoc(doc(db, "Project_Task", projectTaskId.toString()), {
-        ProjectID: idProject,
-        // ...
-      });
-
-      if (assignVisible) {
-        //Cập nhật bảng Task_User
-        const idAssignee = parseInt(selectedAssignee);
-
-        // Cập nhật bảng Task_User
-        let taskUserRef = collection(db, "Task_User");
-        const q_taskUser = query(taskUserRef, where("TaskID", "==", task_ID));
-
-        const taskUserSnapshot = await getDocs(q_taskUser);
-
-        const taskUserId = taskUserSnapshot.docs[0].data().itemID;
-        console.log("taskUserId", taskUserId);
-        console.log("taskUserId", typeof taskUserId);
-
-        await updateDoc(doc(db, "Task_User", taskUserId.toString()), {
-          AssigneeID: idAssignee,
+        // Perform the update for each record in the Project_Task collection
+        await updateDoc(doc(db, "Project_Task", projectTaskId.toString()), {
+          ProjectID: idProject,
+          // ...
         });
-      } else {
-        // Cập nhật bảng Task_User
-        let taskUserRef = collection(db, "Task_User");
-        const q_taskUser = query(taskUserRef, where("TaskID", "==", task_ID));
 
-        const taskUserSnapshot = await getDocs(q_taskUser);
+        if (assignVisible) {
+          //Cập nhật bảng Task_User
+          const idAssignee = parseInt(selectedAssignee);
 
-        const taskUserId = taskUserSnapshot.docs[0].data().itemID;
-        console.log("taskUserId", taskUserId);
-        console.log("taskUserId", typeof taskUserId);
+          // Cập nhật bảng Task_User
+          let taskUserRef = collection(db, "Task_User");
+          const q_taskUser = query(taskUserRef, where("TaskID", "==", task_ID));
 
-        await updateDoc(doc(db, "Task_User", taskUserId.toString()), {
-          AssigneeID: userId,
+          const taskUserSnapshot = await getDocs(q_taskUser);
+
+          const taskUserId = taskUserSnapshot.docs[0].data().itemID;
+          console.log("taskUserId", taskUserId);
+          console.log("taskUserId", typeof taskUserId);
+
+          await updateDoc(doc(db, "Task_User", taskUserId.toString()), {
+            AssigneeID: idAssignee,
+          });
+        } else {
+          // Cập nhật bảng Task_User
+          let taskUserRef = collection(db, "Task_User");
+          const q_taskUser = query(taskUserRef, where("TaskID", "==", task_ID));
+
+          const taskUserSnapshot = await getDocs(q_taskUser);
+
+          const taskUserId = taskUserSnapshot.docs[0].data().itemID;
+          console.log("taskUserId", taskUserId);
+          console.log("taskUserId", typeof taskUserId);
+
+          await updateDoc(doc(db, "Task_User", taskUserId.toString()), {
+            AssigneeID: userId,
+          });
+        }
+      } else if (selectedProject) {
+        //THÊM PROJECT_TASK MỚI
+        const projectTaskSnapshot = await getDocs(
+          collection(db, "Project_Task")
+        );
+        const existingProjectTask = projectTaskSnapshot.docs.map((doc) =>
+          doc.data()
+        );
+        // Tìm projectTaskID lớn nhất trong danh sách
+        const maxProjectTaskID = Math.max(
+          ...existingProjectTask.map((projectTask) =>
+            parseInt(projectTask.itemID)
+          )
+        );
+        console.log("maxProjectTaskID", maxProjectTaskID);
+        const newProjectTaskID = maxProjectTaskID + 1;
+
+        const projectTaskRef = doc(
+          collection(db, "Project_Task"),
+          newProjectTaskID.toString()
+        );
+        console.log("ProjectTask created with ID: ", projectTaskRef.id);
+
+        await setDoc(projectTaskRef, {
+          // Document data
+          ProjectID: selectedProject,
+          TaskID: task_ID,
+          itemID: newProjectTaskID,
+          // ...
         });
+        if (assignVisible) {
+          //THÊM TASK_USER MỚI
+          const taskUserSnapshot = await getDocs(collection(db, "Task_User"));
+          const existingTaskUser = taskUserSnapshot.docs.map((doc) =>
+            doc.data()
+          );
+          // Tìm projectTaskID lớn nhất trong danh sách
+          const maxTaskUserID = Math.max(
+            ...existingTaskUser.map((taskUser) => parseInt(taskUser.itemID))
+          );
+          console.log("maxTaskUserID", maxTaskUserID);
+          const newTaskUserkID = maxTaskUserID + 1;
+
+          const taskUserRef = doc(
+            collection(db, "Task_User"),
+            newTaskUserkID.toString()
+          );
+          console.log("TaskUser created with ID: ", taskUserRef.id);
+          const assigneeID = parseInt(selectedAssignee);
+          await setDoc(taskUserRef, {
+            // Document data
+            AssigneeID: assigneeID,
+            TaskID: task_ID,
+            itemID: newTaskUserkID,
+            // ...
+          });
+        } else {
+          const taskUserSnapshot = await getDocs(collection(db, "Task_User"));
+          const existingTaskUser = taskUserSnapshot.docs.map((doc) =>
+            doc.data()
+          );
+          // Tìm projectTaskID lớn nhất trong danh sách
+          const maxTaskUserID = Math.max(
+            ...existingTaskUser.map((taskUser) => parseInt(taskUser.itemID))
+          );
+          console.log("maxTaskUserID", maxTaskUserID);
+          const newTaskUserkID = maxTaskUserID + 1;
+
+          const taskUserRef = doc(
+            collection(db, "Task_User"),
+            newTaskUserkID.toString()
+          );
+          console.log("TaskUser created with ID: ", taskUserRef.id);
+          const assigneeID = parseInt(selectedAssignee);
+          await setDoc(taskUserRef, {
+            // Document data
+            AssigneeID: userId,
+            TaskID: task_ID,
+            itemID: newTaskUserkID,
+            // ...
+          });
+        }
       }
 
       console.log("Cập nhật thành công");
+      openModal("success", "Task updated!");
       // Thực hiện các hành động khác sau khi cập nhật thành công
     } catch (error) {
       console.log("Lỗi khi cập nhật:", error);
+      openModal("error", "Update failed!");
       // Xử lý lỗi nếu có
     }
-    refreshTaskInfoScreen();
-    navigation.goBack();
+
     // navigation.replace("T")
   };
   // Header Animation
@@ -989,6 +1094,13 @@ export default function EditTaskScreen({ navigation, route }) {
               </View>
             </View>
           </View>
+          <PopupModal
+            visible={modalVisible}
+            type={popupType}
+            title={popupTitle}
+            message={popupMessage}
+            onClose={closeModal}
+          />
         </View>
       </Animated.ScrollView>
     </KeyboardAvoidingView>
