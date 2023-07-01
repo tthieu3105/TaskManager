@@ -81,7 +81,7 @@ export default function NotifyScreen({ navigation }) {
             style={{
               color: "#363942",
               fontWeight: "bold",
-              fontSize: 24
+              fontSize: 24,
             }}
           >
             All updates
@@ -103,55 +103,6 @@ export default function NotifyScreen({ navigation }) {
         )}
       >
         <View style={{ marginTop: CONTAINER_HEIGHT }}>
-          {/* Notify Card */}
-          <NotifyCard
-            nameTask={notifyInfo.name}
-            createDate={notifyInfo.date}
-            projectName={notifyInfo.project}
-            dueDate={notifyInfo.due}
-          ></NotifyCard>
-          {/* End of Notify Card */}
-
-          {/* Notify Card */}
-          <NotifyCard
-            nameTask={notifyInfo.name}
-            createDate={notifyInfo.date}
-            projectName={notifyInfo.project}
-            dueDate={notifyInfo.due}
-          ></NotifyCard>
-          {/* End of Notify Card */}
-          {/* Notify Card */}
-          <NotifyCard
-            nameTask={notifyInfo.name}
-            createDate={notifyInfo.date}
-            projectName={notifyInfo.project}
-            dueDate={notifyInfo.due}
-          ></NotifyCard>
-          {/* End of Notify Card */}
-          {/* Notify Card */}
-          <NotifyCard
-            nameTask={notifyInfo.name}
-            createDate={notifyInfo.date}
-            projectName={notifyInfo.project}
-            dueDate={notifyInfo.due}
-          ></NotifyCard>
-          {/* End of Notify Card */}
-          {/* Notify Card */}
-          <NotifyCard
-            nameTask={notifyInfo.name}
-            createDate={notifyInfo.date}
-            projectName={notifyInfo.project}
-            dueDate={notifyInfo.due}
-          ></NotifyCard>
-          {/* End of Notify Card */}
-          {/* Notify Card */}
-          <NotifyCard
-            nameTask={notifyInfo.name}
-            createDate={notifyInfo.date}
-            projectName={notifyInfo.project}
-            dueDate={notifyInfo.due}
-          ></NotifyCard>
-          {/* End of Notify Card */}
           {/* Notify Card */}
           <NotifyCard
             nameTask={notifyInfo.name}
@@ -194,6 +145,6 @@ const styles = StyleSheet.create({
   textHeader: {
     color: "#3379E4",
     fontWeight: "500",
-    fontSize: 18
+    fontSize: 18,
   },
 });
