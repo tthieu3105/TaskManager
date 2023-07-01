@@ -31,7 +31,11 @@ import {
   getDocs,
   query,
   where,
+  deleteDoc,
 } from "firebase/firestore";
+import { useFocusEffect } from "@react-navigation/native";
+import PopupModal from "./../components/PopUpNotify";
+
 const CONTAINER_HEIGHT = 80;
 const inputText = {
   name1: "Project",
@@ -46,7 +50,13 @@ const inputText = {
 };
 
 export default function TaskInfoScreen({ navigation, route }) {
-  const { taskID } = route.params;
+  const {
+    taskID,
+    refreshScreen,
+    refreshMyTaskScreen,
+    refreshOverdueScreen,
+    refreshCompletedScreen,
+  } = route.params;
   const [task, setTask] = useState(null);
   const [project, setProject] = useState(null);
 
@@ -71,6 +81,133 @@ export default function TaskInfoScreen({ navigation, route }) {
     "7 days before",
     // ...Thêm các giá trị khác vào đây
   ];
+  const refreshTaskInfoScreen = async () => {
+    try {
+      const taskDoc = await getDoc(doc(db, "Task", taskID));
+
+      if (taskDoc.exists) {
+        const taskData = taskDoc.data();
+        setTask(taskData);
+        //  Thực hiện tách ngày và giờ riêng của thuộc tính StartTime
+        const options = {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        };
+        const startDay = taskData.StartTime.toDate();
+        const startDate = startDay.toLocaleDateString("en-US", options);
+        const startTime = startDay.toLocaleTimeString();
+
+        setStartDate(startDate); // Set the startDate state here
+        setStartTime(startTime);
+        // Set giá trị includeEndDate, includeTime, Remind, Assign to
+        const includeEndDate = taskData.IncludeEndDate;
+        const includeTime = taskData.IncludeTime;
+        const remind = taskData.Remind;
+        const assignTo = taskData.AssignTo;
+        setDueDateVisible(includeEndDate);
+        setTimeVisible(includeTime);
+        setRemindVisible(remind);
+        setAssignVisible(assignTo);
+        //In ra kiểu dữ liệu của thuộc tính taskID mà truyền vào
+        console.log("Type of taskID:", typeof taskID); //string
+        //Chuyển kiểu dữ liệu sang int do thuộc tính TaskID trong Firestore là int
+        const task_ID = parseInt(taskID);
+        //Tách thuộc tính DueDate và DueTime
+        if (includeEndDate) {
+          const endDay = taskData.DueTime.toDate();
+          const endDate = endDay.toLocaleDateString("en-US", options);
+          const endTime = endDay.toLocaleTimeString();
+
+          setEndDate(endDate); // Set the endDate state here
+          setEndTime(endTime);
+        }
+        if (remind) {
+          //Lấy đối tượng Timestamp trong Firestore và chuyển sang Date
+          const dueTime = taskData.DueTime.toDate();
+          const remindTime = taskData.RemindTime.toDate();
+          // Lấy giá trị ngày từ RemindTime
+          const remindDay = remindTime.getDate();
+
+          // Lấy giá trị ngày từ DueTime
+          const dueDay = dueTime.getDate();
+          // Chuyển đổi giá trị ngày sang kiểu số nguyên
+          const remindDayInt = parseInt(remindDay);
+          const dueDayInt = parseInt(dueDay);
+          // Kết quả là một số nguyên tương ứng với ngày
+          console.log("Remind day:", remindDayInt);
+          console.log("Due day:", dueDayInt);
+          // Tính toán khoảng thời gian giữa DueTime và RemindTime
+          const daysDiff = dueDayInt - remindDayInt;
+          // Tìm giá trị tương ứng dựa trên daysDiff
+          console.log("Days Difference:", daysDiff);
+          let selectedOption;
+          if (daysDiff === 0) {
+            selectedOption = "On day of event";
+          } else {
+            selectedOption = remindOptions.find(
+              (option) => parseInt(option) === daysDiff
+            );
+          }
+
+          setRemindTime(selectedOption);
+        }
+        if (assignTo) {
+          const taskUserRef = collection(db, "Task_User");
+          const queryTaskUser = query(
+            taskUserRef,
+            where("TaskID", "==", task_ID)
+          );
+          const taskUserSnapshot = await getDocs(queryTaskUser);
+          if (!taskUserSnapshot.empty) {
+            const assigneeID = taskUserSnapshot.docs[0].data().AssigneeID;
+            console.log("Type of assigneeID:", typeof assigneeID); //number
+            // Fetch project name from Project table
+
+            const userSnapshot = await getDoc(
+              doc(db, "User", assigneeID.toString())
+            );
+
+            if (userSnapshot.exists()) {
+              const userData = userSnapshot.data();
+              const userName = userData.Name;
+              setAssignee(userName);
+            }
+          }
+        }
+
+        // Fetch project ID from Project_Task table
+        const projectTaskRef = collection(db, "Project_Task");
+        const queryProjectTask = query(
+          projectTaskRef,
+          where("TaskID", "==", task_ID)
+        );
+
+        const projectTaskSnapshot = await getDocs(queryProjectTask);
+        if (!projectTaskSnapshot.empty) {
+          const projectID = projectTaskSnapshot.docs[0].data().ProjectID;
+          console.log("Type of projectID:", typeof projectID); //number
+          // Fetch project name from Project table
+
+          const projectSnapshot = await getDoc(
+            doc(db, "Project", projectID.toString())
+          );
+
+          if (projectSnapshot.exists()) {
+            const projectData = projectSnapshot.data();
+            const nameProject = projectData.ProjectName;
+            setProjectName(nameProject);
+          }
+        }
+      } else {
+        // Handle case when task doesn't exist
+        console.log("Task not found");
+      }
+    } catch (error) {
+      console.error("Error refreshing Screen B:", error);
+    }
+  };
   useEffect(() => {
     const fetchTask = async () => {
       try {
@@ -80,8 +217,14 @@ export default function TaskInfoScreen({ navigation, route }) {
           const taskData = taskDoc.data();
           setTask(taskData);
           //  Thực hiện tách ngày và giờ riêng của thuộc tính StartTime
+          const options = {
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          };
           const startDay = taskData.StartTime.toDate();
-          const startDate = startDay.toLocaleDateString();
+          const startDate = startDay.toLocaleDateString("en-US", options);
           const startTime = startDay.toLocaleTimeString();
 
           setStartDate(startDate); // Set the startDate state here
@@ -102,7 +245,7 @@ export default function TaskInfoScreen({ navigation, route }) {
           //Tách thuộc tính DueDate và DueTime
           if (includeEndDate) {
             const endDay = taskData.DueTime.toDate();
-            const endDate = endDay.toLocaleDateString();
+            const endDate = endDay.toLocaleDateString("en-US", options);
             const endTime = endDay.toLocaleTimeString();
 
             setEndDate(endDate); // Set the endDate state here
@@ -196,7 +339,67 @@ export default function TaskInfoScreen({ navigation, route }) {
 
     fetchTask();
   }, [taskID]);
+  //XÓA DỮ LIỆU
+  const handleDeleteTask = async () => {
+    try {
+      // Create a DocumentReference for the task document using the taskId
+      const taskDocRef = doc(db, "Task", taskID);
+      const task_ID = parseInt(taskID);
 
+      //Xóa bảng Project_Task
+      //Tiến hành tìm itemID của bảng Project_Task
+      let projectTaskRef = collection(db, "Project_Task");
+      const q_projectTask = query(
+        projectTaskRef,
+        where("TaskID", "==", task_ID)
+      );
+
+      const projectTaskSnapshot = await getDocs(q_projectTask);
+      if (!projectTaskSnapshot.empty) {
+        const projectTaskId = projectTaskSnapshot.docs[0].data().itemID;
+        projectTaskRef = doc(db, "Project_Task", projectTaskId.toString());
+        // Xóa bảng Task_User
+        //Tiến hành tìm itemID của bảng Task_User
+        let taskUserRef = collection(db, "Task_User");
+        const q_taskUser = query(taskUserRef, where("TaskID", "==", task_ID));
+
+        const taskUserSnapshot = await getDocs(q_taskUser);
+
+        const taskUserId = taskUserSnapshot.docs[0].data().itemID;
+        taskUserRef = doc(db, "Task_User", taskUserId.toString());
+        // Delete the document from Firestore
+
+        await deleteDoc(taskUserRef);
+        await deleteDoc(projectTaskRef);
+
+        // Task deleted successfully
+      }
+      await deleteDoc(taskDocRef);
+      openModal("success", "Task deleted");
+      console.log("Task deleted");
+    } catch (error) {
+      // Error deleting task
+      openModal("error", "Error deleting task");
+      console.error("Error deleting task: ", error);
+    }
+  };
+  // Popup thông báo
+  const [modalVisible, setModalVisible] = useState(false);
+  const [popupType, setPopupType] = useState("");
+  const [popupTitle, setPopupTitle] = useState("");
+  const [popupMessage, setPopupMessage] = useState("");
+  const openModal = (type, title, message) => {
+    setPopupType(type);
+    setPopupTitle(title);
+    setPopupMessage(message);
+    setModalVisible(true);
+  };
+  const closeModal = () => {
+    setModalVisible(false);
+    refreshScreen();
+    refreshMyTaskScreen();
+    refreshOverdueScreen(), refreshCompletedScreen(), navigation.goBack();
+  };
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
   const offsetAnim = useRef(new Animated.Value(0)).current;
@@ -260,13 +463,20 @@ export default function TaskInfoScreen({ navigation, route }) {
         <View style={styles.rowSection}>
           <TouchableOpacity
             style={styles.headerBehave}
-            onPress={() => navigation.goBack()}
+            onPress={() => {
+              navigation.goBack();
+              if (refreshScreen) {
+                refreshScreen();
+              }
+            }}
           >
             <SimpleLineIcons name="arrow-left" size={20} color="black" />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.headerBehave}
-            onPress={() => navigation.navigate("EditTask", { taskID })}
+            onPress={() =>
+              navigation.navigate("EditTask", { taskID, refreshTaskInfoScreen })
+            }
           >
             <Text style={styles.textHeader}>Edit</Text>
           </TouchableOpacity>
@@ -499,12 +709,19 @@ export default function TaskInfoScreen({ navigation, route }) {
       </Animated.ScrollView>
       <View style={styles.createTask}>
         {/*Btn Create Task */}
-        <TouchableOpacity>
+        <TouchableOpacity onPress={handleDeleteTask}>
           <View style={styles.btnDeleteTask}>
             <Text style={styles.textInBtnDeleteTask}>Delete this task</Text>
           </View>
         </TouchableOpacity>
       </View>
+      <PopupModal
+        visible={modalVisible}
+        type={popupType}
+        title={popupTitle}
+        message={popupMessage}
+        onClose={closeModal}
+      />
     </KeyboardAvoidingView>
   );
 }
