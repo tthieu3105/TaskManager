@@ -12,33 +12,40 @@ import {
 import React, { Component, useEffect, useRef } from "react";
 import { Colors } from "react-native/Libraries/NewAppScreen";
 import { Ionicons } from "@expo/vector-icons";
-import { useState, useContext } from "react";
+import { useContext, useState } from "react";
 import { StatusBar } from "expo-status-bar";
 import CreateAccScreen from "./CreateAccScreen";
 import { useNavigation } from "react-router-native";
-import { UserContext, UserProvider } from "../contextObject";
-
 import { ToastAndroid } from "react-native";
-import { db } from "../components/FirebaseConfig";
-import {
-  ref,
-  onValue,
-  get,
-  child,
-  orderByChild,
-  equalTo,
-} from "firebase/database";
+
+import { db } from "../components/FirestoreConfig";
+import { collection, getDocs, query, where, or, and } from "firebase/firestore";
+import { UserContext, UserProvider } from "../contextObject";
+import PopupModal from "./../components/PopUpNotify";
 
 const CONTAINER_HEIGHT = 80;
 
 const LoginScreen = ({ navigation }) => {
-  const { setUserId } = useContext(UserContext);
-  let userID = 1;
-  setUserId(userID);
-  console.log("Type of userID:", typeof userID);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [popupType, setPopupType] = useState("");
+  const [popupTitle, setPopupTitle] = useState("");
+  const [popupMessage, setPopupMessage] = useState("");
+  const openModal = (type, title, message) => {
+    setPopupType(type);
+    setPopupTitle(title);
+    setPopupMessage(message);
+    setModalVisible(true);
+  };
+  const closeModal = () => {
+    setModalVisible(false);
+    // navigation.navigate("HomeScreen");
+  };
+
+  // Lấy user name
   const [userName, setUserName] = useState("");
   // Lấy Password
   const [password, setPassword] = useState("");
+
   const [hidePassword, setHidePassword] = useState(true);
   const [showPasswordIcon, setShowPasswordIcon] = useState("eye-outline");
   // Button hiển thị password
@@ -47,56 +54,45 @@ const LoginScreen = ({ navigation }) => {
     setShowPasswordIcon(hidePassword ? "eye-off-outline" : "eye-outline");
   };
 
-  const LoginFunction = (userName, password) => {
-    if (userName === "") {
-      ToastAndroid.show(
-        "UserName or Email cannot be empty",
-        ToastAndroid.SHORT
-      );
+  const { setUserId } = useContext(UserContext);
+  const LoginFunction = async (userName, password) => {
+    if (userName === "" && password === "") {
+      openModal("error", "User name & password can't be empty!");
+      console.log("ERROR: No user name & password");
       return false;
     }
+
     if (password === "") {
-      ToastAndroid.show("Password cannot be empty", ToastAndroid.SHORT);
+      openModal("error", "Password can't be empty!");
+      console.log("ERROR: No password");
       return false;
     }
 
-    // Lấy reference đến node 'User' trong Firebase Realtime Database
-    const usersRef = ref(db, "User");
+    let userID = 0;
+    const q = query(
+      collection(db, "User"),
+      and(
+        or(where("UserName", "==", userName), where("Email", "==", userName)),
+        where("Password", "==", password)
+      )
+    );
 
-    const userList = [];
+    const querySnapshot = await getDocs(q);
 
-    // Lấy toàn bộ dữ liệu User và lưu vào list user
-    get(usersRef).then((snapshot) => {
-      if (snapshot.exists()) {
-        const data = snapshot.val();
-        Object.keys(data).forEach((key) => {
-          const user = data[key];
-          userList.push({
-            username: user.UserName,
-            email: user.Email,
-            password: user.Password,
-          });
-        });
-        console.log("Users found:", userList);
-        const foundUser = userList.find(
-          (user) =>
-            (user.username === userName || user.email === userName) &&
-            user.password === password
-        );
-        if (foundUser) {
-          ToastAndroid.show("Login Successfully!", ToastAndroid.SHORT);
-
-          navigation.navigate("HomeNavigator");
-        } else {
-          ToastAndroid.show(
-            "Invalid UserName or Password!",
-            ToastAndroid.SHORT
-          );
-        }
-      } else {
-        console.log("No users found");
+    if (querySnapshot.size > 0) {
+      for (const user of querySnapshot.docs) {
+        userID = user.data().UserID;
       }
-    });
+      console.log("user id: ", userID);
+
+      setUserId(userID);
+
+      console.log("Login Successfully!");
+      navigation.navigate("HomeNavigator", { userID: userID });
+    } else {
+      openModal("error", "Wrong login info!", "Please try again!");
+      console.log("ERROR: Wrong password or user name");
+    }
   };
 
   // Header Animation
@@ -223,6 +219,13 @@ const LoginScreen = ({ navigation }) => {
               <Text style={styles.textInButton}>Create account</Text>
             </TouchableOpacity>
           </View>
+          <PopupModal
+            visible={modalVisible}
+            type={popupType}
+            title={popupTitle}
+            message={popupMessage}
+            onClose={closeModal}
+          />
         </View>
       </Animated.ScrollView>
     </KeyboardAvoidingView>
