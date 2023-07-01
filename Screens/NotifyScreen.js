@@ -8,6 +8,7 @@ import {
 import React, { Component, useEffect, useRef } from "react";
 import { TouchableOpacity } from "react-native";
 import NotifyCard from "../components/NotifyCard";
+import NotifyCard2 from "../components/NotifyCard2";
 import { ScrollView } from "react-native";
 import { StatusBar } from "react-native";
 const CONTAINER_HEIGHT = 80;
@@ -81,7 +82,7 @@ export default function NotifyScreen({ navigation }) {
             style={{
               color: "#363942",
               fontWeight: "bold",
-              fontSize: 24
+              fontSize: 24,
             }}
           >
             All updates
@@ -112,54 +113,7 @@ export default function NotifyScreen({ navigation }) {
           ></NotifyCard>
           {/* End of Notify Card */}
 
-          {/* Notify Card */}
-          <NotifyCard
-            nameTask={notifyInfo.name}
-            createDate={notifyInfo.date}
-            projectName={notifyInfo.project}
-            dueDate={notifyInfo.due}
-          ></NotifyCard>
-          {/* End of Notify Card */}
-          {/* Notify Card */}
-          <NotifyCard
-            nameTask={notifyInfo.name}
-            createDate={notifyInfo.date}
-            projectName={notifyInfo.project}
-            dueDate={notifyInfo.due}
-          ></NotifyCard>
-          {/* End of Notify Card */}
-          {/* Notify Card */}
-          <NotifyCard
-            nameTask={notifyInfo.name}
-            createDate={notifyInfo.date}
-            projectName={notifyInfo.project}
-            dueDate={notifyInfo.due}
-          ></NotifyCard>
-          {/* End of Notify Card */}
-          {/* Notify Card */}
-          <NotifyCard
-            nameTask={notifyInfo.name}
-            createDate={notifyInfo.date}
-            projectName={notifyInfo.project}
-            dueDate={notifyInfo.due}
-          ></NotifyCard>
-          {/* End of Notify Card */}
-          {/* Notify Card */}
-          <NotifyCard
-            nameTask={notifyInfo.name}
-            createDate={notifyInfo.date}
-            projectName={notifyInfo.project}
-            dueDate={notifyInfo.due}
-          ></NotifyCard>
-          {/* End of Notify Card */}
-          {/* Notify Card */}
-          <NotifyCard
-            nameTask={notifyInfo.name}
-            createDate={notifyInfo.date}
-            projectName={notifyInfo.project}
-            dueDate={notifyInfo.due}
-          ></NotifyCard>
-          {/* End of Notify Card */}
+          
         </View>
       </Animated.ScrollView>
     </KeyboardAvoidingView>
@@ -194,6 +148,6 @@ const styles = StyleSheet.create({
   textHeader: {
     color: "#3379E4",
     fontWeight: "500",
-    fontSize: 18
+    fontSize: 18,
   },
 });
