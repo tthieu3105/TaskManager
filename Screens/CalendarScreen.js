@@ -9,14 +9,21 @@ import {
 } from "react-native";
 
 import React, { Component, useRef } from "react";
+import { useContext } from "react"
+import { UserContext, UserProvider } from "../contextObject";
 import { useState, useEffect } from "react";
 import AntDesign from "../node_modules/@expo/vector-icons/AntDesign";
 import axios from "axios";
 import TabContainer from "../components/TabContainer";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../components/FirestoreConfig";
+
 
 const CONTAINER_HEIGHT = 80;
 
 const CalendarScreen = () => {
+  const { userId } = useContext(UserContext); // lay user id
+
   // currentDate:  lưu trữ ngày hiện tại và được khởi tạo ban đầu bằng đối tượng Date mới
   const [currentDate, setCurrentDate] = useState(new Date());
   // selectedDate lưu trữ ngày được chọn (nếu có) và được khởi tạo ban đầu bằng giá trị null
@@ -78,20 +85,65 @@ const CalendarScreen = () => {
   };
 
   //Task
-  const [task, setTasks] = useState([]);
 
-  const renderTask = ({ item }) => {
+  const taskCollection = collection(db, "Task");
+  const [taskList, setTaskList] = useState([]);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const querySnapshot = await getDocs(taskCollection);
+        const tasks = [];
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          if (data.CreatorID = userId) {
+            // const timestamp = data.CreateAt;
+            // const seconds = timestamp.seconds;
+            // const date = new Date(seconds * 1000); // Chuyển đổi thành đối tượng Date
+            // const formattedDate = formatDate(date); // Định dạng ngày tháng
+            tasks.push(data);
+          }
+        });
+        setTaskList(tasks);
+      } catch (error) {
+        console.error("Lỗi lấy ds note: ", error);
+      }
+    };
+    fetchData();
+  }, []);
+  console.log(taskList);
+  const formatDate = (date) => {
+    const day = ("0" + date.getDate()).slice(-2);
+    const month = ("0" + (date.getMonth() + 1)).slice(-2);
+    const year = date.getFullYear();
+    const hours = ("0" + date.getHours()).slice(-2);
+    const minutes = ("0" + date.getMinutes()).slice(-2);
+
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
+  };
+
+  const renderTask = (item) => {
     return (
-      <View style={styles.taskContainer}>
-        <View style={styles.taskFrame}>
-          <Text style={styles.taskName}>{item.name}</Text>
-          <Text style={styles.taskTime}>
-            {formatTime(item.startTime)} - {formatTime(item.endTime)}
-          </Text>
+      <View style={styles.container1}>
+        <Text style={styles.textInInsertBox}>8:00AM</Text>
+        <View style={styles.taskBox}>
+          <Text style={styles.textInTaskBox}>{item.Title}</Text>
+          <Text style={styles.timeInTaskBox}>8:00AM - 10:00AM</Text>
         </View>
       </View>
     );
   };
+
+  // const renderTask = () => {
+  //   return taskList.map((task) => (
+  //     <View style={styles.container1}>
+  //     <Text style={styles.textInInsertBox}>8:00AM</Text>
+  //     <View style={styles.taskBox}>
+  //       <Text style={styles.textInTaskBox}>{task.Title}</Text>
+  //       <Text style={styles.timeInTaskBox}>8:00AM - 10:00AM</Text>
+  //     </View>
+  //   </View>
+  //   ));
+  // };
 
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -188,20 +240,13 @@ const CalendarScreen = () => {
 
             {/* Layout hiển thị các task trong ngày đc chọn trên calendar */}
             <View style={{ flex: 70, backgroundColor: "white" }}>
-              {/* <FlatList
-              data={task}
-              renderItem={renderTask}
-              keyExtractor={(item) => item.id}
-              showsVerticalScrollIndicator={true}
-            ></FlatList> */}
-
-              <View style={styles.container1}>
-                <Text style={styles.textInInsertBox}>8:00AM</Text>
-                <View style={styles.taskBox}>
-                  <Text style={styles.textInTaskBox}>Continue Project</Text>
-                  <Text style={styles.timeInTaskBox}>8:00AM - 10:00AM</Text>
-                </View>
-              </View>
+              <FlatList
+                data={taskList}
+                renderItem={renderTask}
+                keyExtractor={(item) => item.TaskID}
+                showsVerticalScrollIndicator={true}
+              />
+             
             </View>
           </View>
         </Animated.ScrollView>
@@ -247,7 +292,6 @@ const styles = StyleSheet.create({
     color: "#363942",
     fontSize: 27,
     fontWeight: "bold",
-
     // fontStyle
   },
 
