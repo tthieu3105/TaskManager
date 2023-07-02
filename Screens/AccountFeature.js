@@ -20,6 +20,7 @@ import UserAvatar from "@muhzi/react-native-user-avatar";
 import { db } from "../components/FirestoreConfig";
 import { collection, getDocs, query, where, or, and } from "firebase/firestore";
 import { UserContext, UserProvider } from "../contextObject";
+// import { AsyncStorage } from "react-native";
 
 const CONTAINER_HEIGHT = 80;
 
@@ -95,11 +96,13 @@ const AccountFeature = ({ navigation, route }) => {
     }
   };
 
-  const LogoutFunction = async (userLoginName, password) => {
-    // setUserName("");
-    // setPassword("");
+  const LogoutFunction = async () => {
+    // Xóa thông tin đăng nhập của người dùng
+    // AsyncStorage.removeItem();
+
+    // Chuyển đến màn hình đăng nhập và làm trống các trường userName và password
     navigation.navigate("Login");
-    console.log("Logout user");
+    
   };
 
   // const {userID} = useContext(UserContext);
@@ -172,10 +175,7 @@ const AccountFeature = ({ navigation, route }) => {
               {/* Avatar */}
               <View style={styles.row}>
                 <View style={styles.image}>
-                  <UserAvatar
-                    size={80}
-                    src={imageURI}
-                  />
+                  <UserAvatar size={80} src={imageURI} />
                 </View>
                 {/* Project done */}
                 <Text></Text>
