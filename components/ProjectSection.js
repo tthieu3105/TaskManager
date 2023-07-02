@@ -4,10 +4,11 @@ import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { Feather } from "@expo/vector-icons";
 import TaskCard from "./TaskCardProgress";
 
-export default class HomeSection extends Component {
+export default class ProjectSection
+ extends Component {
   handlePress = () => {
-    const { screenName, navigation, refreshScreen } = this.props;
-    navigation.navigate(screenName, { refreshScreen });
+    const { screenName, navigation, ProjectID } = this.props;
+    navigation.navigate(screenName, {ProjectID: ProjectID});
   };
   render() {
     return (

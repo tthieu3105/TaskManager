@@ -11,13 +11,23 @@ import {
 
 import Constants from "expo-constants";
 import React, { Component, useRef } from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { Colors } from "react-native/Libraries/NewAppScreen";
 import { Entypo } from "@expo/vector-icons";
 import { Ionicons } from "@expo/vector-icons";
 import AntDesign from "../node_modules/@expo/vector-icons/AntDesign";
 import UserAvatar from "@muhzi/react-native-user-avatar";
 import TabContainer from "../components/TabContainer";
+import { db } from "../components/FirestoreConfig";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  where,
+} from "firebase/firestore";
+import { UserContext, UserProvider } from "../contextObject";
 
 const CONTAINER_HEIGHT = 80;
 
@@ -52,6 +62,227 @@ const WorkSpaceScreen = ({ navigation }) => {
     0,
     CONTAINER_HEIGHT
   );
+
+  //Hello
+  const { userId } = useContext(UserContext);
+  const [userName, setUserName] = useState("");
+  const [userAvatar, setUserAvatar] = useState("");
+
+  const getNameAvatar = async () => {
+    const docRef = doc(db, "User", userId.toString());
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      const fullName = docSnap.data().Name;
+      const nameArray = fullName.split(" ");
+      const lastName = nameArray[nameArray.length - 1];
+      setUserName(lastName);
+
+      let avatarUrl = docSnap.data().Avatar;
+      if (avatarUrl == "") {
+        const initials = fullName
+          .split(" ")
+          .map((name) => name.charAt(0))
+          .join("");
+        avatarUrl = `https://ui-avatars.com/api/?name=${fullName}&background=random&size=25`;
+      }
+
+      setUserAvatar(avatarUrl);
+    } else {
+      // docSnap.data() will be undefined in this case
+      console.log("No such document!");
+      setUserName("John");
+    }
+  };
+
+  //project
+  const [count, setCount] = useState("");
+  const [projectList, setProjectList] = useState([]);
+
+  const getProject = async () => {
+    const q = query(
+      collection(db, "Project"),
+      where("CreatorID", "==", userId)
+    );
+    const querySnapshot = await getDocs(q);
+
+    const sl = querySnapshot.size;
+    setCount(sl);
+
+    const proList = [];
+    for (const pro of querySnapshot.docs) {
+      const proID = pro.data().ProjectID;
+
+      const q1 = query(
+        collection(db, "Project_Task"),
+        where("ProjectID", "==", proID)
+      );
+
+      const querySnapshot1 = await getDocs(q1);
+      const numberOfTask = querySnapshot1.size;
+
+      const userList = [];
+      const docRef = doc(db, "User", pro.data().CreatorID.toString());
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        userList.push({
+          UserID: docSnap.data().UserID,
+          Name: docSnap.data().Name,
+          Avatar: docSnap.data().Avatar,
+        });
+      }
+      const q3 = query(
+        collection(db, "Project_User"),
+        where("ProjectID", "==", proID)
+      );
+
+      const querySnapshot3 = await getDocs(q3);
+
+      if (querySnapshot3.size > 0) {
+        for (const pro_user of querySnapshot3.docs) {
+          const docRef = doc(db, "User", pro_user.data().AssigneeID.toString());
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            userList.push({
+              UserID: docSnap.data().UserID,
+              Name: docSnap.data().Name,
+              Avatar: docSnap.data().Avatar,
+            });
+          }
+        }
+      }
+
+      // Not Started / On Progress / Completed / Overdue
+      const status = { NotStarted: 0, OnProgress: 0, Completed: 0, Overdue: 0 };
+      // querySnapshot1
+      for (const task of querySnapshot1.docs) {
+        const docRef = doc(db, "Task", task.data().TaskID.toString());
+        const docSnap = await getDoc(docRef);
+        switch (docSnap.data().Status) {
+          case "Not Started":
+            status.NotStarted++;
+            break;
+          case "On Progress":
+            status.OnProgress++;
+            break;
+          case "Completed":
+            status.Completed++;
+            break;
+          case "Overdue":
+            status.Overdue++;
+            break;
+        }
+      }
+      const sum =
+        status.NotStarted +
+        status.OnProgress +
+        status.Completed +
+        status.Overdue;
+      let progress = 0;
+      if (sum != 0) {
+        progress = status.Completed / sum;
+        progress = progress.toFixed(4);
+      }
+
+      proList.push({
+        ProjectID: proID,
+        ProjectName: pro.data().ProjectName,
+        numberOfTask: numberOfTask,
+        userList: userList,
+        progress: progress,
+        hidden: false,
+      });
+    }
+    setProjectList(proList);
+  };
+
+  useEffect(() => {
+    getNameAvatar();
+    getProject();
+  }, []);
+
+  // Find box
+  const [keyword, setKeyword] = useState("");
+  const handleClearSearchBox = () => {
+    setKeyword("");
+    projectList.map((p) => {
+      p.hidden = false;
+    });
+  };
+
+  const FindKeyword = () => {
+    const key = keyword.toLowerCase();
+    const updatedList = projectList.map((p) => {
+      const proName = p.ProjectName.toLowerCase();
+      if (!proName.includes(key)) {
+        return { ...p, hidden: true };
+      }
+      return { ...p, hidden: false };
+    });
+    setProjectList(updatedList);
+  };
+
+  // Sort
+  const [sort, setSort] = useState(0);
+  const Sort = () => {
+    let initProList = "";
+    projectList
+      .filter((p) => p.hidden == false)
+      .map((p) => {
+        initProList = initProList + p.ProjectID.toString();
+      });
+    let sortProList = "";
+    switch (sort) {
+      case 0:
+        sortProList = "";
+        projectList.sort((a, b) => a.ProjectName.localeCompare(b.ProjectName));
+        projectList
+          .filter((p) => p.hidden == false)
+          .map((p) => {
+            sortProList = sortProList + p.ProjectID.toString();
+          });
+        if (initProList !== sortProList) {
+          setSort(1);
+          break;
+        }
+      case 1:
+        sortProList = "";
+        projectList.sort((a, b) => b.progress - a.progress);
+        projectList
+          .filter((p) => p.hidden == false)
+          .map((p) => {
+            sortProList = sortProList + p.ProjectID.toString();
+          });
+        if (initProList !== sortProList) {
+          setSort(2);
+          break;
+        }
+      case 2:
+        sortProList = "";
+        projectList.sort((a, b) => a.progress - b.progress);
+        projectList
+          .filter((p) => p.hidden == false)
+          .map((p) => {
+            sortProList = sortProList + p.ProjectID.toString();
+          });
+        if (initProList !== sortProList) {
+          setSort(3);
+          break;
+        }
+      case 3:
+        sortProList = "";
+        projectList.sort((a, b) => a.ProjectID - b.ProjectID);
+        projectList
+          .filter((p) => p.hidden == false)
+          .map((p) => {
+            sortProList = sortProList + p.ProjectID.toString();
+          });
+        if (initProList !== sortProList) {
+          setSort(0);
+          break;
+        }
+    }
+  };
 
   var _clampedScrollValue = 0;
   var _offsetValue = 0;
@@ -106,11 +337,7 @@ const WorkSpaceScreen = ({ navigation }) => {
               style={styles.headerBehave}
               onPress={() => navigation.navigate("AccountFeature")}
             >
-              <UserAvatar
-                size={40}
-                active
-                src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=2900&q=80"
-              />
+              <UserAvatar size={40} active src={userAvatar} />
             </TouchableOpacity>
           </View>
         </Animated.View>
@@ -125,7 +352,7 @@ const WorkSpaceScreen = ({ navigation }) => {
             {/* Layout welcome, ngày tháng, findbox */}
             <View style={{ backgroundColor: "white", flex: 20 }}>
               {/* Xử lý load tên người dùng + Hello */}
-              <Text style={styles.title}>Hello Josh</Text>
+              <Text style={styles.title}>Hello {userName}</Text>
 
               {/* Ngày tháng hiện tại */}
               <Text style={styles.normalTextOnBackGround}>{currentDate}</Text>
@@ -134,14 +361,24 @@ const WorkSpaceScreen = ({ navigation }) => {
               <View style={styles.searchBox}>
                 <View style={styles.row1} marginTop={9}>
                   <TextInput
-                    width={"85%"}
+                    width={"75%"}
                     style={styles.textInSearchBox}
                     placeholder="Find your project"
                     placeholderTextColor={Colors.placeholder}
+                    onChangeText={(text) => setKeyword(text)}
+                    value={keyword}
                   ></TextInput>
 
+                  <TouchableOpacity onPress={handleClearSearchBox}>
+                    <AntDesign
+                      name="closecircle"
+                      size={20}
+                      style={styles.iconClearSearchBox}
+                    />
+                  </TouchableOpacity>
+
                   {/* Xử lý button tìm kiếm */}
-                  <TouchableOpacity>
+                  <TouchableOpacity onPress={FindKeyword}>
                     <AntDesign
                       name="search1"
                       size={25}
@@ -157,32 +394,124 @@ const WorkSpaceScreen = ({ navigation }) => {
 
               {/* Workspace title */}
               <View style={styles.row1}>
-                <Text style={styles.smallTitle}>Workspace</Text>
-                {/* Đếm số lượng workspace người dùng đang có và load lên text tại đây */}
-                <Text style={styles.numberOfProject}>4</Text>
+                <View style={styles.column1}>
+                  <Text style={styles.smallTitle}>Workspace</Text>
+                  {/* Đếm số lượng workspace người dùng đang có và load lên text tại đây */}
+                  <Text style={styles.numberOfProject}>{count}</Text>
 
-                {/* Xử lý button sắp xếp project tại đây */}
-                <TouchableOpacity>
-                  <Entypo name="select-arrows" size={22} color="black" />
-                </TouchableOpacity>
+                  {/* Xử lý button sắp xếp project tại đây */}
+                  <TouchableOpacity onPress={Sort}>
+                    <Entypo name="select-arrows" size={22} color="black" />
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.column2}>
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate("AddProject")}
+                  >
+                    <AntDesign
+                      name="pluscircleo"
+                      size={22}
+                      style={styles.iconPlus}
+                    ></AntDesign>
+                  </TouchableOpacity>
+                </View>
               </View>
 
               {/* Projects */}
-              {/* Đếm số lượng workspace của người dùng và hiển thị các workspace của người dùng lên màn hình*/}
+              {projectList
+                .filter((p) => p.hidden == false)
+                .map((p) => {
+                  let proName = p.ProjectName;
+                  if (proName.length > 40) {
+                    proName = proName.slice(0, 39) + "...";
+                  }
+                  return (
+                    <TouchableOpacity
+                      style={styles.projectFrame}
+                      key={p.ProjectID}
+                      onPress={() =>
+                        navigation.navigate("Projects", {
+                          ProjectID: p.ProjectID,
+                        })
+                      }
+                    >
+                      {/* Tên & số lượng công việc */}
+                      <View style={styles.smallFrame1}>
+                        <Text style={styles.smallTitle2}>{proName}</Text>
+                        <Text style={styles.numberOfProject2}>
+                          {p.numberOfTask} tasks
+                        </Text>
+                      </View>
+
+                      {/* Tiến độ hoàn thành & avatar thành viên */}
+                      <View style={styles.smallFrame2}>
+                        {/* Xử lý lấy tiến độ hoàn thành và load lên text & view */}
+                        <View style={styles.smallFrame3}>
+                          <Text style={styles.progressText}>{`${
+                            p.progress * 100
+                          }%`}</Text>
+                          <View style={styles.progressBar}>
+                            <View
+                              style={[
+                                styles.progress,
+                                { width: `${p.progress * 100}%` },
+                              ]}
+                            />
+                          </View>
+                        </View>
+
+                        <View style={styles.smallFrame4}>
+                          {p.userList.map((user) => {
+                            if (user.Avatar == "") {
+                              const name = user.Name;
+                              const initials = name
+                                .split(" ")
+                                .map((name) => name.charAt(0))
+                                .join("");
+                              const avatarUrl = `https://ui-avatars.com/api/?name=${name}&background=random&size=25`;
+                              return (
+                                <UserAvatar
+                                  style={styles.avatar}
+                                  key={user.UserID}
+                                  size={25}
+                                  src={avatarUrl}
+                                  alt={user.Name}
+                                />
+                              );
+                            } else {
+                              return (
+                                <UserAvatar
+                                  style={styles.avatar}
+                                  key={user.UserID}
+                                  size={25}
+                                  src={user.Avatar}
+                                  alt={user.Name}
+                                />
+                              );
+                            }
+                          })}
+                        </View>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+
+              {/* Đếm số lượng task của project và hiển thị các workspace của người dùng lên màn hình
               <View style={styles.projectFrame}>
-                {/* Tên & số lượng công việc */}
+                Tên & số lượng công việc
                 <View style={styles.smallFrame1}>
-                  {/* xử lý lấy tên và số lượng project từ BE, load lên text tại đây */}
+                  xử lý lấy tên và số lượng project từ BE, load lên text tại đây
                   <Text style={styles.smallTitle2}>Web design</Text>
                   <Text style={styles.numberOfProject2}>12 Projects</Text>
                 </View>
 
-                {/* Tiến độ hoàn thành & avatar thành viên */}
+                Tiến độ hoàn thành & avatar thành viên
                 <View style={styles.smallFrame2}>
-                  {/* Xử lý lấy tiến độ hoàn thành và load lên text & view */}
-                  {/* Xử lý lấy avatar các thành viên trong workspace và load lên một vài avatar nhỏ */}
+                  Xử lý lấy tiến độ hoàn thành và load lên text & view
+                  Xử lý lấy avatar các thành viên trong workspace và load lên một vài avatar nhỏ
                 </View>
-              </View>
+              </View> */}
             </View>
           </View>
         </Animated.ScrollView>
@@ -216,6 +545,17 @@ const styles = StyleSheet.create({
 
   row1: {
     flexDirection: "row",
+    display: "flex",
+  },
+
+  column1: {
+    flexDirection: "row",
+    flex: 4,
+  },
+
+  column2: {
+    flex: 1,
+    justifyContent: "flex-end",
   },
 
   image: {
@@ -237,10 +577,22 @@ const styles = StyleSheet.create({
     // fontStyle
   },
 
+  iconClearSearchBox: {
+    marginLeft: 10,
+    color: "#c0c0c0",
+  },
+
   iconInSearchBox: {
     marginRight: 15,
-    marginLeft: "auto",
+    marginLeft: 10,
     color: "gray",
+  },
+
+  iconPlus: {
+    marginLeft: "auto",
+    marginRight: 15,
+    color: "black",
+    marginBottom: 10,
   },
 
   smallTitle: {
@@ -256,6 +608,7 @@ const styles = StyleSheet.create({
     marginLeft: 15,
     marginRight: 5,
     color: "white",
+    fontWeight: "bold",
     fontSize: 18,
     marginTop: 30,
     marginBottom: 5,
@@ -295,14 +648,15 @@ const styles = StyleSheet.create({
   projectFrame: {
     backgroundColor: "white",
     marginTop: 15,
-    height: 135,
-    borderRadius: 10,
+    height: 145,
     shadowColor: "gray",
     shadowOpacity: 0.5,
     shadowOffset: {
       width: 2,
       height: 2,
     },
+    borderRadius: 15,
+    elevation: 15,
     marginHorizontal: 15,
     marginBottom: 15,
   },
@@ -319,6 +673,51 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 10,
     borderBottomRightRadius: 10,
     flex: 4,
+    display: "flex",
+    flexDirection: "row",
+  },
+
+  smallFrame3: {
+    marginTop: 15,
+    marginLeft: 10,
+    flex: 1,
+    borderRadius: 5,
+  },
+
+  progressBar: {
+    marginTop: 3,
+    marginLeft: 10,
+    height: 3,
+    backgroundColor: "lightgrey",
+    justifyContent: "center",
+    alignItems: "center",
+    position: "relative",
+  },
+
+  progress: {
+    height: "100%",
+    backgroundColor: "#0093E9",
+    position: "absolute",
+    left: 0,
+  },
+
+  progressText: {
+    fontSize: 14,
+    color: "#000000",
+    marginLeft: 15,
+  },
+
+  smallFrame4: {
+    marginTop: 15,
+    marginRight: 10,
+    flex: 1,
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "flex-end",
+  },
+
+  avatar: {
+    marginLeft: 5,
   },
 
   searchBox: {

@@ -11,15 +11,38 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Switch,
+  ActivityIndicator,
 } from "react-native";
-import React, { Component, useEffect, useRef, useState } from "react";
+import React, {
+  Component,
+  useEffect,
+  useRef,
+  useState,
+  useContext,
+} from "react";
 import { Feather, SimpleLineIcons } from "@expo/vector-icons";
 import Header from "../components/HeaderWithTextAndIcon";
-import { MaterialIcons } from "@expo/vector-icons";
+import { MaterialIcons, MaterialCommunityIcons } from "@expo/vector-icons";
 import InputArea from "../components/InputAreaForTask";
 import { Colors } from "react-native/Libraries/NewAppScreen";
 import { SelectList } from "react-native-dropdown-select-list";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
+import { firebase } from "../components/FirebaseConfig";
+import { db } from "../components/FirestoreConfig";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  where,
+  updateDoc,
+  serverTimestamp,
+  deleteDoc,
+  setDoc,
+} from "firebase/firestore";
+import { UserContext, UserProvider } from "../contextObject";
+import PopupModal from "./../components/PopUpNotify";
 
 const CONTAINER_HEIGHT = 80;
 const inputText = {
@@ -31,7 +54,479 @@ const inputText = {
   icon3: "calendar-today",
   hintText: "Enter Username or Email",
 };
-export default function EditTaskScreen({ navigation }) {
+export default function EditTaskScreen({ navigation, route }) {
+  const { userId } = useContext(UserContext);
+  //Lấy taskID từ màn hình TaskInfo
+  const { taskID, refreshTaskInfoScreen } = route.params;
+  const [task, setTask] = useState(null);
+  const [projectName, setProjectName] = useState(""); // Add state for project name
+  const [IDProject, setIDProject] = useState("");
+  const [projectNameData, setProjectNameData] = useState([]);
+  const [selectedProject, setSelectedProject] = React.useState(""); // Add state for project name
+  const [startTime, setStartTime] = useState(null); // Add a state for start date
+  const [endTime, setEndTime] = useState(null);
+  const [dueDateVisible, setDueDateVisible] = useState(false); // Due date
+  const [timeVisible, setTimeVisible] = useState(false); //Include time
+  //Remind
+  const [remindVisible, setRemindVisible] = useState(false); //Remind enable
+  const [remindTime, setRemindTime] = useState("");
+  const [idRemind, setIDRemind] = useState("");
+  const [selectedRemind, setSelectedRemind] = React.useState("");
+
+  //Assign
+  const [assignee, setAssignee] = useState("");
+  const [IDAssignee, setIDAssignee] = useState("");
+  const [assigneeNameData, setAssigneeNameData] = useState([]); // Add state for assignee name
+  const [assignVisible, setAssignVisible] = useState(false);
+  const [selectedAssignee, setSelectedAssignee] = React.useState("");
+  const [assignDisable, setAssignDisable] = useState(true);
+
+  const [selectedStartDate, setSelectedStartDate] = useState("");
+  const [selectedEndDate, setSelectedEndDate] = useState("");
+
+  //Các trường cần cập nhật dữ liệu
+  const [newTitle, setNewTitle] = useState("");
+  const [newDescription, setNewDescription] = useState("");
+  const remindOptions = [
+    { key: "0", value: "On day of event" },
+    { key: "1", value: "1 days before" },
+    { key: "2", value: "2 days before" },
+    { key: "3", value: "7 days before" },
+    // ...Thêm các giá trị khác vào đây
+  ];
+  // Popup thông báo
+  const [modalVisible, setModalVisible] = useState(false);
+  const [popupType, setPopupType] = useState("");
+  const [popupTitle, setPopupTitle] = useState("");
+  const [popupMessage, setPopupMessage] = useState("");
+  const openModal = (type, title, message) => {
+    setPopupType(type);
+    setPopupTitle(title);
+    setPopupMessage(message);
+    setModalVisible(true);
+  };
+  const closeModal = () => {
+    setModalVisible(false);
+    refreshTaskInfoScreen();
+
+    navigation.goBack();
+  };
+  useEffect(() => {
+    const fetchTask = async () => {
+      try {
+        const taskDoc = await getDoc(doc(db, "Task", taskID));
+
+        if (taskDoc.exists) {
+          const taskData = taskDoc.data();
+          setTask(taskData);
+          //  Thực hiện tách ngày và giờ riêng của thuộc tính StartTime
+          const options = {
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          };
+          const startDay = taskData.StartTime.toDate();
+          const startDate = startDay.toLocaleDateString("en-US", options);
+          const startTime = startDay.toLocaleTimeString();
+          setSelectedStartDate(startDate); // Set the startDate state here
+          setStartTime(startTime);
+
+          // Set giá trị includeEndDate, includeTime, Remind
+          const includeEndDate = taskData.IncludeEndDate;
+          const includeTime = taskData.IncludeTime;
+          const remind = taskData.Remind;
+          const assignTo = taskData.AssignTo;
+          //In ra kiểu dữ liệu của thuộc tính taskID mà truyền vào
+          console.log("Type of taskID:", typeof taskID); //string
+          //Chuyển kiểu dữ liệu sang int do thuộc tính TaskID trong Firestore là int
+          const task_ID = parseInt(taskID);
+          setDueDateVisible(includeEndDate);
+          setTimeVisible(includeTime);
+          setRemindVisible(remind);
+          setAssignVisible(assignTo);
+          setAssignDisable(!assignVisible);
+          //Tách thuộc tính DueDate và DueTime
+          if (includeEndDate) {
+            const endDay = taskData.DueTime.toDate();
+            const endDate = endDay.toLocaleDateString("en-US", options);
+            const endTime = endDay.toLocaleTimeString();
+            setSelectedEndDate(endDate); // Set the endDate state here
+            setEndTime(endTime);
+          }
+          if (remind) {
+            //Lấy đối tượng Timestamp trong Firestore và chuyển sang Date
+            const dueTime = taskData.DueTime.toDate();
+            const remindTime = taskData.RemindTime.toDate();
+            // Lấy giá trị ngày từ RemindTime
+            const remindDay = remindTime.getDate();
+
+            // Lấy giá trị ngày từ DueTime
+            const dueDay = dueTime.getDate();
+            // Chuyển đổi giá trị ngày sang kiểu số nguyên
+            const remindDayInt = parseInt(remindDay);
+            const dueDayInt = parseInt(dueDay);
+            // Kết quả là một số nguyên tương ứng với ngày
+            console.log("Remind day:", remindDayInt);
+            console.log("Due day:", dueDayInt);
+            // Tính toán khoảng thời gian giữa DueTime và RemindTime
+            const daysDiff = dueDayInt - remindDayInt;
+            // Tìm giá trị tương ứng dựa trên daysDiff
+            console.log("Days Difference:", daysDiff);
+            let selectedOption;
+            let selectedId;
+
+            if (daysDiff === 0) {
+              selectedOption = "On day of event";
+              selectedId = 0;
+            } else {
+              const selectedOptionObject = remindOptions.find(
+                (option) => parseInt(option.value) === daysDiff
+              );
+              if (selectedOptionObject) {
+                selectedOption = selectedOptionObject.value;
+                selectedId = selectedOptionObject.key;
+              }
+              console.log("selectedId", selectedId);
+              console.log("selectedOption", selectedOption);
+              console.log("selectedOptionObject", selectedOptionObject);
+            }
+
+            setRemindTime(selectedOption);
+            setIDRemind(selectedId);
+          }
+
+          // Fetch project ID from Project_Task table
+          const projectTaskRef = collection(db, "Project_Task");
+          const queryProjectTask = query(
+            projectTaskRef,
+            where("TaskID", "==", task_ID)
+          );
+
+          const projectTaskSnapshot = await getDocs(queryProjectTask);
+          if (!projectTaskSnapshot.empty) {
+            const projectID = projectTaskSnapshot.docs[0].data().ProjectID;
+            console.log("Type of projectID:", typeof projectID); //number
+            // Fetch project name from Project table
+
+            const projectSnapshot = await getDoc(
+              doc(db, "Project", projectID.toString())
+            );
+            if (projectSnapshot.exists()) {
+              const projectData = projectSnapshot.data();
+              const nameProject = projectData.ProjectName;
+              setProjectName(nameProject);
+              setIDProject(projectID);
+            }
+
+            if (assignTo) {
+              const taskUserRef = collection(db, "Task_User");
+              const queryTaskUser = query(
+                taskUserRef,
+                where("TaskID", "==", task_ID)
+              );
+              const taskUserSnapshot = await getDocs(queryTaskUser);
+              if (!taskUserSnapshot.empty) {
+                const assigneeID = taskUserSnapshot.docs[0].data().AssigneeID;
+                console.log(" assigneeID:", assigneeID); //number
+                // Fetch assignee name from Project table
+
+                const userSnapshot = await getDoc(
+                  doc(db, "User", assigneeID.toString())
+                );
+
+                if (userSnapshot.exists()) {
+                  const userData = userSnapshot.data();
+                  const userName = userData.Name;
+                  setAssignee(userName);
+                  setIDAssignee(assigneeID);
+                }
+              }
+              //Fetch all Assignee's name
+              const q_projectUser = query(
+                collection(db, "Project_User"),
+                where("ProjectID", "==", projectID)
+              );
+              const projectUserSnapshot = await getDocs(q_projectUser);
+
+              const assigneeIDs = projectUserSnapshot.docs.map(
+                (doc) => doc.data().AssigneeID
+              );
+
+              const q_user = query(
+                collection(db, "User"),
+                where("UserID", "in", assigneeIDs)
+              );
+
+              const userSnapshot = await getDocs(q_user);
+
+              const assigneeNames = userSnapshot.docs.map((doc) => {
+                const assignee = doc.data();
+                return { key: doc.id, value: assignee.Name };
+              });
+
+              setAssigneeNameData(assigneeNames);
+            }
+          }
+          //Fetch all Project's name
+          const q_project = query(
+            collection(db, "Project"),
+            where("CreatorID", "==", userId)
+          );
+          const projectNameSnapshot = await getDocs(q_project);
+
+          const projectData = projectNameSnapshot.docs.map((doc) => {
+            const project = doc.data();
+            return { key: doc.id, value: project.ProjectName };
+          });
+
+          setProjectNameData(projectData);
+
+          //Set giá trị ban đầu và thực hiện cập nhật khi có thay đổi
+          const NewTitle = taskData.Title;
+          setNewTitle(NewTitle);
+          const NewDescription = taskData.Description;
+          setNewDescription(NewDescription);
+        } else {
+          // Handle case when task doesn't exist
+          console.log("Task not found");
+        }
+      } catch (error) {
+        console.log("Error fetching task:", error);
+      }
+    };
+
+    fetchTask();
+  }, [taskID]);
+  //Lấy danh sách assignee dựa vào tên project
+  const handleProjectChange = async (selectedProject) => {
+    const SelectedProject = parseInt(selectedProject);
+    setSelectedProject(SelectedProject);
+    try {
+      const q_projectUser = query(
+        collection(db, "Project_User"),
+        where("ProjectID", "==", SelectedProject)
+      );
+      const projectUserSnapshot = await getDocs(q_projectUser);
+      const assigneeIDs = projectUserSnapshot.docs.map(
+        (doc) => doc.data().AssigneeID
+      );
+      if (assigneeIDs.length > 0) {
+        const q_user = query(
+          collection(db, "User"),
+          where("UserID", "in", assigneeIDs)
+        );
+        const userSnapshot = await getDocs(q_user);
+
+        const assigneeNames = userSnapshot.docs.map((doc) => {
+          const assignee = doc.data();
+          return { key: doc.id, value: assignee.Name };
+        });
+
+        setAssigneeNameData(assigneeNames);
+        setAssignDisable(false);
+      } else {
+        setAssigneeNameData([]);
+        setAssignDisable(true);
+        setAssignVisible(false);
+      }
+    } catch (error) {
+      console.error("Error fetching assignee name: ", error);
+    }
+  };
+  //Cập nhật dữ liệu
+  //Title
+  const handleTitleChange = (value) => {
+    setNewTitle(value); // Cập nhật giá trị mới khi người dùng thay đổi trong InputArea
+  };
+  // Description
+  const handleDescriptionChange = (value) => {
+    setNewDescription(value);
+  };
+  const handleDonePress = async () => {
+    try {
+      //Cập nhật bảng Task
+      // Chuyển đổi startDate và startTime thành đối tượng Date
+      const startDateTime = new Date(
+        `${selectedStartDate} ${timeVisible ? startTime : "09:00 AM"}`
+      );
+      let endDateTime = null;
+      // Set the default value of endDateTime as startDateTime plus 7 days
+      const defaultEndDateTime = new Date(startDateTime);
+      defaultEndDateTime.setDate(defaultEndDateTime.getDate() + 7);
+
+      // Update endDateTime if it is null or undefined
+      if (dueDateVisible) {
+        endDateTime = new Date(
+          `${selectedEndDate} ${timeVisible ? endTime : "09:00 AM"}`
+        );
+      } else {
+        endDateTime = defaultEndDateTime;
+      }
+
+      // Cập nhật giá trị trong Firestore
+      await updateDoc(doc(db, "Task", taskID), {
+        // Các trường cần cập nhật và giá trị mới
+        Title: newTitle,
+        Remind: remindVisible,
+        IncludeEndDate: dueDateVisible,
+        IncludeTime: timeVisible,
+        AssignTo: assignVisible,
+        Description: newDescription,
+        StartTime: startDateTime,
+        DueTime: endDateTime,
+        // Các trường khác...
+      });
+      //Cập nhật bảng Project_Task
+      const idProject = parseInt(selectedProject);
+      console.log("taskID", taskID);
+      console.log("taskID", typeof taskID); //string
+      const task_ID = parseInt(taskID);
+      // Cập nhật bảng Project_Task
+      const projectTaskRef = collection(db, "Project_Task");
+      const q_projectTask = query(
+        projectTaskRef,
+        where("TaskID", "==", task_ID)
+      );
+
+      const projectTaskSnapshot = await getDocs(q_projectTask);
+
+      if (!projectTaskSnapshot.empty) {
+        const projectTaskId = projectTaskSnapshot.docs[0].data().itemID;
+
+        // Perform the update for each record in the Project_Task collection
+        await updateDoc(doc(db, "Project_Task", projectTaskId.toString()), {
+          ProjectID: idProject,
+          // ...
+        });
+
+        if (assignVisible) {
+          //Cập nhật bảng Task_User
+          const idAssignee = parseInt(selectedAssignee);
+
+          // Cập nhật bảng Task_User
+          let taskUserRef = collection(db, "Task_User");
+          const q_taskUser = query(taskUserRef, where("TaskID", "==", task_ID));
+
+          const taskUserSnapshot = await getDocs(q_taskUser);
+
+          const taskUserId = taskUserSnapshot.docs[0].data().itemID;
+          console.log("taskUserId", taskUserId);
+          console.log("taskUserId", typeof taskUserId);
+
+          await updateDoc(doc(db, "Task_User", taskUserId.toString()), {
+            AssigneeID: idAssignee,
+          });
+        } else {
+          // Cập nhật bảng Task_User
+          let taskUserRef = collection(db, "Task_User");
+          const q_taskUser = query(taskUserRef, where("TaskID", "==", task_ID));
+
+          const taskUserSnapshot = await getDocs(q_taskUser);
+
+          const taskUserId = taskUserSnapshot.docs[0].data().itemID;
+          console.log("taskUserId", taskUserId);
+          console.log("taskUserId", typeof taskUserId);
+
+          await updateDoc(doc(db, "Task_User", taskUserId.toString()), {
+            AssigneeID: userId,
+          });
+        }
+      } else if (selectedProject) {
+        //THÊM PROJECT_TASK MỚI
+        const projectTaskSnapshot = await getDocs(
+          collection(db, "Project_Task")
+        );
+        const existingProjectTask = projectTaskSnapshot.docs.map((doc) =>
+          doc.data()
+        );
+        // Tìm projectTaskID lớn nhất trong danh sách
+        const maxProjectTaskID = Math.max(
+          ...existingProjectTask.map((projectTask) =>
+            parseInt(projectTask.itemID)
+          )
+        );
+        console.log("maxProjectTaskID", maxProjectTaskID);
+        const newProjectTaskID = maxProjectTaskID + 1;
+
+        const projectTaskRef = doc(
+          collection(db, "Project_Task"),
+          newProjectTaskID.toString()
+        );
+        console.log("ProjectTask created with ID: ", projectTaskRef.id);
+
+        await setDoc(projectTaskRef, {
+          // Document data
+          ProjectID: selectedProject,
+          TaskID: task_ID,
+          itemID: newProjectTaskID,
+          // ...
+        });
+        if (assignVisible) {
+          //THÊM TASK_USER MỚI
+          const taskUserSnapshot = await getDocs(collection(db, "Task_User"));
+          const existingTaskUser = taskUserSnapshot.docs.map((doc) =>
+            doc.data()
+          );
+          // Tìm projectTaskID lớn nhất trong danh sách
+          const maxTaskUserID = Math.max(
+            ...existingTaskUser.map((taskUser) => parseInt(taskUser.itemID))
+          );
+          console.log("maxTaskUserID", maxTaskUserID);
+          const newTaskUserkID = maxTaskUserID + 1;
+
+          const taskUserRef = doc(
+            collection(db, "Task_User"),
+            newTaskUserkID.toString()
+          );
+          console.log("TaskUser created with ID: ", taskUserRef.id);
+          const assigneeID = parseInt(selectedAssignee);
+          await setDoc(taskUserRef, {
+            // Document data
+            AssigneeID: assigneeID,
+            TaskID: task_ID,
+            itemID: newTaskUserkID,
+            // ...
+          });
+        } else {
+          const taskUserSnapshot = await getDocs(collection(db, "Task_User"));
+          const existingTaskUser = taskUserSnapshot.docs.map((doc) =>
+            doc.data()
+          );
+          // Tìm projectTaskID lớn nhất trong danh sách
+          const maxTaskUserID = Math.max(
+            ...existingTaskUser.map((taskUser) => parseInt(taskUser.itemID))
+          );
+          console.log("maxTaskUserID", maxTaskUserID);
+          const newTaskUserkID = maxTaskUserID + 1;
+
+          const taskUserRef = doc(
+            collection(db, "Task_User"),
+            newTaskUserkID.toString()
+          );
+          console.log("TaskUser created with ID: ", taskUserRef.id);
+          const assigneeID = parseInt(selectedAssignee);
+          await setDoc(taskUserRef, {
+            // Document data
+            AssigneeID: userId,
+            TaskID: task_ID,
+            itemID: newTaskUserkID,
+            // ...
+          });
+        }
+      }
+
+      console.log("Cập nhật thành công");
+      openModal("success", "Task updated!");
+      // Thực hiện các hành động khác sau khi cập nhật thành công
+    } catch (error) {
+      console.log("Lỗi khi cập nhật:", error);
+      openModal("error", "Update failed!");
+      // Xử lý lỗi nếu có
+    }
+
+    // navigation.replace("T")
+  };
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
   const offsetAnim = useRef(new Animated.Value(0)).current;
@@ -71,38 +566,9 @@ export default function EditTaskScreen({ navigation }) {
     extrapolate: "clamp",
   });
   // End of header animation
-  // Drop down list
-  const [selected, setSelected] = React.useState("");
-
-  const data = [
-    { key: "1", value: "Web design" },
-    { key: "2", value: "Mobile" },
-    { key: "3", value: "Cameras" },
-    { key: "4", value: "Computers" },
-    { key: "5", value: "Vegetables" },
-    { key: "6", value: "Diary Products" },
-    { key: "7", value: "Drinks" },
-  ];
-  // End of drop down list
-
   // Calendar
   // Date
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
-  const [selectedDate, setSelectedDate] = useState("");
-  useEffect(() => {
-    // Lấy ngày tháng năm hiện tại và định dạng thành chuỗi
-    const date = new Date();
-    const options = {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    };
-    const formattedDate = date.toLocaleDateString("en-US", options);
-
-    // Cập nhật state currentDate
-    setSelectedDate(formattedDate);
-  }, []);
 
   const showDatePicker = () => {
     setDatePickerVisibility(true);
@@ -112,7 +578,7 @@ export default function EditTaskScreen({ navigation }) {
     setDatePickerVisibility(false);
   };
 
-  const handleDateConfirm = (date) => {
+  const handleStartDateConfirm = (date) => {
     // console.warn("A date has been picked: ", date);
 
     // Có 2 cách để hiển thị date dd/mm/yyyy
@@ -131,12 +597,11 @@ export default function EditTaskScreen({ navigation }) {
       day: "numeric",
     };
     const x = dt.toLocaleDateString("en-US", options);
-    setSelectedDate(x);
+    setSelectedStartDate(x);
     hideDatePicker();
   };
   // End date
   const [isEndDatePickerVisible, setEndDatePickerVisibility] = useState(false);
-  const [selectedEndDate, setSelectedEndDate] = useState("");
   const showEndDatePicker = () => {
     setEndDatePickerVisibility(true);
   };
@@ -171,7 +636,6 @@ export default function EditTaskScreen({ navigation }) {
   // Start time
   const [isStartTimePickerVisible, setStartTimePickerVisibility] =
     useState(false);
-  const [startTime, setStartTime] = useState("");
   const [currentDate, setCurrentDate] = useState("");
 
   const showStartTimePicker = () => {
@@ -190,7 +654,6 @@ export default function EditTaskScreen({ navigation }) {
   };
   // End Time
   const [isEndTimePickerVisible, setEndTimePickerVisibility] = useState(false);
-  const [endTime, setEndTime] = useState("");
   const showEndTimePicker = () => {
     setEndTimePickerVisibility(true);
   };
@@ -208,9 +671,8 @@ export default function EditTaskScreen({ navigation }) {
   // End of calendar
   // Toggle Button
   // Remind
-  const [isEnableRemind, setIsEnableRemind] = useState(true);
+  const [isEnableRemind, setIsEnableRemind] = useState(remindVisible);
   // Hide an Element
-  const [remindVisible, setRemindVisible] = useState(false);
   const toggleSwitchRemind = () => {
     if (isEnableRemind) {
       setRemindVisible(false);
@@ -220,9 +682,8 @@ export default function EditTaskScreen({ navigation }) {
     setIsEnableRemind((previousState) => !previousState);
   };
   // Due date
-  const [isEnableDueDate, setIsEnableDueDate] = useState(true);
+  const [isEnableDueDate, setIsEnableDueDate] = useState(dueDateVisible);
 
-  const [dueDateVisible, setDueDateVisible] = useState(false);
   const toggleSwitchDueDate = () => {
     if (isEnableDueDate) {
       setDueDateVisible(false);
@@ -232,11 +693,21 @@ export default function EditTaskScreen({ navigation }) {
     setIsEnableDueDate((previousState) => !previousState);
   };
   // End date
+  // Time
+  const [isEnableTime, setIsEnableTime] = useState(timeVisible);
 
+  const toggleSwitchTime = () => {
+    if (isEnableTime) {
+      setTimeVisible(false);
+    } else {
+      setTimeVisible(true);
+    }
+    setIsEnableTime((previousState) => !previousState);
+  };
+  // End of Time
   // Assign to
-  const [isEnableAssign, setIsEnableAssign] = useState(true);
+  const [isEnableAssign, setIsEnableAssign] = useState(assignVisible);
 
-  const [assignVisible, setAssignVisible] = useState(false);
   const toggleSwitchAssign = () => {
     if (isEnableAssign) {
       setAssignVisible(false);
@@ -246,7 +717,10 @@ export default function EditTaskScreen({ navigation }) {
     setIsEnableAssign((previousState) => !previousState);
   };
   // End of Toggle Button
-
+  if (!task) {
+    // Add a loading indicator or other placeholder component while the task is being fetched
+    return <ActivityIndicator />;
+  }
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -271,7 +745,7 @@ export default function EditTaskScreen({ navigation }) {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.headerBehave}
-            onPress={() => navigation.goBack()}
+            onPress={handleDonePress}
           >
             <Text style={styles.textHeader}>Done</Text>
           </TouchableOpacity>
@@ -297,9 +771,9 @@ export default function EditTaskScreen({ navigation }) {
               <Text style={styles.title}>Project</Text>
               <View style={{ marginHorizontal: 20, marginTop: 10 }}>
                 <SelectList
-                  setSelected={(val) => setSelected(val)}
-                  data={data}
-                  save="value"
+                  setSelected={handleProjectChange}
+                  data={projectNameData}
+                  save="key"
                   boxStyles={{
                     backgroundColor: "#F5F5F5",
                     borderRadius: 10,
@@ -312,6 +786,7 @@ export default function EditTaskScreen({ navigation }) {
                     borderWidth: "0",
                   }}
                   maxHeight={200}
+                  defaultOption={{ key: IDProject, value: projectName }}
                 />
               </View>
 
@@ -321,7 +796,13 @@ export default function EditTaskScreen({ navigation }) {
 
             {/* Title name */}
             {/* TextInput */}
-            <InputArea name={inputText.name2}></InputArea>
+            <InputArea
+              onInputChange={(value) => setNewTitle(value)}
+              value={newTitle}
+              name={inputText.name2}
+              content={newTitle}
+              onChange={handleTitleChange}
+            ></InputArea>
 
             {/* End of TextInput */}
 
@@ -331,7 +812,14 @@ export default function EditTaskScreen({ navigation }) {
               <Text style={styles.title}>Start date</Text>
               {/* inputText */}
               <View style={styles.inputText}>
-                <Text style={styles.textInInputText}>{selectedDate}</Text>
+                <TextInput
+                  value={
+                    selectedStartDate ? selectedStartDate.toLocaleString() : ""
+                  }
+                  style={styles.textInInputText}
+                  onChangeText={(text) => setSelectedStartDate(text)}
+                />
+
                 <TouchableOpacity onPress={showDatePicker}>
                   {/* Icon */}
                   <MaterialIcons
@@ -345,7 +833,7 @@ export default function EditTaskScreen({ navigation }) {
               <DateTimePickerModal
                 isVisible={isDatePickerVisible}
                 mode="date"
-                onConfirm={handleDateConfirm}
+                onConfirm={handleStartDateConfirm}
                 onCancel={hideDatePicker}
               />
             </View>
@@ -359,7 +847,14 @@ export default function EditTaskScreen({ navigation }) {
                 <Text style={styles.title}>Due date</Text>
                 {/* inputText */}
                 <View style={styles.inputText}>
-                  <Text style={styles.textInInputText}>{selectedEndDate}</Text>
+                  <TextInput
+                    value={
+                      selectedEndDate ? selectedEndDate.toLocaleString() : ""
+                    }
+                    editable={false}
+                    style={styles.textInInputText}
+                    onChangeText={(text) => setSelectedEndDate(text)}
+                  ></TextInput>
                   <TouchableOpacity onPress={showEndDatePicker}>
                     {/* Icon */}
                     <MaterialIcons
@@ -383,25 +878,33 @@ export default function EditTaskScreen({ navigation }) {
 
             {/* Time */}
             {/* TextInput */}
-            <View
-              style={{
-                display: "flex",
-                flexDirection: "row",
-              }}
-            >
-              <Text style={styles.timeTitle}>Start Time</Text>
-              <Text style={styles.timeTitle}>End Time</Text>
-            </View>
-
-            <View>
-              <View>
-                {/* Input Text */}
-                <View style={styles.inputTextWithTime}>
+            {timeVisible ? (
+              <View
+                style={{
+                  display: "flex",
+                  flexDirection: "row",
+                  marginHorizontal: 20,
+                  marginTop: 20,
+                }}
+              >
+                {/* Start time */}
+                <View
+                  style={dueDateVisible ? { width: "55%" } : { width: "100%" }}
+                >
+                  <Text style={styles.timeTitle}>Start Time</Text>
                   <TouchableOpacity
-                    style={styles.smallInputText}
+                    style={[
+                      styles.smallInputText,
+                      dueDateVisible ? styles.width80 : null,
+                    ]}
                     onPress={showStartTimePicker}
                   >
-                    <Text style={styles.textInInputText}>{startTime}</Text>
+                    <TextInput
+                      value={startTime ? startTime.toLocaleString() : ""}
+                      style={styles.textInInputText}
+                      editable={false}
+                      onChangeText={(text) => setStartTime(text)}
+                    />
                   </TouchableOpacity>
                   <DateTimePickerModal
                     isVisible={isStartTimePickerVisible}
@@ -409,64 +912,39 @@ export default function EditTaskScreen({ navigation }) {
                     onConfirm={handleStartTimeConfirm}
                     onCancel={hideStartTimePicker}
                   />
-                  <TouchableOpacity
-                    style={styles.smallInputText}
-                    onPress={showEndTimePicker}
-                  >
-                    <Text style={styles.textInInputText}>{endTime}</Text>
-                  </TouchableOpacity>
-                  <DateTimePickerModal
-                    isVisible={isEndTimePickerVisible}
-                    mode="time"
-                    onConfirm={handleEndTimeConfirm}
-                    onCancel={hideEndTimePicker}
-                  />
                 </View>
+                {dueDateVisible ? (
+                  <View style={{ width: "45%" }}>
+                    <Text style={styles.timeTitle}>End Time</Text>
+                    <View>
+                      <TouchableOpacity
+                        style={styles.smallInputText}
+                        onPress={showEndTimePicker}
+                      >
+                        <TextInput
+                          value={endTime ? endTime.toLocaleString() : ""}
+                          style={styles.textInInputText}
+                          editable={false}
+                          onChangeText={(text) => setEndTime(text)}
+                        />
+                      </TouchableOpacity>
+                      <DateTimePickerModal
+                        isVisible={isEndTimePickerVisible}
+                        mode="time"
+                        onConfirm={handleEndTimeConfirm}
+                        onCancel={hideEndTimePicker}
+                      />
+                    </View>
+                  </View>
+                ) : null}
               </View>
+            ) : null}
+
+            <View>
               {/* End of TextInput */}
 
               {/* Remind, End date and Assign to*/}
               <View style={styles.itemsEnable}>
-                {/* Remind */}
-                <View style={styles.rowEnable}>
-                  <View style={styles.childRowEnable}>
-                    <TouchableOpacity>
-                      <MaterialIcons
-                        name="access-alarm"
-                        size={24}
-                        color="black"
-                        style={{ marginRight: 3 }}
-                      />
-                    </TouchableOpacity>
-                    <Text style={styles.titleInEnableRow}>Remind</Text>
-                  </View>
-
-                  <View style={styles.childRowEnableMiddle}>
-                    {remindVisible ? (
-                      <View style={styles.childRowEnable}>
-                        <Text style={styles.textInEnableRow}>
-                          1 days before
-                        </Text>
-                        <TouchableOpacity>
-                          <MaterialIcons
-                            name="arrow-drop-down-circle"
-                            size={24}
-                            color="#363942"
-                            style={{ padding: 3 }}
-                          />
-                        </TouchableOpacity>
-                      </View>
-                    ) : null}
-                  </View>
-                  <View style={styles.childRowEnable}>
-                    <Switch
-                      trackColor={{ false: "#767577", true: "#81b0ff" }}
-                      onValueChange={toggleSwitchRemind}
-                      value={isEnableRemind}
-                    />
-                  </View>
-                </View>
-                {/* End of Remind */}
                 {/* Due date */}
                 <View style={styles.rowEnable}>
                   <View style={styles.childRowEnable}>
@@ -482,11 +960,76 @@ export default function EditTaskScreen({ navigation }) {
                     <Switch
                       trackColor={{ false: "#767577", true: "#81b0ff" }}
                       onValueChange={toggleSwitchDueDate}
-                      value={isEnableDueDate}
+                      value={dueDateVisible}
                     />
                   </View>
                 </View>
                 {/* End of due date */}
+                {/* Inlcude time */}
+                <View style={styles.rowEnable}>
+                  <View style={styles.childRowEnable}>
+                    <MaterialCommunityIcons
+                      name="timer-sand-empty"
+                      size={24}
+                      color="black"
+                    />
+                    <Text style={styles.titleInEnableRow}>Include time</Text>
+                  </View>
+                  <View style={styles.childRowEnable}>
+                    <Switch
+                      trackColor={{ false: "#767577", true: "#81b0ff" }}
+                      onValueChange={toggleSwitchTime}
+                      value={timeVisible}
+                    />
+                  </View>
+                </View>
+                {/* End of Include time */}
+                {/* Remind */}
+                <View style={styles.rowEnable}>
+                  <View style={styles.childRowEnable}>
+                    <TouchableOpacity>
+                      <MaterialIcons
+                        name="access-alarm"
+                        size={24}
+                        color="black"
+                        style={{ marginRight: 3 }}
+                      />
+                    </TouchableOpacity>
+                    <Text style={styles.titleInEnableRow}>Remind</Text>
+                  </View>
+
+                  <View style={styles.childRowEnable}>
+                    <Switch
+                      trackColor={{ false: "#767577", true: "#81b0ff" }}
+                      onValueChange={toggleSwitchRemind}
+                      value={remindVisible}
+                      disabled={dueDateVisible ? false : true}
+                    />
+                  </View>
+                </View>
+                {remindVisible ? (
+                  <View style={{ marginHorizontal: 20, marginVertical: 10 }}>
+                    <SelectList
+                      setSelected={setSelectedRemind}
+                      data={remindOptions}
+                      save="value"
+                      boxStyles={{
+                        backgroundColor: "#F5F5F5",
+                        borderRadius: 10,
+                        shadowColor: "gray",
+                        shadowOpacity: 0.5,
+                        shadowOffset: {
+                          width: 2,
+                          height: 2,
+                        },
+                        borderWidth: "0",
+                      }}
+                      maxHeight={200}
+                      defaultOption={{ key: idRemind, value: remindTime }}
+                    />
+                  </View>
+                ) : null}
+                {/* End of Remind */}
                 {/* Assign to */}
                 <View style={styles.rowEnable}>
                   <View style={styles.childRowEnable}>
@@ -502,19 +1045,33 @@ export default function EditTaskScreen({ navigation }) {
                     <Switch
                       trackColor={{ false: "#767577", true: "#81b0ff" }}
                       onValueChange={toggleSwitchAssign}
-                      value={isEnableAssign}
+                      value={assignVisible}
+                      disable={assignDisable}
                     />
                   </View>
                 </View>
                 <View>
                   {/* inputText */}
                   {assignVisible ? (
-                    <View style={styles.inputText}>
-                      <TextInput
-                        style={styles.textInInputText}
-                        placeholder="Enter Username or Email"
-                        placeholderTextColor={Colors.placeholder}
-                      ></TextInput>
+                    <View style={{ marginHorizontal: 20, marginVertical: 10 }}>
+                      <SelectList
+                        setSelected={setSelectedAssignee}
+                        data={assigneeNameData}
+                        save="key"
+                        boxStyles={{
+                          backgroundColor: "#F5F5F5",
+                          borderRadius: 10,
+                          shadowColor: "gray",
+                          shadowOpacity: 0.5,
+                          shadowOffset: {
+                            width: 2,
+                            height: 2,
+                          },
+                          borderWidth: "0",
+                        }}
+                        maxHeight={200}
+                        defaultOption={{ key: IDAssignee, value: assignee }}
+                      />
                     </View>
                   ) : null}
                 </View>
@@ -529,11 +1086,21 @@ export default function EditTaskScreen({ navigation }) {
                     multiline={true}
                     placeholder="Your description here"
                     placeholderTextColor={Colors.placeholder}
-                  />
+                    onChangeText={(value) => handleDescriptionChange(value)}
+                  >
+                    {newDescription}
+                  </TextInput>
                 </TouchableOpacity>
               </View>
             </View>
           </View>
+          <PopupModal
+            visible={modalVisible}
+            type={popupType}
+            title={popupTitle}
+            message={popupMessage}
+            onClose={closeModal}
+          />
         </View>
       </Animated.ScrollView>
     </KeyboardAvoidingView>
@@ -576,12 +1143,10 @@ const styles = StyleSheet.create({
   smallInputText: {
     backgroundColor: "#F5F5F5",
     borderRadius: 10,
-    marginHorizontal: 20,
     marginTop: 10,
     alignItems: "center",
     padding: 10,
     flexDirection: "row",
-    width: "40%",
     shadowColor: "gray",
     shadowOpacity: 0.5,
     shadowOffset: {
@@ -602,9 +1167,6 @@ const styles = StyleSheet.create({
     color: "#363942",
     fontSize: 12,
     fontWeight: "bold",
-    marginHorizontal: 20,
-    marginTop: 20,
-    width: "40%",
     shadowColor: "gray",
     shadowOpacity: 0.5,
     shadowOffset: {
@@ -734,5 +1296,8 @@ const styles = StyleSheet.create({
     color: "#3379E4",
     fontWeight: "500",
     fontSize: 18,
+  },
+  width80: {
+    width: "80%",
   },
 });

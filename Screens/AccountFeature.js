@@ -71,6 +71,37 @@ const AccountFeature = ({ navigation, route }) => {
 
   const { userId } = useContext(UserContext);
 
+  const getNameAvatar = async () => {
+    const docRef = doc(db, "User", userId.toString());
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      const fullName = docSnap.data().Name;
+      const nameArray = fullName.split(" ");
+      const lastName = nameArray[nameArray.length - 1];
+      setUserName(lastName);
+
+      let avatarUrl = docSnap.data().Avatar;
+      if (avatarUrl == "") {
+        const initials = fullName
+          .split(" ")
+          .map((name) => name.charAt(0))
+          .join("");
+        avatarUrl = `https://ui-avatars.com/api/?name=${fullName}&background=random&size=25`;
+      }
+
+      setUserAvatar(avatarUrl);
+    } else {
+      // docSnap.data() will be undefined in this case
+      console.log("No such document!");
+      setUserName("John");
+    }
+  };
+
+  useEffect(() => {
+    getNameAvatar();
+  }, []);
+
   const [imageURI, setImageURI] = useState("");
   const [Uname, setUname] = useState("");
   const [Career, setCareer] = useState("");
@@ -86,7 +117,18 @@ const AccountFeature = ({ navigation, route }) => {
 
     if (querySnapshot.size > 0) {
       for (const user of querySnapshot.docs) {
-        setImageURI(user.data().Avatar);
+        let avatarUrl = user.data().Avatar;
+        if (avatarUrl == "") {
+          const fullName = user.data().Name;
+          const initials = fullName
+            .split(" ")
+            .map((name) => name.charAt(0))
+            .join("");
+          avatarUrl = `https://ui-avatars.com/api/?name=${fullName}&background=random&size=25`;
+          setImageURI(avatarUrl);
+        } else {
+          setImageURI(user.data().Avatar);
+        }
         setUname(user.data().Name);
         setCareer(user.data().Job);
         setULocation(user.data().Location);

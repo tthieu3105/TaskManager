@@ -5,10 +5,14 @@ import {
   TextInput,
   TouchableOpacity,
 } from "react-native";
-import React, { Component } from "react";
+import React, { Component, useState } from "react";
 import { MaterialIcons } from "@expo/vector-icons";
 import { Colors } from "react-native/Libraries/NewAppScreen";
+
 export default class InputArea extends Component {
+  handleInputChange = (value) => {
+    this.props.onChange(value); // Gọi hàm xử lý khi giá trị thay đổi
+  };
   render() {
     return (
       <View>
@@ -20,7 +24,10 @@ export default class InputArea extends Component {
             placeholder={this.props.placeHolder}
             placeholderTextColor={Colors.placeholder}
             editable={this.props.editableState}
-          ></TextInput>
+            onChangeText={this.handleInputChange}
+          >
+            {this.props.content}
+          </TextInput>
           <TouchableOpacity>
             {/* Icon */}
             <MaterialIcons name={this.props.icon} size={24} color="#363942" />

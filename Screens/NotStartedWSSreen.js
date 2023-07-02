@@ -94,7 +94,7 @@ const projectCard = {
   status1: "On Progress",
   icon: "user-circle",
 };
-export default function CompletedWSSreen({ navigation, route }) {
+export default function NotStartedWSSreen({ navigation, route }) {
   const { userId } = useContext(UserContext);
   const [userName, setUserName] = useState("");
   const [userAvatar, setUserAvatar] = useState("");
@@ -197,7 +197,7 @@ export default function CompletedWSSreen({ navigation, route }) {
         const taskSnap = await getDoc(taskRef);
 
         if (taskSnap.exists()) {
-          if (taskSnap.data().Status == "Completed") {
+          if (taskSnap.data().Status == "Not Started") {
             let userID = 0;
             let userAvatar = "";
             let name = "";
@@ -436,7 +436,7 @@ export default function CompletedWSSreen({ navigation, route }) {
 
         {/* My Task */}
         <View style={styles.contentName}>
-          <Text style={{ fontSize: 20, fontWeight: 600 }}>Completed</Text>
+          <Text style={{ fontSize: 20, fontWeight: 600 }}>Not Started</Text>
           <Text
             style={{
               fontSize: 20,

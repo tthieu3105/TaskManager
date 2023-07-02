@@ -18,25 +18,70 @@ import FontAwesome from "../node_modules/@expo/vector-icons/FontAwesome";
 import EvilIcon from "../node_modules/@expo/vector-icons/EvilIcons";
 import AntDesign from "../node_modules/@expo/vector-icons/AntDesign";
 import UserAvatar from "@muhzi/react-native-user-avatar";
+import { db } from "../components/FirestoreConfig";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  where,
+  deleteDoc,
+} from "firebase/firestore";
+import NoteCard from "../components/NoteCard";
 
 const CONTAINER_HEIGHT = 80;
 
-const NoteInforScreen = ({ navigation }) => {
+const NoteInforScreen = ({ navigation, route }) => {
   const [currentDate, setCurrentDate] = useState("");
-  // Hiển thị ngày tháng năm hiện tại lên textView:
+  const [note, setNote] = useState('');
+  const { id } = route.params;
+  const node = id.toString();
+
+  //Lấy note đã touch ở NoteScreen
   useEffect(() => {
-    // Lấy ngày tháng năm hiện tại và định dạng thành chuỗi
-    const date = new Date();
-    const options = {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
+    const fetchNote = async () => {
+      try {
+        const noteDoc = await getDoc(doc(db, "Note", node));
+        if (noteDoc.exists()) {
+          const noteData = noteDoc.data();
+          setNote(noteData);
+          const timestamp = noteData.CreateAt;
+          const seconds = timestamp.seconds;
+          const date = new Date(seconds * 1000); // Chuyển đổi thành đối tượng Date
+          const formattedDate = formatDate(date);
+          setCurrentDate(formattedDate); // Định dạng ngày tháng
+        } else {
+          console.log("Note id does not exist");
+        }
+      } catch (error) {
+        console.log("Error getting document:", error);
+      }
     };
-    const formattedDate = date.toLocaleDateString("en-US", options);
-    // Cập nhật state currentDate
-    setCurrentDate(formattedDate);
-  }, []);
+    fetchNote();
+  }, [id]);
+
+  //Format lại định dạng ngày tháng của note
+  const formatDate = (date) => {
+    const day = ("0" + date.getDate()).slice(-2);
+    const month = ("0" + (date.getMonth() + 1)).slice(-2);
+    const year = date.getFullYear();
+    const hours = ("0" + date.getHours()).slice(-2);
+    const minutes = ("0" + date.getMinutes()).slice(-2);
+
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
+  };
+
+  const deleteNote = async () => {
+    try {
+      const noteRef = doc(db, "Note", node);
+      await deleteDoc(noteRef);
+      console.log('Xóa document thành công!');
+    } catch (error) {
+      console.error('Lỗi khi xóa document:', error);
+    }
+    navigation.replace("NoteScreen");
+  };
 
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -103,7 +148,7 @@ const NoteInforScreen = ({ navigation }) => {
 
           {/* edit button */}
           <View>
-            <TouchableOpacity onPress={() => navigation.navigate("EditNote")}>
+            <TouchableOpacity onPress={() => navigation.navigate("EditNote", { id })}>
               <Text style={styles.editButton}>Edit</Text>
             </TouchableOpacity>
           </View>
@@ -123,7 +168,7 @@ const NoteInforScreen = ({ navigation }) => {
             <Text style={styles.smallTitle}>Title</Text>
             <View style={styles.insertBox}>
               {/* Load title của note lên <text> */}
-              <Text style={styles.textInInsertBox}></Text>
+              <Text style={styles.textInInsertBox}>{note.Title}</Text>
             </View>
 
             {/* Date */}
@@ -140,12 +185,14 @@ const NoteInforScreen = ({ navigation }) => {
             <Text style={styles.smallTitle}>Description</Text>
             <View style={styles.noteBox}>
               {/* load nội dung note lên text */}
-              <Text style={styles.textInInsertBox}></Text>
+              <Text style={styles.textInInsertBox}>{note.Description}</Text>
             </View>
           </View>
 
-          {/* Create note button */}
-          <TouchableOpacity style={styles.button}>
+          {/* Delete note button */}
+          <TouchableOpacity
+            style={styles.button}
+            onPress={deleteNote}>
             <Text style={styles.textInButton}>Delete this note</Text>
           </TouchableOpacity>
         </View>
@@ -153,10 +200,6 @@ const NoteInforScreen = ({ navigation }) => {
     </KeyboardAvoidingView>
   );
 };
-
-// const AddNoteScreen = () => {
-
-// };
 
 const styles = StyleSheet.create({
   header: {

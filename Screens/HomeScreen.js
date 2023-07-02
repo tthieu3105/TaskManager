@@ -10,20 +10,36 @@ import {
   Animated,
   KeyboardAvoidingView,
   SafeAreaView,
+  FlatList,
+  ActivityIndicator,
 } from "react-native";
-import React, { Component, useEffect, useRef } from "react";
+import React, {
+  Component,
+  useEffect,
+  useRef,
+  useContext,
+  useState,
+} from "react";
 import { Colors } from "react-native/Libraries/NewAppScreen";
 import UserAvatar from "@muhzi/react-native-user-avatar";
 import { Feather, SimpleLineIcons, Ionicons } from "@expo/vector-icons";
 import HomeSection from "../components/HomeSection";
-import TaskCardOP from "../components/TaskCardProgress";
+import TaskCard from "../components/TaskCardProgress";
 import TaskCardCP from "../components/TaskCardCompleted";
 import TaskCardOD from "../components/TaskCardOverdue";
 import TabContainer from "../components/TabContainer";
 
-import { useContext, useState } from "react";
 import { db } from "../components/FirestoreConfig";
-import { collection, getDocs, query, where, or, and } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  or,
+  and,
+  getDoc,
+  doc,
+} from "firebase/firestore";
 import { UserContext, UserProvider } from "../contextObject";
 
 const CONTAINER_HEIGHT = 80;
@@ -44,6 +60,143 @@ const taskCard = {
 };
 
 export default function HomeScreen({ navigation }) {
+  const [currentDate, setCurrentDate] = useState("");
+  useEffect(() => {
+    // Lấy ngày tháng năm hiện tại và định dạng thành chuỗi
+    const date = new Date();
+    const options = {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    };
+    const formattedDate = date.toLocaleDateString("en-US", options);
+    // Cập nhật state currentDate
+    setCurrentDate(formattedDate);
+  }, []);
+
+  const [userName, setUserName] = useState("");
+  const [userAvatar, setUserAvatar] = useState("");
+
+  const getNameAvatar = async () => {
+    const docRef = doc(db, "User", userId.toString());
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      const fullName = docSnap.data().Name;
+      const nameArray = fullName.split(" ");
+      const lastName = nameArray[nameArray.length - 1];
+      setUserName(lastName);
+
+      let avatarUrl = docSnap.data().Avatar;
+      if (avatarUrl == "") {
+        const initials = fullName
+          .split(" ")
+          .map((name) => name.charAt(0))
+          .join("");
+        avatarUrl = `https://ui-avatars.com/api/?name=${fullName}&background=random&size=25`;
+      }
+
+      setUserAvatar(avatarUrl);
+    } else {
+      // docSnap.data() will be undefined in this case
+      console.log("No such document!");
+      setUserName("John");
+    }
+  };
+
+  useEffect(() => {
+    getNameAvatar();
+  }, []);
+  const { userId } = useContext(UserContext);
+  const [isLoading, setIsLoading] = useState(true); // Add a state for loading indicator
+  const [tasks, setTasks] = useState([]);
+  const refreshHomeScreen = async () => {
+    try {
+      const q = query(collection(db, "Task"), where("CreatorID", "==", userId));
+      // const querySnapshot = await getDocs(collection(db, "Task"));
+      const querySnapshot = await getDocs(q);
+      const tasksData = querySnapshot.docs.map((doc) => {
+        const { Description, StartTime, DueTime, Status, Title } = doc.data();
+        const startDateTime = StartTime.toDate();
+        const startTime = startDateTime.toLocaleTimeString();
+
+        const endDateTime = DueTime.toDate();
+        const endTime = endDateTime.toLocaleTimeString();
+        return {
+          id: doc.id,
+          Description,
+          StartTime,
+          DueTime,
+          Status,
+          Title,
+          startTime,
+        };
+      });
+
+      setTasks(tasksData);
+      setMasterData(tasksData);
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Error refreshing Screen B:", error);
+    }
+  };
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const q = query(
+          collection(db, "Task"),
+          where("CreatorID", "==", userId)
+        );
+        // const querySnapshot = await getDocs(collection(db, "Task"));
+        const querySnapshot = await getDocs(q);
+        const tasksData = querySnapshot.docs.map((doc) => {
+          const { Description, StartTime, DueTime, Status, Title } = doc.data();
+          const startDateTime = StartTime.toDate();
+          const startTime = startDateTime.toLocaleTimeString();
+
+          const endDateTime = DueTime.toDate();
+          const endTime = endDateTime.toLocaleTimeString();
+          return {
+            id: doc.id,
+            Description,
+            StartTime,
+            DueTime,
+            Status,
+            Title,
+            startTime,
+          };
+        });
+
+        setTasks(tasksData);
+        setMasterData(tasksData);
+        setIsLoading(false);
+      } catch (error) {
+        console.log("Error fetching tasks:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  //Search Box
+  const [search, setSearch] = useState("");
+  const [masterData, setMasterData] = useState([]);
+  const searchFilter = (text) => {
+    if (text) {
+      const newData = masterData.filter((item) => {
+        const itemData = item.Title
+          ? item.Title.toUpperCase()
+          : "".toUpperCase();
+        const textData = text.toUpperCase();
+        return itemData.indexOf(textData) > -1;
+      });
+      setTasks(newData);
+      setSearch(text);
+    } else {
+      setTasks(masterData);
+      setSearch(text);
+    }
+  };
   // Header Animation
   const scrollY = useRef(new Animated.Value(0)).current;
   const offsetAnim = useRef(new Animated.Value(0)).current;
@@ -76,14 +229,17 @@ export default function HomeScreen({ navigation }) {
       _offsetValue = value;
     });
   }, []);
-
+userName
   const headerTranslate = clampedScroll.interpolate({
     inputRange: [0, CONTAINER_HEIGHT],
     outputRange: [0, -CONTAINER_HEIGHT],
     extrapolate: "clamp",
   });
-  // End of header animation
 
+  // End of header animation
+  if (isLoading) {
+    return <ActivityIndicator size="large" color="#0000ff" />;
+  }
   return (
     <TabContainer>
       <KeyboardAvoidingView
@@ -94,7 +250,6 @@ export default function HomeScreen({ navigation }) {
       >
         {/* Hiển thị trạng thái điện thoại */}
         <StatusBar barStyle={"dark-content"} />
-
         {/* Header */}
         <Animated.View
           style={[
@@ -114,133 +269,140 @@ export default function HomeScreen({ navigation }) {
               style={styles.headerBehave}
               onPress={() => navigation.navigate("AccountFeature")}
             >
-              <UserAvatar
-                size={40}
-                active
-                src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=2900&q=80"
-              />
+              <UserAvatar size={40} active src={userAvatar} />
             </TouchableOpacity>
           </View>
         </Animated.View>
         {/* End of Header */}
-        <Animated.ScrollView
-          onScroll={Animated.event(
-            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-            { useNativeDriver: true }
-          )}
-        >
-          <View
-            style={{
-              marginTop: 80,
-            }}
-          >
-            {/* Hello user */}
-            <Text style={styles.title}>Hello Josh</Text>
-            <Text style={styles.detailText}>May 27, 2022</Text>
+        <FlatList
+          ListHeaderComponent={
+            <Animated.ScrollView
+              onScroll={Animated.event(
+                [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                { useNativeDriver: true }
+              )}
+            >
+              <View
+                style={{
+                  marginTop: 80,
+                }}
+              >
+                {/* Hello user */}
+                <Text style={styles.title}>Hello {userName}</Text>
+                <Text style={styles.detailText}>{currentDate}</Text>
 
-            {/* SearchBox */}
-            <View style={styles.SearchBox}>
-              <TextInput
-                style={styles.textInSearchBox}
-                placeholder="Find your task"
-                placeholderTextColor={Colors.placeholder}
-              ></TextInput>
-              <TouchableOpacity>
-                <Feather name="search" size={24} color="#363942" />
-              </TouchableOpacity>
+                {/* SearchBox */}
+                <View style={styles.SearchBox}>
+                  <TextInput
+                    value={search}
+                    onChangeText={(text) => searchFilter(text)}
+                    style={styles.textInSearchBox}
+                    placeholder="Find your task"
+                    placeholderTextColor={Colors.placeholder}
+                  ></TextInput>
+                  <TouchableOpacity>
+                    <Feather name="search" size={24} color="#363942" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* My Task */}
+              <HomeSection
+                title={sectionInHome.sectionName}
+                navigation={navigation}
+                screenName="MyTask"
+                refreshScreen={refreshHomeScreen}
+              ></HomeSection>
+            </Animated.ScrollView>
+          }
+          ListFooterComponent={
+            <View>
+              <View>
+                <HomeSection
+                  title={sectionInHome.sectionName2}
+                  navigation={navigation}
+                  screenName="Completed"
+                  refreshScreen={refreshHomeScreen}
+                ></HomeSection>
+                <FlatList
+                  nestedScrollEnabled={true}
+                  data={tasks
+                    .filter((item) => item.Status === "Completed")
+                    .slice(0, 3)}
+                  renderItem={({ item }) => (
+                    <TaskCard
+                      title={item.Title}
+                      subtitle={item.Description}
+                      time={item.startTime}
+                      taskStatus={item.Status}
+                      iconName={taskCard.icon}
+                      navigation={navigation}
+                      screenName="TaskInfo"
+                      firebase={db}
+                      taskID={item.id}
+                      avatar={userAvatar}
+                      refreshScreen={refreshHomeScreen} // Pass the refreshScreen function as a prop
+                    />
+                  )}
+                  listKey="completedList"
+                  keyExtractor={(item) => item.id.toString()}
+                />
+              </View>
+
+              <View>
+                <HomeSection
+                  title={sectionInHome.sectionName3}
+                  navigation={navigation}
+                  screenName="Overdue"
+                  refreshScreen={refreshHomeScreen}
+                ></HomeSection>
+                <FlatList
+                  nestedScrollEnabled={true}
+                  data={tasks
+                    .filter((item) => item.Status === "Overdue")
+                    .slice(0, 3)}
+                  renderItem={({ item }) => (
+                    <TaskCard
+                      title={item.Title}
+                      subtitle={item.Description}
+                      time={item.startTime}
+                      taskStatus={item.Status}
+                      iconName={taskCard.icon}
+                      navigation={navigation}
+                      screenName="TaskInfo"
+                      firebase={db}
+                      taskID={item.id}
+                      avatar={userAvatar}
+                      refreshScreen={refreshHomeScreen} // Pass the refreshScreen function as a prop
+                    />
+                  )}
+                  listKey="overdueList"
+                  keyExtractor={(item) => item.id.toString()}
+                />
+              </View>
             </View>
-          </View>
-
-          {/* My Task */}
-          <HomeSection
-            title={sectionInHome.sectionName}
-            navigation={navigation}
-            screenName="MyTask"
-          ></HomeSection>
-
-          {/* TaskCard */}
-          <TaskCardOP
-            title={taskCard.title1}
-            subtitle={taskCard.subtitle1}
-            time={taskCard.time1}
-            status={taskCard.status1}
-            iconName={taskCard.icon}
-            navigation={navigation}
-            screenName="TaskInfo"
-          ></TaskCardOP>
-          {/* End of TaskCard */}
-
-          {/* TaskCard */}
-          <TaskCardOP
-            title={taskCard.title1}
-            subtitle={taskCard.subtitle1}
-            time={taskCard.time1}
-            status={taskCard.status1}
-            iconName={taskCard.icon}
-            navigation={navigation}
-            screenName="TaskInfo"
-          ></TaskCardOP>
-          {/* End of TaskCard */}
-          {/* End of My Task*/}
-
-          {/* Completed Section */}
-          <HomeSection
-            title={sectionInHome.sectionName2}
-            navigation={navigation}
-            screenName="Completed"
-          ></HomeSection>
-          {/* TaskCard */}
-          <TaskCardCP
-            title={taskCard.title1}
-            subtitle={taskCard.subtitle1}
-            time={taskCard.time1}
-            status={taskCard.status2}
-            navigation={navigation}
-            screenName="TaskInfo"
-          ></TaskCardCP>
-          {/* End of TaskCard */}
-
-          {/* TaskCard */}
-          <TaskCardCP
-            title={taskCard.title1}
-            subtitle={taskCard.subtitle1}
-            time={taskCard.time1}
-            status={taskCard.status2}
-            navigation={navigation}
-            screenName="TaskInfo"
-          ></TaskCardCP>
-          {/* End of TaskCard */}
-          {/* End of Completed Section */}
-
-          {/* Overdue Section */}
-          <HomeSection
-            title={sectionInHome.sectionName3}
-            navigation={navigation}
-            screenName="Overdue"
-          ></HomeSection>
-          {/* TaskCard */}
-          <TaskCardOD
-            title={taskCard.title1}
-            subtitle={taskCard.subtitle1}
-            time={taskCard.time1}
-            status={taskCard.status3}
-            navigation={navigation}
-            screenName="TaskInfo"
-          ></TaskCardOD>
-          {/* End of TaskCard */}
-
-          {/* TaskCard */}
-          <TaskCardOD
-            title={taskCard.title1}
-            subtitle={taskCard.subtitle1}
-            time={taskCard.time1}
-            status={taskCard.status3}
-            navigation={navigation}
-            screenName="TaskInfo"
-          ></TaskCardOD>
-          {/* End of TaskCard */}
-          {/* End of Overdue Section */}
-        </Animated.ScrollView>
+          }
+          data={tasks
+            .filter((item) => item.Status === "On Progress")
+            .slice(0, 3)} // Giới hạn số lượng mục
+          renderItem={({ item }) => (
+            <TaskCard
+              title={item.Title}
+              subtitle={item.Description}
+              time={item.startTime}
+              taskStatus={item.Status}
+              iconName={taskCard.icon}
+              navigation={navigation}
+              screenName="TaskInfo"
+              firebase={db}
+              taskID={item.id}
+              avatar={userAvatar}
+              refreshScreen={refreshHomeScreen} // Pass the refreshScreen function as a prop
+            />
+          )}
+          listKey="onProgressList"
+          keyExtractor={(item) => item.id.toString()}
+        />
       </KeyboardAvoidingView>
     </TabContainer>
   );
@@ -300,5 +462,8 @@ const styles = StyleSheet.create({
   },
   headerBehave: {
     padding: 20,
+  },
+  activityIndicatorContainer: {
+    position: "absolute",
   },
 });
