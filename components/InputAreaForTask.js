@@ -10,6 +10,9 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { Colors } from "react-native/Libraries/NewAppScreen";
 
 export default class InputArea extends Component {
+  handleInputChange = (value) => {
+    this.props.onChange(value); // Gọi hàm xử lý khi giá trị thay đổi
+  };
   render() {
     return (
       <View>
@@ -21,6 +24,7 @@ export default class InputArea extends Component {
             placeholder={this.props.placeHolder}
             placeholderTextColor={Colors.placeholder}
             editable={this.props.editableState}
+            onChangeText={this.handleInputChange}
           >
             {this.props.content}
           </TextInput>

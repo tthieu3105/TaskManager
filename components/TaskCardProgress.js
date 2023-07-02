@@ -2,7 +2,6 @@ import { View, StyleSheet, Text, TouchableOpacity } from "react-native";
 import React, { Component } from "react";
 import FontAwesome5 from "@expo/vector-icons/FontAwesome5";
 import { Feather } from "@expo/vector-icons";
-import UserAvatar from "@muhzi/react-native-user-avatar";
 import { db } from "./FirestoreConfig";
 import {
   collection,
@@ -15,8 +14,8 @@ import {
 } from "firebase/firestore";
 export default class TaskCardOP extends Component {
   handlePress = () => {
-    const { screenName, navigation, taskID } = this.props;
-    navigation.navigate(screenName, { taskID });
+    const { screenName, navigation, taskID, refreshScreen } = this.props;
+    navigation.navigate(screenName, { taskID, refreshScreen });
   };
   constructor(props) {
     super(props);
@@ -56,7 +55,7 @@ export default class TaskCardOP extends Component {
     }
   };
   handleTaskStatusChange = async () => {
-    const { taskID } = this.props;
+    const { taskID, firebase, refreshScreen } = this.props;
     const { status } = this.state;
 
     let newStatus = "";
@@ -72,7 +71,7 @@ export default class TaskCardOP extends Component {
 
         break;
       case "Overdue":
-        newStatus = "On Progress";
+        newStatus = "Overdue";
 
         break;
       default:
@@ -80,12 +79,17 @@ export default class TaskCardOP extends Component {
     }
     newColor = this.handleChangeColor(newStatus);
     try {
-      const taskRef = doc(collection(db, "Task"), taskID);
+      const taskRef = doc(collection(firebase, "Task"), taskID);
       // Update the status and color in Firestore
       await updateDoc(taskRef, { Status: newStatus });
 
       // Update the state with the new status and color
       this.setState({ taskStatus: newStatus, statusColor: newColor });
+
+      //Refresh lại trang
+      if (typeof refreshScreen === "function") {
+        refreshScreen();
+      }
     } catch (error) {
       console.log("Error updating task status:", error);
     }
@@ -104,14 +108,10 @@ export default class TaskCardOP extends Component {
               <Text style={styles.taskCardTitle}>{this.props.title}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.priorityStar}>
-              {/* <FontAwesome5
+              <FontAwesome5
                 name={this.props.iconName}
                 size={24}
                 color="black"
-              /> */}
-              <UserAvatar
-                size={24}
-                src={this.props.avatar}
               />
             </TouchableOpacity>
           </View>
@@ -146,8 +146,10 @@ export default class TaskCardOP extends Component {
               style={[
                 styles.statusButton,
                 { backgroundColor: this.state.statusColor },
+                this.state.status === "Overdue" && styles.disabledStatusButton,
               ]}
               onPress={this.handleTaskStatusChange}
+              disabled={this.state.status === "Overdue"}
             >
               <Text style={styles.textInStatus}>{this.state.status}</Text>
             </TouchableOpacity>
@@ -233,5 +235,8 @@ const styles = StyleSheet.create({
     display: "flex",
     flexDirection: "row",
     justifyContent: "space-between",
+  },
+  disabledStatusButton: {
+    opacity: 0.5,
   },
 });

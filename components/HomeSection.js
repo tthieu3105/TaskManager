@@ -6,8 +6,8 @@ import TaskCard from "./TaskCardProgress";
 
 export default class HomeSection extends Component {
   handlePress = () => {
-    const { screenName, navigation } = this.props;
-    navigation.navigate(screenName);
+    const { screenName, navigation, refreshScreen } = this.props;
+    navigation.navigate(screenName, { refreshScreen });
   };
   render() {
     return (
