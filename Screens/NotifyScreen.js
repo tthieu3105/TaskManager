@@ -5,12 +5,29 @@ import {
   Animated,
   KeyboardAvoidingView,
 } from "react-native";
-import React, { Component, useEffect, useRef } from "react";
+import React, {
+  Component,
+  useState,
+  useEffect,
+  useRef,
+  useContext,
+} from "react";
 import { TouchableOpacity } from "react-native";
 import NotifyCard from "../components/NotifyCard";
-import NotifyCard2 from "../components/NotifyCard2";
 import { ScrollView } from "react-native";
 import { StatusBar } from "react-native";
+import { UserContext, UserProvider } from "../contextObject";
+import { db } from "../components/FirestoreConfig";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  where,
+  deleteDoc,
+} from "firebase/firestore";
+
 const CONTAINER_HEIGHT = 80;
 const notifyInfo = {
   name: "name of task",
@@ -59,6 +76,83 @@ export default function NotifyScreen({ navigation }) {
   });
   // End of header animation
 
+  // get notify
+  const { userId } = useContext(UserContext);
+  const [notifyList, setNotifyList] = useState([]);
+  const getNotifyInfo = async () => {
+    const q = query(
+      collection(db, "Notification"),
+      where("UserID", "==", userId)
+    );
+    const querySnapshot = await getDocs(q);
+
+    const notifies = [];
+    for (const notify of querySnapshot.docs) {
+      const notifyID = notify.data().NotificationID;
+      console.log("notifyID: ", notifyID);
+      const proID = notify.data().ProjectID;
+      let proName = "";
+      const status = notify.data().Status;
+      let taskName = "";
+      const taskID = notify.data().TaskID;
+      const time = notify.data().Time.toDate().toLocaleTimeString();
+      const date = notify.data().Time.toDate().toLocaleDateString();
+      const type = notify.data().Type;
+      let dueTime = "";
+      let dueDate = "";
+      let creatorName = "";
+
+      if (type == 1 || type == 2) {
+        const proRef = doc(db, "Project", proID.toString());
+        const proSnap = await getDoc(proRef);
+        if (proSnap.exists()) {
+          proName = proSnap.data().ProjectName;
+
+          const creatorRef = doc(
+            db,
+            "User",
+            proSnap.data().CreatorID.toString()
+          );
+          const creatorSnap = await getDoc(creatorRef);
+          if (creatorSnap.exists()) {
+            creatorName = creatorSnap.data().Name;
+          }
+        }
+      }
+      if (type != 1) {
+        const taskRef = doc(db, "Task", taskID.toString());
+        const taskSnap = await getDoc(taskRef);
+        if (taskSnap.exists()) {
+          taskName = taskSnap.data().Title;
+          dueTime = taskSnap.data().DueTime.toDate().toLocaleTimeString();
+          dueDate = taskSnap.data().DueTime.toDate().toLocaleDateString();
+        }
+      }
+
+      const n = {
+        NotificationID: notifyID,
+        ProjectID: proID,
+        ProjectName: proName,
+        Status: status,
+        TaskID: taskID,
+        TaskName: taskName,
+        Date: date,
+        Time: time,
+        Type: type,
+        DueTime: dueTime,
+        DueDate: dueDate,
+        CreatorName: creatorName,
+      };
+      notifies.push(n);
+    }
+    setNotifyList(notifies);
+  };
+
+  useEffect(() => {
+    getNotifyInfo();
+  }, []);
+  console.log("no list: ", notifyList);
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -105,15 +199,17 @@ export default function NotifyScreen({ navigation }) {
       >
         <View style={{ marginTop: CONTAINER_HEIGHT }}>
           {/* Notify Card */}
-          <NotifyCard
-            nameTask={notifyInfo.name}
-            createDate={notifyInfo.date}
-            projectName={notifyInfo.project}
-            dueDate={notifyInfo.due}
-          ></NotifyCard>
-          {/* End of Notify Card */}
+          {notifyList.map((noti) => {
+            return (
+              <NotifyCard
+                key={noti.NotificationID}
+                navigation={navigation}
+                notify={noti}
+              ></NotifyCard>
+            );
+          })}
 
-          
+          {/* End of Notify Card */}
         </View>
       </Animated.ScrollView>
     </KeyboardAvoidingView>

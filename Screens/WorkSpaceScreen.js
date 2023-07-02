@@ -66,7 +66,9 @@ const WorkSpaceScreen = ({ navigation }) => {
   //Hello
   const { userId } = useContext(UserContext);
   const [userName, setUserName] = useState("");
-  const getName = async () => {
+  const [userAvatar, setUserAvatar] = useState("");
+
+  const getNameAvatar = async () => {
     const docRef = doc(db, "User", userId.toString());
     const docSnap = await getDoc(docRef);
 
@@ -75,6 +77,17 @@ const WorkSpaceScreen = ({ navigation }) => {
       const nameArray = fullName.split(" ");
       const lastName = nameArray[nameArray.length - 1];
       setUserName(lastName);
+
+      let avatarUrl = docSnap.data().Avatar;
+      if (avatarUrl == "") {
+        const initials = fullName
+          .split(" ")
+          .map((name) => name.charAt(0))
+          .join("");
+        avatarUrl = `https://ui-avatars.com/api/?name=${fullName}&background=random&size=25`;
+      }
+
+      setUserAvatar(avatarUrl);
     } else {
       // docSnap.data() will be undefined in this case
       console.log("No such document!");
@@ -184,7 +197,7 @@ const WorkSpaceScreen = ({ navigation }) => {
   };
 
   useEffect(() => {
-    getName();
+    getNameAvatar();
     getProject();
   }, []);
 
@@ -324,11 +337,7 @@ const WorkSpaceScreen = ({ navigation }) => {
               style={styles.headerBehave}
               onPress={() => navigation.navigate("AccountFeature")}
             >
-              <UserAvatar
-                size={40}
-                active
-                src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=2900&q=80"
-              />
+              <UserAvatar size={40} active src={userAvatar} />
             </TouchableOpacity>
           </View>
         </Animated.View>
@@ -397,7 +406,9 @@ const WorkSpaceScreen = ({ navigation }) => {
                 </View>
 
                 <View style={styles.column2}>
-                  <TouchableOpacity onPress={() =>navigation.navigate("AddProject")}>
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate("AddProject")}
+                  >
                     <AntDesign
                       name="pluscircleo"
                       size={22}
@@ -535,7 +546,6 @@ const styles = StyleSheet.create({
   row1: {
     flexDirection: "row",
     display: "flex",
-    
   },
 
   column1: {

@@ -21,6 +21,39 @@ const CONTAINER_HEIGHT = 80;
 
 const AddNoteScreen = ({ navigation }) => {
   const { userId } = useContext(UserContext);
+  const [userName, setUserName] = useState("");
+  const [userAvatar, setUserAvatar] = useState("");
+
+  const getNameAvatar = async () => {
+    const docRef = doc(db, "User", userId.toString());
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      const fullName = docSnap.data().Name;
+      const nameArray = fullName.split(" ");
+      const lastName = nameArray[nameArray.length - 1];
+      setUserName(lastName);
+
+      let avatarUrl = docSnap.data().Avatar;
+      if (avatarUrl == "") {
+        const initials = fullName
+          .split(" ")
+          .map((name) => name.charAt(0))
+          .join("");
+        avatarUrl = `https://ui-avatars.com/api/?name=${fullName}&background=random&size=25`;
+      }
+
+      setUserAvatar(avatarUrl);
+    } else {
+      // docSnap.data() will be undefined in this case
+      console.log("No such document!");
+      setUserName("John");
+    }
+  };
+
+  useEffect(() => {
+    getNameAvatar();
+  }, []);
   const [currentDate, setCurrentDate] = useState("");
   // Hiển thị ngày tháng năm hiện tại lên textView:
   useEffect(() => {
@@ -147,7 +180,7 @@ const AddNoteScreen = ({ navigation }) => {
             <UserAvatar
               size={40}
               active
-              src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=2900&q=80"
+              src={userAvatar}
             />
           </View>
         </View>

@@ -8,7 +8,7 @@ const navigation = useNavigation();
 const LoginFunction = (userName, password) => {
     if (userName === "admin" && password === "1") {
         ToastAndroid.show("Login Successfully!", ToastAndroid.SHORT);
-        navigation.navigate('Home');
+        navigation.navigate('HomeNavigator');
     }
     else {
         ToastAndroid.show("Invalid UserName or Password!", ToastAndroid.SHORT);

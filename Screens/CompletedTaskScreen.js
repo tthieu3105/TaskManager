@@ -29,7 +29,16 @@ import { Colors } from "react-native/Libraries/NewAppScreen";
 import UserAvatar from "@muhzi/react-native-user-avatar";
 import { UserContext, UserProvider } from "../contextObject";
 import { db } from "../components/FirestoreConfig";
-import { collection, getDocs, query, where, or, and } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  or,
+  and,
+  getDoc,
+  doc,
+} from "firebase/firestore";
 import TabContainer from "../components/TabContainer";
 import HomeSection from "../components/HomeSection";
 import TaskCard from "../components/TaskCardProgress";
@@ -50,6 +59,53 @@ const taskCard = {
   icon: "star",
 };
 export default function CompletedTaskScreen({ navigation, route }) {
+  const [currentDate, setCurrentDate] = useState("");
+  useEffect(() => {
+    // Lấy ngày tháng năm hiện tại và định dạng thành chuỗi
+    const date = new Date();
+    const options = {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    };
+    const formattedDate = date.toLocaleDateString("en-US", options);
+    // Cập nhật state currentDate
+    setCurrentDate(formattedDate);
+  }, []);
+
+  const [userName, setUserName] = useState("");
+  const [userAvatar, setUserAvatar] = useState("");
+
+  const getNameAvatar = async () => {
+    const docRef = doc(db, "User", userId.toString());
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      const fullName = docSnap.data().Name;
+      const nameArray = fullName.split(" ");
+      const lastName = nameArray[nameArray.length - 1];
+      setUserName(lastName);
+
+      let avatarUrl = docSnap.data().Avatar;
+      if (avatarUrl == "") {
+        const initials = fullName
+          .split(" ")
+          .map((name) => name.charAt(0))
+          .join("");
+        avatarUrl = `https://ui-avatars.com/api/?name=${fullName}&background=random&size=25`;
+      }
+
+      setUserAvatar(avatarUrl);
+    } else {
+      // docSnap.data() will be undefined in this case
+      console.log("No such document!");
+      setUserName("John");
+    }
+  };
+
+  useEffect(() => {
+    getNameAvatar();
+  }, []);
   //Load data
   const { refreshScreen } = route.params;
 
@@ -216,11 +272,7 @@ export default function CompletedTaskScreen({ navigation, route }) {
               style={styles.headerBehave}
               onPress={() => navigation.navigate("AccountFeature")}
             >
-              <UserAvatar
-                size={40}
-                active
-                src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=2900&q=80"
-              />
+              <UserAvatar size={40} active src={userAvatar} />
             </TouchableOpacity>
           </View>
         </Animated.View>
@@ -239,8 +291,8 @@ export default function CompletedTaskScreen({ navigation, route }) {
                 }}
               >
                 {/* Hello user */}
-                <Text style={styles.title}>Hello Josh</Text>
-                <Text style={styles.detailText}>May 27, 2022</Text>
+                <Text style={styles.title}>Hello {userName}</Text>
+                <Text style={styles.detailText}>{currentDate}</Text>
 
                 {/* SearchBox */}
                 <View style={styles.SearchBox}>
@@ -275,6 +327,7 @@ export default function CompletedTaskScreen({ navigation, route }) {
               screenName="TaskInfo"
               firebase={db}
               taskID={item.id}
+              avatar={userAvatar}
               refreshScreen={refreshCompletedScreen}
             />
           )}

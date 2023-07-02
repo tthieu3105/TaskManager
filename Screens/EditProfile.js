@@ -30,6 +30,16 @@ import {
   batch,
   updateDoc,
 } from "firebase/firestore";
+
+import { storage } from "../components/StorageConfig";
+import {
+  getDownloadURL,
+  getStorage,
+  uploadBytes,
+  ref as storageRef,
+  deleteObject,
+} from "firebase/storage";
+
 import { UserContext, UserProvider } from "../contextObject";
 import { Colors } from "react-native/Libraries/NewAppScreen";
 import PopupModal from "./../components/PopUpNotify";
@@ -88,12 +98,11 @@ const EditProfile = ({ navigation, route }) => {
   const newUname = Uname;
 
   //Image Picker
-  const [image, setImage] = useState("");
-  const [imageURI, setImageURI] = useState(route.params.userAvatar);
+  const [image, setImage] = useState(route.params.userAvatar);
   // const [newImageURI, setNewImageURI] = useState("");
   //convert local pic url to uri:
   // const convertUri = `file://${RNFS.DocumentDirectoryPath}/image.jpg`;
-
+  
   // RNFS.copyFile(image, uri).then(() => {
   //   // Tải lên hình ảnh lên Firebase Storage
   //   const storageRef = firebase.storage().ref().child('avatars/image.jpg');
@@ -107,9 +116,6 @@ const EditProfile = ({ navigation, route }) => {
   //   });
   // });
   // console.log("Picture uri: ", image);
-  useEffect(() => {
-    setImage(imageURI);
-  }, [setImageURI]);
 
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -137,7 +143,7 @@ const EditProfile = ({ navigation, route }) => {
   };
   const closeModal = () => {
     setModalVisible(false);
-    navigation.navigate("HomeScreen");
+    navigation.navigate("HomeNavigator");
   };
 
   //Update thông tin user
@@ -145,8 +151,29 @@ const EditProfile = ({ navigation, route }) => {
     console.log("doing in user: ", userId);
     const docRef = doc(db, "User", userId.toString());
 
-    if (
-      image.trim() == route.params.userAvatar &&
+    let updateAvartar = false;
+    if(image != route.params.userAvatar) {
+      console.log("image: ", image);
+      const response = await fetch(image);
+      const blob = await response.blob();
+      const storageReference = storageRef(
+        storage,
+        `UserAvatar/UserID/${userId}`
+      );
+      try {
+        await uploadBytes(storageReference, blob);
+        const url = await getDownloadURL(storageReference);
+        console.log("update avatar: ", url);
+        await updateDoc(docRef, { Avatar: url });
+        updateAvartar = true;
+      } catch (error) {
+        console.log("Error uploading avatar:", error);
+      }
+    }
+
+    console.log("image: ", image);
+
+    if (updateAvartar == false && 
       Uname.trim() == route.params.userName &&
       Career.trim() == route.params.userJob &&
       UMail.trim() == route.params.userEmail &&
@@ -156,7 +183,6 @@ const EditProfile = ({ navigation, route }) => {
       openModal("error", "Nothing to updated!");
       console.log("Nothing to update");
     } else {
-      await updateDoc(docRef, { Avatar: image });
       console.log("UserAvatar name updated!");
       navigation.setParams({ userAvatar: image });
 
@@ -283,6 +309,25 @@ const EditProfile = ({ navigation, route }) => {
                 placeholderTextColor={Colors.black}
               ></TextInput>
             </View>
+
+            {/* Gender */}
+            <View>
+              <Text style={styles.infoTitle}>Gender</Text>
+              <View style={styles.insertBox}>
+                <TouchableOpacity style={styles.frameToInsert}>
+                  {/* Lấy dữ liệu giới tính user cho vào <text/> */}
+                  <Text style={styles.textInInsertBox}></Text>
+                  {/* Button: back to previous screen */}
+                  <TouchableOpacity>
+                    <AntDesign
+                      name="down"
+                      size={30}
+                      style={styles.downIcon}
+                    ></AntDesign>
+                  </TouchableOpacity>
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
 
           {/* Contact information */}
@@ -313,7 +358,7 @@ const EditProfile = ({ navigation, route }) => {
 
           {/* Location & Language */}
           <View>
-            <Text style={styles.smallTitle}>Location</Text>
+            <Text style={styles.smallTitle}>Location & Language</Text>
             {/* Location */}
             <Text style={styles.infoTitle}>Location</Text>
             <View style={styles.insertBox}>
@@ -324,15 +369,31 @@ const EditProfile = ({ navigation, route }) => {
                 placeholderTextColor={Colors.black}
               ></TextInput>
             </View>
+
+            {/* Language */}
+            <View>
+              <Text style={styles.infoTitle}>Language</Text>
+              <View style={styles.insertBox}>
+                <TouchableOpacity style={styles.frameToInsert}>
+                  {/* Lấy dữ liệu giới tính user cho vào <text/> */}
+                  <Text style={styles.textInInsertBox}></Text>
+                  {/* Button: back to previous screen */}
+                  <TouchableOpacity>
+                    <AntDesign
+                      name="down"
+                      size={30}
+                      style={styles.downIcon}
+                    ></AntDesign>
+                  </TouchableOpacity>
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
 
           {/* Button save / discard */}
           <View style={styles.row}>
             {/* Discard */}
-            <TouchableOpacity
-              style={styles.buttonDiscard}
-              onPress={() => navigation.goBack()}
-            >
+            <TouchableOpacity style={styles.buttonDiscard}>
               <Text style={styles.textInButton1}>Discard</Text>
             </TouchableOpacity>
 
